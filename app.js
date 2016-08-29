@@ -437,10 +437,15 @@ function receivedPostback(event) {
         addDrink(payload);
     }
     else if(payload.startsWith("ListCategories")){ 
-      ListCategories(senderID);
+      var params = payload.split("-");
+      listCategories(senderID, parseInt(params[1]));
+    }
+    else if(payload.startsWith("ShowCategory")){ 
+      var params = payload.split("-");
+      showCategory(senderID, params[1]);
     }
     else{
-        sendTextMessage(senderID, "Postback called");      
+        sendTextMessage(senderID, "Postback called "+payload);      
     }
 }
 
@@ -892,7 +897,7 @@ function sendMenuMessage(recipientId) {
               {
                 "title":     "Buenos dias",
                 "subtitle":  "Para conocer nuestras categorias de productos, por favor escoja la opción de su preferencia:",
-                "image_url":"https://i.ytimg.com/vi/5jB3XQdap9w/maxresdefault.jpg",
+                "image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/disp/964c387445961.560ab8bbd7808.jpg",
                 "buttons":[
                   {
                     "type":"postback",
@@ -907,7 +912,7 @@ function sendMenuMessage(recipientId) {
                   {
                     "type":"postback",
                     "title":"Product categories",
-                    "payload":"ListCategories:"+recipientId
+                    "payload":"ListCategories-0"
                   }                 
                 ]
               }    
@@ -1140,18 +1145,18 @@ function addDrink(drinkID){
     console.log("add drink: "+drinkID)
 }
 
-function ListCategories(recipientId){
-      
+function listCategories(recipientId, catIdx){
+  var idx = 0      
   var elements = [];
   var lists = [];     
-    
-  Parse.Cloud.run('getProducts', { businessId: 'com.inoutdelivery.licoresmedellin' }, {
+  
+  Parse.Cloud.run('getProducts', { businessId: 'com.inoutdelivery.sandwichorsalad' }, {
     success: function(result) {
       result.categories.forEach(function(item){
-        console.log(item.get('name'));
+        //console.log(item.get('name'));
         if(item && item.get('name')){
-            console.log(elements.length);
-          if(elements.length < 10){
+            //console.log(elements.length);
+          if(idx >= (catIdx)*9 && idx < (catIdx+1)*9){
               var image = item.get('image');
               var image_url = SERVER_URL + "/assets/drink1.jpg"
               if(image){
@@ -1159,51 +1164,87 @@ function ListCategories(recipientId){
               }
               elements.push({
                 title: item.get('name'),
-                subtitle: item.get('name'),
-                item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
+                //subtitle: item.get('name'),
+                //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
                 image_url: image_url,
               buttons: [{
                 type: "postback",
-                title: "Comprar 1 "+item.get('name'),
-                payload: "AddDrink1",
+                title: "Ver "+item.get('name'),
+                payload: "ShowCategory-"+item.id,
               }]
               })
           }
-          else{
-            lists.push(elements);
-            elements = [];  
-          }
+          idx=idx+1; 
         }
       });
       
-      if(lists.length>0){
-          lists.push(elements)
-      }
-      
-      for(var i in lists){
-        console.log(i);
-        var messageData = {
-          recipient: {
-            id: recipientId
-          },
-          message: {
-            attachment: {
-              type: "template",
-              payload: {
-                template_type: "generic",
-                elements: lists[i]
-              }
+      elements.push({
+        title: "Más categorias ",
+        subtitle: "Categorias ",
+        buttons: [{
+          type: "postback",
+          title: "Categorias "+((catIdx+1)*9+1)+"-"+idx,
+          payload: "ListCategories-1",
+        }]
+      });
+         
+      var messageData = {
+        recipient: {
+          id: recipientId
+        },
+        message: {
+          attachment: {
+            type: "template",
+            payload: {
+              template_type: "generic",
+              elements: elements
             }
           }
-        };
-        callSendAPI(messageData); 
-      }
+        }
+      };
+      callSendAPI(messageData);     
+        
+      
       },
       error: function(error) {
 
       }
   }); 
 }
+
+function showCategory(recipientId, catId){
+    //console.log("Category: "+catId);
+    
+    Parse.Cloud.run('getProducts', { businessId: 'com.inoutdelivery.sandwichorsalad' }, {
+    success: function(result) {
+      result.categories.forEach(function(category){
+        if(category.id == catId){
+          console.log(category.get('name')+" "+category.id);
+          category.get('products').forEach(function(item){
+            var Product = Parse.Object.extend("Product");
+            var product = new Parse.Query(Product);        
+            product.get(item.id, {
+              success: function(pro) {
+                console.log(pro.get('name'));
+                console.log(pro.get('imgUrl'));
+              },
+              error: function(object, error) {
+                   console.log("error");
+                // The object was not retrieved successfully.
+                // error is a Parse.Error with an error code and message.
+              }
+          });
+          });
+        }
+      });   
+    },
+    error: function(error) {
+
+    }
+  });
+}
+
+
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
