@@ -57,6 +57,8 @@ const SERVER_URL = (process.env.SERVER_URL) ?
   (process.env.SERVER_URL) :
   config.get('serverURL');
 
+const BUSINESSID = 'com.inoutdelivery.sandwichorsalad';
+
 if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
   console.error("Missing config values");
   process.exit(1);
@@ -67,25 +69,25 @@ var products = {'food1': { title: "Arepa",
                         price: 2000, 
                         item_url: "https://en.wikipedia.org/wiki/Arepa",              
                         image_url: SERVER_URL + "/assets/food1.jpg"},
-             'food2': { title: "Buñuelos",
+                'food2': { title: "Buñuelos",
                         subtitle: "Tu mejor snack para diciembre",
                         price: 1500, 
                         item_url: "https://en.wikipedia.org/wiki/Bu%C3%B1uelo",     image_url: SERVER_URL + "/assets/food2.jpg"},
-             'food3': { title: "Empanada",
+                'food3': { title: "Empanada",
                         subtitle: "Nunca son demasiadas",
                         price: 2500,
                         item_url: "https://en.wikipedia.org/wiki/Empanada",
                         image_url: SERVER_URL + "/assets/food3.jpg"},
-             'drink1': { title: "Salpicón",
+                'drink1': { title: "Salpicón",
                         subtitle: "Bebida de frutas tropicales",
                         price: 2000, 
                         item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",              
                         image_url: SERVER_URL + "/assets/drink1.jpg"},
-             'drink2': { title: "Café",
+                'drink2': { title: "Café",
                         subtitle: "Autentico café Colombiano",
                         price: 1000, 
                         item_url: "https://es.wikipedia.org/wiki/Caf%C3%A9_de_Colombia",     image_url: SERVER_URL + "/assets/drink2.jpg"},
-             'drink3': { title: "Masato",
+                'drink3': { title: "Masato",
                         subtitle: "Bebida hecha a partir de arroz",
                         price: 1500,
                         item_url: "https://es.wikipedia.org/wiki/Masato",
@@ -881,52 +883,6 @@ function sendAccountLinking(recipientId) {
   callSendAPI(messageData);
 }
 
-function sendMenuMessage(recipientId) {
-    
-    var messageData = {
-      recipient: {
-        id: recipientId
-      },
-      message: {
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "generic",
-            //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja la opción de su preferencia:",
-            elements: [
-              {
-                "title":     "Buenos dias",
-                "subtitle":  "Para conocer nuestras categorias de productos, por favor escoja la opción de su preferencia:",
-                "image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/disp/964c387445961.560ab8bbd7808.jpg",
-                "buttons":[
-                  {
-                    "type":"postback",
-                    "title":"Start Chatting",
-                    "payload":"USER_DEFINED_PAYLOAD"
-                  },
-                  {
-                    "type":"web_url",
-                    "url":"http://www.licoresmedellin.com/",
-                    "title":"View Website"
-                  },    
-                  {
-                    "type":"postback",
-                    "title":"Product categories",
-                    "payload":"ListCategories-0"
-                  }                 
-                ]
-              }    
-            ]
-          }
-        }
-      }
-    };  
-    
-    callSendAPI(messageData); 
-    
-    
-}
-
 function sendFoodMessage(recipientId) {
   var messageData = {
     recipient: {
@@ -1145,17 +1101,68 @@ function addDrink(drinkID){
     console.log("add drink: "+drinkID)
 }
 
+function sendMenuMessage(recipientId) {
+    
+    var Commerce = Parse.Object.extend("Customer");
+    var commerce = new Parse.Query(Commerce); 
+    commerce.contains('businessId', BUSINESSID)
+    
+    commerce.find({
+        success: function(results) {
+          console.log(results)
+          
+          var image_url = results[0].get('image').url();
+          console.log(image_url)
+          
+          var messageData = {
+              recipient: {
+                id: recipientId
+              },
+              message: {
+                attachment: {
+                  type: "template",
+                  payload: {
+                    template_type: "generic",
+                    //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
+                    elements: [
+                      {
+                        "title":     "Buenos dias",
+                        "subtitle":  "Para conocer nuestras categorias de productos, por favor escoja la opción de su preferencia:",
+                        "image_url": image_url,
+                        "buttons":[
+                          {
+                            "type":"postback",
+                            "title":"Categorías",
+                            "payload":"ListCategories-0"
+                          }                 
+                        ]
+                      }    
+                    ]
+                  }
+                }
+              }
+            };  
+
+            callSendAPI(messageData);     
+            
+        },
+        error: function() {
+          console.log("Lookup failed");
+        }
+    });
+}
+
 function listCategories(recipientId, catIdx){
   var idx = 0      
   var elements = [];
   var lists = [];     
-  
-  Parse.Cloud.run('getProducts', { businessId: 'com.inoutdelivery.sandwichorsalad' }, {
+    
+  Parse.Cloud.run('getProducts', { businessId: BUSINESSID }, {
     success: function(result) {
       result.categories.forEach(function(item){
         //console.log(item.get('name'));
         if(item && item.get('name')){
-            //console.log(elements.length);
+          //console.log(elements.length);
           if(idx >= (catIdx)*9 && idx < (catIdx+1)*9){
               var image = item.get('image');
               var image_url = SERVER_URL + "/assets/drink1.jpg"
@@ -1167,9 +1174,9 @@ function listCategories(recipientId, catIdx){
                 //subtitle: item.get('name'),
                 //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
                 image_url: image_url,
-              buttons: [{
-                type: "postback",
-                title: "Ver "+item.get('name'),
+                buttons: [{
+                  type: "postback",
+                  title: "Ver "+item.get('name'),
                 payload: "ShowCategory-"+item.id,
               }]
               })
@@ -1178,16 +1185,18 @@ function listCategories(recipientId, catIdx){
         }
       });
       
-      elements.push({
-        title: "Más categorias ",
-        subtitle: "Categorias ",
-        buttons: [{
-          type: "postback",
-          title: "Categorias "+((catIdx+1)*9+1)+"-"+idx,
-          payload: "ListCategories-1",
-        }]
-      });
-         
+      if(idx>9){
+        elements.push({
+          title: "Más categorias ",
+          subtitle: "Categorias ",
+            buttons: [{
+              type: "postback",
+              title: "Categorias "+((catIdx+1)*9+1)+"-"+idx,
+              payload: "ListCategories-1",
+          }]
+        });    
+      }
+       
       var messageData = {
         recipient: {
           id: recipientId
@@ -1213,28 +1222,73 @@ function listCategories(recipientId, catIdx){
 }
 
 function showCategory(recipientId, catId){
-    //console.log("Category: "+catId);
-    
-    Parse.Cloud.run('getProducts', { businessId: 'com.inoutdelivery.sandwichorsalad' }, {
+    Parse.Cloud.run('getProducts', { businessId: BUSINESSID }, {
     success: function(result) {
+      var idx = 0;      
+      var elements = [];
+      var lists = []; 
       result.categories.forEach(function(category){
         if(category.id == catId){
           console.log(category.get('name')+" "+category.id);
-          category.get('products').forEach(function(item){
+          var products = category.get('products')
+          var limit = products.length < 9 ? products.length - 1 : 9
+          console.log('Length: '+products.length)              
+          products.forEach(function(item){
             var Product = Parse.Object.extend("Product");
             var product = new Parse.Query(Product);        
             product.get(item.id, {
-              success: function(pro) {
-                console.log(pro.get('name'));
-                console.log(pro.get('imgUrl'));
+              success: function(item){
+                  var image = item.get('image')
+                  var image_url = ''
+                  if(item && item.get('name')){
+                    if(idx >= 0 && idx < 9){                       
+                      if(image){
+                        image_url = image.url();
+                      }
+                      elements.push({
+                        title: item.get('name'),
+                        //subtitle: item.get('name'),
+                        //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
+                        image_url: image_url,
+                        buttons: [{
+                          type: "postback",
+                          title: "Agregar "+item.get('name'),
+                          payload: "Add-"+item.id,
+                        }]
+                      })  
+                    }
+                    else if(idx == limit){
+                      console.log(idx);
+                      console.log(elements);
+                      var messageData = {
+                        recipient: {
+                          id: recipientId
+                        },
+                        message: {
+                          attachment: {
+                            type: "template",
+                              payload: {
+                                template_type: "generic",
+                                elements: elements
+                              }
+                            }
+                          }
+                        };
+                        callSendAPI(messageData);  
+                    }
+                  }
+                  idx++
+                  //console.log(elements); 
               },
               error: function(object, error) {
-                   console.log("error");
+                console.log("error");
                 // The object was not retrieved successfully.
                 // error is a Parse.Error with an error code and message.
               }
           });
-          });
+          });    
+          //clearTimeoutonsole.log("error");    
+              
         }
       });   
     },
