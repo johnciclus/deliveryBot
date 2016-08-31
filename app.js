@@ -57,7 +57,7 @@ const SERVER_URL = (process.env.SERVER_URL) ?
   (process.env.SERVER_URL) :
   config.get('serverURL');
 
-const BUSINESSID = 'com.inoutdelivery.sandwichorsalad';
+const BUSINESSID = 'com.inoutdelivery.oxxo';
 
 if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
   console.error("Missing config values");
@@ -442,9 +442,9 @@ function receivedPostback(event) {
       var params = payload.split("-");
       listCategories(senderID, parseInt(params[1]));
     }
-    else if(payload.startsWith("ShowCategory")){ 
+    else if(payload.startsWith("ListProducts")){ 
       var params = payload.split("-");
-      showCategory(senderID, params[1]);
+      listProducts(senderID, params[1], parseInt(params[2]));
     }
     else{
         sendTextMessage(senderID, "Postback called "+payload);      
@@ -1177,26 +1177,33 @@ function listCategories(recipientId, catIdx){
                 buttons: [{
                   type: "postback",
                   title: "Ver "+item.get('name'),
-                payload: "ShowCategory-"+item.id,
-              }]
+                  payload: "ListProducts-"+item.id+"-"+catIdx,
+                }]
               })
           }
           idx=idx+1; 
         }
       });
       
-      if(idx>9){
-        elements.push({
-          title: "Más categorias ",
-          subtitle: "Categorias ",
-            buttons: [{
+      console.log('length: '+idx);
+      var buttons = []
+ 
+      if(idx> (catIdx+1)*9){
+        buttons.push({
               type: "postback",
               title: "Categorias "+((catIdx+1)*9+1)+"-"+idx,
-              payload: "ListCategories-1",
-          }]
-        });    
+              payload: "ListCategories-"+(idx+1),
+          });   
       }
-       
+      
+      if(buttons.length>0){
+        elements.push({
+          title: "Más categorias ",
+          subtitle: "Categorias disponibles",
+          buttons: buttons
+        });    
+      }    
+
       var messageData = {
         recipient: {
           id: recipientId
@@ -1211,8 +1218,8 @@ function listCategories(recipientId, catIdx){
           }
         }
       };
-      callSendAPI(messageData);     
         
+      callSendAPI(messageData);
       
       },
       error: function(error) {
@@ -1221,81 +1228,82 @@ function listCategories(recipientId, catIdx){
   }); 
 }
 
-function showCategory(recipientId, catId){
-    Parse.Cloud.run('getProducts', { businessId: BUSINESSID }, {
+function listProducts(recipientId, category, proIdx){
+    console.log('List products: '+category +" "+ proIdx);
+
+    Parse.Cloud.run('getProducts', { businessId: BUSINESSID, category: category }, {
     success: function(result) {
       var idx = 0;      
       var elements = [];
-      var lists = []; 
-      result.categories.forEach(function(category){
-        if(category.id == catId){
-          console.log(category.get('name')+" "+category.id);
-          var products = category.get('products')
-          var limit = products.length < 9 ? products.length - 1 : 9
-          console.log('Length: '+products.length)              
-          products.forEach(function(item){
-            var Product = Parse.Object.extend("Product");
-            var product = new Parse.Query(Product);        
-            product.get(item.id, {
-              success: function(item){
-                  var image = item.get('image')
-                  var image_url = ''
-                  if(item && item.get('name')){
-                    if(idx >= 0 && idx < 9){                       
-                      if(image){
-                        image_url = image.url();
+      var lists = [];
+      var products = result.products;
+      
+      for(var i in products){
+          console.log(products[i]);
+      }    
+        
+      products.forEach(function(item){
+            var image = item.get('image')
+            var image_url = ''
+            if(item && item.get('name')){
+              if(idx >= (proIdx)*9 && idx < (proIdx+1)*9){
+                if(image){
+                  image_url = image.url();
+                }
+                elements.push({
+                  title: item.get('name') +": $"+ item.get('priceDefault'),
+                  subtitle: item.get('description'),
+                  //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
+                  image_url: image_url,
+                  buttons: [{
+                    type: "postback",
+                    title: "Agregar 1 "+item.get('name'),
+                    payload: "Add-"+item.id,
+                  }]
+                })  
+              }
+              if(idx == (products.length-1)){
+                var buttons = []  
+                if( (proIdx+1)*9 < products.length ){
+                  buttons.push({
+                    type: "postback",
+                    title: "Más productos ",
+                    payload: "ListProducts-"+category+"-1",
+                  });
+                  
+                  elements.push({
+                    title: "Más categorias ",
+                    subtitle: "Categorias disponibles",
+                    buttons: buttons
+                  });
+                } 
+                
+                var messageData = {
+                  recipient: {
+                    id: recipientId
+                  },
+                  message: {
+                    attachment: {
+                      type: "template",
+                      payload: {
+                        template_type: "generic",
+                        elements: elements
                       }
-                      elements.push({
-                        title: item.get('name'),
-                        //subtitle: item.get('name'),
-                        //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
-                        image_url: image_url,
-                        buttons: [{
-                          type: "postback",
-                          title: "Agregar "+item.get('name'),
-                          payload: "Add-"+item.id,
-                        }]
-                      })  
-                    }
-                    else if(idx == limit){
-                      console.log(idx);
-                      console.log(elements);
-                      var messageData = {
-                        recipient: {
-                          id: recipientId
-                        },
-                        message: {
-                          attachment: {
-                            type: "template",
-                              payload: {
-                                template_type: "generic",
-                                elements: elements
-                              }
-                            }
-                          }
-                        };
-                        callSendAPI(messageData);  
                     }
                   }
-                  idx++
-                  //console.log(elements); 
-              },
-              error: function(object, error) {
-                console.log("error");
-                // The object was not retrieved successfully.
-                // error is a Parse.Error with an error code and message.
+                };
+                
+                callSendAPI(messageData);
               }
-          });
-          });    
-          //clearTimeoutonsole.log("error");    
-              
-        }
-      });   
+            }
+            idx++
+          
+        });
     },
     error: function(error) {
 
     }
-  });
+  });   
 }
 
 
