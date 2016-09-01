@@ -16,7 +16,8 @@ const
   crypto = require('crypto'),
   express = require('express'),
   https = require('https'),  
-  request = require('request');
+  request = require('request'),
+  HashMap = require("hashmap");
   
 var Parse = require('parse/node');
 
@@ -94,9 +95,7 @@ var products = {'food1': { title: "Arepa",
                         image_url: SERVER_URL + "/assets/drink3.jpg"}
             }
 
-
-var order = {}
-
+var order = new HashMap();
 /*
  * Use your own validation token. Check that the token used in the Webhook 
  * setup is the same token used here.
@@ -363,12 +362,6 @@ function receivedMessage(event) {
     else if (messageText.indexOf("menu del dia") > -1){
         sendMenuMessage(senderID);
     }
-    else if (messageText.indexOf("comidas") > -1){
-        sendFoodMessage(senderID);
-    }
-    else if (messageText.indexOf("bebidas") > -1){
-        sendDrinkMessage(senderID);
-    }
     else if (messageText.indexOf("cuenta") > -1){
         sendBillMessage(senderID);
     }
@@ -429,15 +422,6 @@ function receivedPostback(event) {
     if(payload == 'FoodMenu'){
         sendFoodMessage(senderID); 
     }
-    else if(payload == 'DrinkMenu'){
-        sendDrinkMessage(senderID);
-    }
-    else if(payload.startsWith("AddFood")){
-        addFood(payload);
-    }
-    else if(payload.startsWith("AddDrink")){
-        addDrink(payload);
-    }
     else if(payload.startsWith("ListCategories")){ 
       var params = payload.split("-");
       listCategories(senderID, parseInt(params[1]));
@@ -445,6 +429,10 @@ function receivedPostback(event) {
     else if(payload.startsWith("ListProducts")){ 
       var params = payload.split("-");
       listProducts(senderID, params[1], parseInt(params[2]));
+    }
+    else if(payload.startsWith("Add")){ 
+      var params = payload.split("-");
+      addProduct(params[1]);  
     }
     else{
         sendTextMessage(senderID, "Postback called "+payload);      
@@ -883,104 +871,6 @@ function sendAccountLinking(recipientId) {
   callSendAPI(messageData);
 }
 
-function sendFoodMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements: [{
-            title: "Arepa",
-            subtitle: "Arepa santandereana con queso",
-            item_url: "https://en.wikipedia.org/wiki/Arepa",               
-            image_url: SERVER_URL + "/assets/food1.jpg",
-            buttons: [{
-              type: "postback",
-              title: "Comprar 1 arepa",
-              payload: "AddFood1",
-            }]
-          }, {
-            title: "Buñuelos",
-            subtitle: "Tu mejor snack para diciembre",
-            item_url: "https://en.wikipedia.org/wiki/Bu%C3%B1uelo",               
-            image_url: SERVER_URL + "/assets/food2.jpg",
-            buttons: [{
-              type: "postback",
-              title: "Comprar 1 buñuelo",
-              payload: "AddFood2",
-            }]
-          }, {
-            title: "Empanada",
-            subtitle: "Nunca son demasiadas",
-            item_url: "https://en.wikipedia.org/wiki/Empanada",               
-            image_url: SERVER_URL + "/assets/food3.jpg",
-            buttons: [{
-              type: "postback",
-              title: "Comprar 1 empanada",
-              payload: "AddFood3",
-            }]
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-function sendDrinkMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements: [{
-            title: "Salpicón",
-            subtitle: "Bebida de frutas tropicales",
-            item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
-            image_url: SERVER_URL + "/assets/drink1.jpg",
-            buttons: [{
-              type: "postback",
-              title: "Comprar 1 salpicón",
-              payload: "AddDrink1",
-            }]
-          },  {
-            title: "Café",
-            subtitle: "Autentico café Colombiano",
-            item_url: "https://es.wikipedia.org/wiki/Caf%C3%A9_de_Colombia",
-            image_url: SERVER_URL + "/assets/drink2.jpg",
-            buttons: [{
-              type: "postback",
-              title: "Comprar 1 café",
-              payload: "AddDrink2",
-            }]
-          },  {
-            title: "Masato",
-            subtitle: "Bebida hecha a partir de arroz",
-            item_url: "https://es.wikipedia.org/wiki/Masato",               
-            image_url: SERVER_URL + "/assets/drink3.jpg",
-            buttons: [{
-              type: "postback",
-              title: "Comprar 1 masato",
-              payload: "AddDrink3",
-            }]
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
 /*
  * Call the Send API. The message data goes in the body. If successful, we'll 
  * get the message id in a response 
@@ -1009,96 +899,6 @@ function callSendAPI(messageData) {
       console.error(response.error);
     }
   });  
-}
-
-function sendBillMessage(recipientId) {
-  // Generate a random receipt ID as the API requires a unique ID
-  var receiptId = "order" + Math.floor(Math.random()*1000);  
-  var elements = []
-  var item = {}
-  var list = []
-  var total = 0
-  
-  for(var i in order){
-      item = {}
-      item['title'] = products[i].title;
-      item['subtitle'] = products[i].subtitle;
-      item['quantity'] = order[i];
-      item['price'] = products[i].price;
-      item['currency'] = "USD"
-      item['image_url'] = products[i].image_url;
-      elements.push(item);
-      total += item['quantity']*item['price']
-  }
-  
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message:{
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "receipt",
-          recipient_name: "John Garavito",
-          order_number: receiptId,
-          currency: "USD",
-          payment_method: "Visa 1234",        
-          timestamp: Math.trunc(Date.now()/1000).toString(),
-          elements: elements,
-          address: {
-            street_1: "Carrera x con calle x",
-            street_2: "",
-            city: "Bucaramanga",
-            postal_code: "680001",
-            state: "SA",
-            country: "CO"
-          },
-          summary: {
-            subtotal: total,
-            shipping_cost: 2000.00,
-            total_tax: total*0.16,
-            total_cost: total*1.16+2000.00
-          },
-          adjustments: [{
-            name: "New Customer Discount",
-            amount: -1000
-          }, {
-            name: "$1000 Off Coupon",
-            amount: -1000
-          }]
-        }
-      }
-    }
-  };
-    
-  order = {}
-  
-  callSendAPI(messageData);
-}
-
-function addFood(foodID){
-    
-    var id = foodID.substr(3).toLowerCase();
-    if(!order[id]){
-        order[id] = 1;
-    }
-    else{
-        order[id]++
-    }
-    
-    console.log("add food: "+id)
-}
-
-function addDrink(drinkID){
-    var id = drinkID.substr(3).toLowerCase();
-    if(!order[id]){
-        order[id] = 1;
-    }
-    else{
-        order[id]++
-    }
-    console.log("add drink: "+drinkID)
 }
 
 function sendMenuMessage(recipientId) {
@@ -1176,7 +976,7 @@ function listCategories(recipientId, catIdx){
                 image_url: image_url,
                 buttons: [{
                   type: "postback",
-                  title: "Ver "+item.get('name'),
+                  title: item.get('name'),
                   payload: "ListProducts-"+item.id+"-"+catIdx,
                 }]
               })
@@ -1243,7 +1043,7 @@ function listProducts(recipientId, category, proIdx){
       }    
         
       products.forEach(function(item){
-            var image = item.get('image')
+            var image = item.get('image');
             var image_url = ''
             if(item && item.get('name')){
               if(idx >= (proIdx)*9 && idx < (proIdx+1)*9){
@@ -1276,8 +1076,7 @@ function listProducts(recipientId, category, proIdx){
                     subtitle: "Categorias disponibles",
                     buttons: buttons
                   });
-                } 
-                
+                }
                 var messageData = {
                   recipient: {
                     id: recipientId
@@ -1291,10 +1090,9 @@ function listProducts(recipientId, category, proIdx){
                       }
                     }
                   }
-                };
-                
-                callSendAPI(messageData);
-              }
+                };    
+                callSendAPI(messageData); 
+              }           
             }
             idx++
           
@@ -1306,6 +1104,106 @@ function listProducts(recipientId, category, proIdx){
   });   
 }
 
+function addProduct(id){
+    if(!order.get(id)){
+        order.set(id, 1);
+    }
+    else{
+        order.set(id, order.get(id)++);
+    }
+    console.log("add product: "+id);
+    console.log("order.count");
+    console.log(order.count());
+}
+
+function sendBillMessage(recipientId){
+  // Generate a random receipt ID as the API requires a unique ID
+  var receiptId = "order" + Math.floor(Math.random()*1000);  
+  var elements = [];
+  var element = {};
+  var total = 0;
+  var limit = order.count();
+  var ind = 0;
+  
+  order.forEach(function(value, key){
+    var Product = Parse.Object.extend("Product");
+    var product = new Parse.Query(Product);
+      
+    product.get(key, {
+      success: function (item) {
+        console.log("ind: "+ind);  
+        console.log("limit: "+limit); 
+        console.log(item.get('name'));
+        console.log(item.get('description'));
+        console.log(item.get('priceDefault'));
+        console.log(item.get('image').url());
+          
+        element = {}
+        element['title'] = item.get('name');
+        element['subtitle'] = item.get('description');
+        element['quantity'] = 1; //order[i];
+        element['price'] = parseInt(item.get('priceDefault'));
+        element['currency'] = "COP";
+        element['image_url'] = item.get('image').url();  
+        
+        console.log('elemments created')  
+        elements.push(element);
+        total += element['quantity']*element['price']; 
+        
+        ind++;
+        
+        if(ind == limit){
+            var messageData = {
+              recipient: {
+                id: recipientId
+              },
+                message:{
+                  attachment: {
+                    type: "template",
+                    payload: {
+                      template_type: "receipt",
+                      recipient_name: "John Garavito",
+                      order_number: receiptId,
+                      currency: "USD",
+                      payment_method: "Visa 1234",        
+                      timestamp: Math.trunc(Date.now()/1000).toString(),
+                      elements: elements,
+                      address: {
+                        street_1: "Carrera x con calle x",
+                        street_2: "",
+                        city: "Bucaramanga",
+                        postal_code: "680001",
+                        state: "SA",
+                        country: "CO"
+                      },
+                      summary: {
+                        subtotal: total,
+                        shipping_cost: 2000.00,
+                        total_tax: total*0.16,
+                        total_cost: total*1.16+2000.00
+                      },
+                      adjustments: [{
+                        name: "New Customer Discount",
+                        amount: -1000
+                      }, {
+                        name: "$1000 Off Coupon",
+                        amount: -1000
+                      }]
+                    }
+                  }
+                }
+              };
+              order = new HashMap();
+            console.log("callSendAPI(messageData)");
+              callSendAPI(messageData);          
+        }
+      },
+      error: function (error) {
+        alert("Error: " + error.code + " " + error.message);
+      }
+    })  
+  });
+}
 
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
