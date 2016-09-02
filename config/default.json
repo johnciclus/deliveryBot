@@ -1,6 +1,6 @@
 {
-    "appSecret": "4ea76f1b696647375440cf33708a37f9",
-    "pageAccessToken": "EAACmGsSpx0UBABHn1EHS8amPivJI2ybAGZCXY7ZACAdxPHut5H1s7YQIvqKRGI6HhWyMkP5f9JvZAqqeYVupifJ5w6J2PWENPW36HTTxa52dlAAOAfrEJHB23PvmdYqCQwKeyrv3eCvVQZCeKtdbZAV4YUth5ZBCeC9k5ZAdBX6LgZDZD",
+    "appSecret": "2d3bae0e05942bc1d93667fffba229d4",
+    "pageAccessToken": "EAAH4Y8AUHr8BAEIok3YhnimvcB7hob6HHpKTYdYjwZC0DWHPZAsXoZAZAbO0YKaVLqHADYLdqZCh7FTFXRU9Bi2fOJJCQDfba7q3VwOxvZC9SySohqRkt2hgaWhNwH7DwGqZBQzpAZCZBQl45pZAtA6Q0evfDh3zMfZAZCksNSRhY85LngZDZD",
     "validationToken": "my_voice_is_my_password_verify_me",
     "serverURL": "https://bot.inoutdelivery.com/"
 }

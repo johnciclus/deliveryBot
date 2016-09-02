@@ -1109,7 +1109,7 @@ function addProduct(id){
         order.set(id, 1);
     }
     else{
-        order.set(id, order.get(id)++);
+        order.set(id, order.get(id)+1);
     }
     console.log("add product: "+id);
     console.log("order.count");
@@ -1128,6 +1128,7 @@ function sendBillMessage(recipientId){
   order.forEach(function(value, key){
     var Product = Parse.Object.extend("Product");
     var product = new Parse.Query(Product);
+    console.log(key);
       
     product.get(key, {
       success: function (item) {
@@ -1141,7 +1142,7 @@ function sendBillMessage(recipientId){
         element = {}
         element['title'] = item.get('name');
         element['subtitle'] = item.get('description');
-        element['quantity'] = 1; //order[i];
+        element['quantity'] = order.get(key); //order[i];
         element['price'] = parseInt(item.get('priceDefault'));
         element['currency'] = "COP";
         element['image_url'] = item.get('image').url();  
