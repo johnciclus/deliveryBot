@@ -1,6 +1,10 @@
 {
-    "appSecret": "2d3bae0e05942bc1d93667fffba229d4",
-    "pageAccessToken": "EAAH4Y8AUHr8BAEIok3YhnimvcB7hob6HHpKTYdYjwZC0DWHPZAsXoZAZAbO0YKaVLqHADYLdqZCh7FTFXRU9Bi2fOJJCQDfba7q3VwOxvZC9SySohqRkt2hgaWhNwH7DwGqZBQzpAZCZBQl45pZAtA6Q0evfDh3zMfZAZCksNSRhY85LngZDZD",
+    "appSecret": "4ea76f1b696647375440cf33708a37f9",
+    "pageAccessToken": "EAACmGsSpx0UBAFHvsn4Yl4t5cGRtZBYdZCkgaegtThhxaUgPt0S59aPlBTPVUqGcsQtV3GACGQQgtyRKeK0djWYr05NZB3oUXQWADaVFb23t9TG7S1Fw6XXw2bQaKFfCyRYc9scx28VcdX7ynvg63ZCoyxEDAFennFMJwA9N0QZDZD",
     "validationToken": "my_voice_is_my_password_verify_me",
-    "serverURL": "https://bot.inoutdelivery.com/"
+    "serverURL": "https://bot.inoutdelivery.com/",
+    "PARSE_APP_ID": "hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ",
+    "PARSE_SERVER_URL": "https://pro.parse.inoutdelivery.com/parse",
+    "BUSINESSID": "com.inoutdelivery.oxxo"
+
 }

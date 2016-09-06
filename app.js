@@ -27,10 +27,6 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
-
-Parse.initialize("hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ");
-Parse.serverURL = 'https://pro.parse.inoutdelivery.com/parse'
-
 /*
  * Be sure to setup your config values before running this code. You can 
  * set them using environment variables or modifying the config file in /config.
@@ -58,42 +54,25 @@ const SERVER_URL = (process.env.SERVER_URL) ?
   (process.env.SERVER_URL) :
   config.get('serverURL');
 
-const BUSINESSID = 'com.inoutdelivery.oxxo';
+const PARSE_APP_ID = (process.env.PARSE_APP_ID) ?
+  (process.env.PARSE_APP_ID) :
+  config.get('PARSE_APP_ID');
+
+const PARSE_SERVER_URL = (process.env.PARSE_SERVER_URL) ?
+  (process.env.PARSE_SERVER_URL) :
+  config.get('PARSE_SERVER_URL');
+
+const BUSINESSID = (process.env.BUSINESSID) ?
+  (process.env.BUSINESSID) :
+  config.get('BUSINESSID');
+
+Parse.initialize(PARSE_APP_ID);
+Parse.serverURL = PARSE_SERVER_URL
 
 if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
   console.error("Missing config values");
   process.exit(1);
 }
-
-var products = {'food1': { title: "Arepa",
-                        subtitle: "Arepa santandereana con queso",
-                        price: 2000, 
-                        item_url: "https://en.wikipedia.org/wiki/Arepa",              
-                        image_url: SERVER_URL + "/assets/food1.jpg"},
-                'food2': { title: "Buñuelos",
-                        subtitle: "Tu mejor snack para diciembre",
-                        price: 1500, 
-                        item_url: "https://en.wikipedia.org/wiki/Bu%C3%B1uelo",     image_url: SERVER_URL + "/assets/food2.jpg"},
-                'food3': { title: "Empanada",
-                        subtitle: "Nunca son demasiadas",
-                        price: 2500,
-                        item_url: "https://en.wikipedia.org/wiki/Empanada",
-                        image_url: SERVER_URL + "/assets/food3.jpg"},
-                'drink1': { title: "Salpicón",
-                        subtitle: "Bebida de frutas tropicales",
-                        price: 2000, 
-                        item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",              
-                        image_url: SERVER_URL + "/assets/drink1.jpg"},
-                'drink2': { title: "Café",
-                        subtitle: "Autentico café Colombiano",
-                        price: 1000, 
-                        item_url: "https://es.wikipedia.org/wiki/Caf%C3%A9_de_Colombia",     image_url: SERVER_URL + "/assets/drink2.jpg"},
-                'drink3': { title: "Masato",
-                        subtitle: "Bebida hecha a partir de arroz",
-                        price: 1500,
-                        item_url: "https://es.wikipedia.org/wiki/Masato",
-                        image_url: SERVER_URL + "/assets/drink3.jpg"}
-            }
 
 var order = new HashMap();
 /*
@@ -910,6 +889,10 @@ function sendMenuMessage(recipientId) {
     commerce.find({
         success: function(results) {
           console.log(results)
+          
+          var currentUser = Parse.User.current()
+          
+          console.log(currentUser);
           
           var image_url = results[0].get('image').url();
           console.log(image_url)
