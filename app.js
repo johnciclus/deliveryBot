@@ -17,9 +17,10 @@ const
   express = require('express'),
   https = require('https'),  
   request = require('request'),
-  HashMap = require("hashmap");
-  
-var Parse = require('parse/node');
+  HashMap = require("hashmap"),
+  Parse = require('parse/node');
+
+var ParseModels = require('./ParseModels')
 
 var app = express();
 app.set('port', process.env.PORT || 8000);
@@ -34,37 +35,25 @@ app.use(express.static('public'));
  */
 
 // App Secret can be retrieved from the App Dashboard
-const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? 
-  process.env.MESSENGER_APP_SECRET :
-  config.get('appSecret');
+const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? process.env.MESSENGER_APP_SECRET : config.get('appSecret');
 
 // Arbitrary value used to validate a webhook
-const VALIDATION_TOKEN = (process.env.MESSENGER_VALIDATION_TOKEN) ?
-  (process.env.MESSENGER_VALIDATION_TOKEN) :
-  config.get('validationToken');
+const VALIDATION_TOKEN = (process.env.MESSENGER_VALIDATION_TOKEN) ? (process.env.MESSENGER_VALIDATION_TOKEN) : config.get('validationToken');
 
 // Generate a page access token for your page from the App Dashboard
-const PAGE_ACCESS_TOKEN = (process.env.MESSENGER_PAGE_ACCESS_TOKEN) ?
-  (process.env.MESSENGER_PAGE_ACCESS_TOKEN) :
-  config.get('pageAccessToken');
+const PAGE_ACCESS_TOKEN = (process.env.MESSENGER_PAGE_ACCESS_TOKEN) ? (process.env.MESSENGER_PAGE_ACCESS_TOKEN) : config.get('pageAccessToken');
 
 // URL where the app is running (include protocol). Used to point to scripts and 
 // assets located at this address. 
-const SERVER_URL = (process.env.SERVER_URL) ?
-  (process.env.SERVER_URL) :
-  config.get('serverURL');
+const SERVER_URL = (process.env.SERVER_URL) ? (process.env.SERVER_URL) : config.get('serverURL');
 
-const PARSE_APP_ID = (process.env.PARSE_APP_ID) ?
-  (process.env.PARSE_APP_ID) :
-  config.get('PARSE_APP_ID');
+const PARSE_APP_ID = (process.env.PARSE_APP_ID) ? (process.env.PARSE_APP_ID) : config.get('PARSE_APP_ID');
 
-const PARSE_SERVER_URL = (process.env.PARSE_SERVER_URL) ?
-  (process.env.PARSE_SERVER_URL) :
-  config.get('PARSE_SERVER_URL');
+const PARSE_SERVER_URL = (process.env.PARSE_SERVER_URL) ? (process.env.PARSE_SERVER_URL) : config.get('PARSE_SERVER_URL');
 
-const BUSINESSID = (process.env.BUSINESSID) ?
-  (process.env.BUSINESSID) :
-  config.get('BUSINESSID');
+const BUSINESSID = (process.env.BUSINESSID) ? (process.env.BUSINESSID) : config.get('BUSINESSID');
+
+const limit = 9;
 
 Parse.initialize(PARSE_APP_ID);
 Parse.serverURL = PARSE_SERVER_URL
@@ -398,11 +387,13 @@ function receivedPostback(event) {
 
   // When a postback is called, we'll send a message back to the sender to 
   // let them know it was successful
-    if(payload == 'FoodMenu'){
-        sendFoodMessage(senderID); 
+    if(payload == 'Greeting'){
+        sendMenuMessage(senderID); 
     }
     else if(payload.startsWith("ListCategories")){ 
       var params = payload.split("-");
+      console.log("List Categories");
+      console.log(params);
       listCategories(senderID, parseInt(params[1]));
     }
     else if(payload.startsWith("ListProducts")){ 
@@ -690,7 +681,7 @@ function sendReceiptMessage(recipientId) {
           template_type: "receipt",
           recipient_name: "Peter Chang",
           order_number: receiptId,
-          currency: "USD",
+          currency: "COP",
           payment_method: "Visa 1234",        
           timestamp: "1428444852", 
           elements: [{
@@ -882,8 +873,7 @@ function callSendAPI(messageData) {
 
 function sendMenuMessage(recipientId) {
     
-    var Commerce = Parse.Object.extend("Customer");
-    var commerce = new Parse.Query(Commerce); 
+    var commerce = new Parse.Query(ParseModels.Customer); 
     commerce.contains('businessId', BUSINESSID)
     
     commerce.find({
@@ -909,25 +899,23 @@ function sendMenuMessage(recipientId) {
                     //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
                     elements: [
                       {
-                        "title":     "Buenos dias",
-                        "subtitle":  "Para conocer nuestras categorias de productos, por favor escoja la opción de su preferencia:",
+                        "title":     "Hola, conmigo podras pedir a domicilio",
+                        "subtitle":  "Para ver, comprar y disfrutar nuestros productos, puedes escribir o seleccionar:",
                         "image_url": image_url,
                         "buttons":[
                           {
                             "type":"postback",
                             "title":"Categorías",
                             "payload":"ListCategories-0"
-                          }                 
+                          }
                         ]
-                      }    
+                      }
                     ]
                   }
                 }
               }
-            };  
-
-            callSendAPI(messageData);     
-            
+            };
+            callSendAPI(messageData);
         },
         error: function() {
           console.log("Lookup failed");
@@ -938,44 +926,23 @@ function sendMenuMessage(recipientId) {
 function listCategories(recipientId, catIdx){
   var idx = 0      
   var elements = [];
-  var lists = [];     
     
-  Parse.Cloud.run('getProducts', { businessId: BUSINESSID }, {
-    success: function(result) {
-      result.categories.forEach(function(item){
-        //console.log(item.get('name'));
-        if(item && item.get('name')){
-          //console.log(elements.length);
-          if(idx >= (catIdx)*9 && idx < (catIdx+1)*9){
-              var image = item.get('image');
-              var image_url = SERVER_URL + "/assets/drink1.jpg"
-              if(image){
-                image_url = image.url();
-              }
-              elements.push({
-                title: item.get('name'),
-                //subtitle: item.get('name'),
-                //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
-                image_url: image_url,
-                buttons: [{
-                  type: "postback",
-                  title: item.get('name'),
-                  payload: "ListProducts-"+item.id+"-"+catIdx,
-                }]
-              })
-          }
-          idx=idx+1; 
-        }
-      });
+  Parse.Cloud.run('getProducts', { businessId: BUSINESSID }).then(function(result){
+      elements = getCategories(result.categories, catIdx);
+      idx = 30;
+      
+      var buttons = [];
+      var catIni = (catIdx+1)*limit;
+      var catFin =  (idx > catIni+limit) ? catIni+limit : idx;
       
       console.log('length: '+idx);
-      var buttons = []
- 
-      if(idx> (catIdx+1)*9){
-        buttons.push({
+      console.log('limit: '+(catIdx+1)*limit);    
+        
+      if(idx > (catIdx+1)*limit){
+          buttons.push({
               type: "postback",
-              title: "Categorias "+((catIdx+1)*9+1)+"-"+idx,
-              payload: "ListCategories-"+(idx+1),
+              title: "Categorias "+(catIni+1)+"-"+catFin,
+              payload: "ListCategories-"+(catIdx+1),
           });   
       }
       
@@ -1005,10 +972,9 @@ function listCategories(recipientId, catIdx){
       callSendAPI(messageData);
       
       },
-      error: function(error) {
+      function(error) {
 
-      }
-  }); 
+      }); 
 }
 
 function listProducts(recipientId, category, proIdx){
@@ -1029,7 +995,7 @@ function listProducts(recipientId, category, proIdx){
             var image = item.get('image');
             var image_url = ''
             if(item && item.get('name')){
-              if(idx >= (proIdx)*9 && idx < (proIdx+1)*9){
+              if(idx >= (proIdx)*limit && idx < (proIdx+1)*limit){
                 if(image){
                   image_url = image.url();
                 }
@@ -1047,7 +1013,7 @@ function listProducts(recipientId, category, proIdx){
               }
               if(idx == (products.length-1)){
                 var buttons = []  
-                if( (proIdx+1)*9 < products.length ){
+                if( (proIdx+1)*limit < products.length ){
                   buttons.push({
                     type: "postback",
                     title: "Más productos ",
@@ -1105,7 +1071,7 @@ function sendBillMessage(recipientId){
   var elements = [];
   var element = {};
   var total = 0;
-  var limit = order.count();
+  var orderLimit = order.count();
   var ind = 0;
   
   order.forEach(function(value, key){
@@ -1116,7 +1082,7 @@ function sendBillMessage(recipientId){
     product.get(key, {
       success: function (item) {
         console.log("ind: "+ind);  
-        console.log("limit: "+limit); 
+        console.log("orderLimit: "+orderLimit); 
         console.log(item.get('name'));
         console.log(item.get('description'));
         console.log(item.get('priceDefault'));
@@ -1136,7 +1102,7 @@ function sendBillMessage(recipientId){
         
         ind++;
         
-        if(ind == limit){
+        if(ind == orderLimit){
             var messageData = {
               recipient: {
                 id: recipientId
@@ -1187,6 +1153,39 @@ function sendBillMessage(recipientId){
       }
     })  
   });
+}
+
+function getCategories(categories, catIdx){
+    var idx = 0;
+    var elements = [];
+    console.log('categories');
+    
+    categories.forEach(function(item){
+        //console.log(item.get('name'));
+        if(item && item.get('name')){
+          //console.log(elements.length);
+          if(idx >= (catIdx)*limit && idx < (catIdx+1)*limit){
+              var image = item.get('image');
+              var image_url = "http://pro.parse.inoutdelivery.com/parse/files/hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ/2671158f9c1cb43cac1423101b6e451b_image.txt"
+              if(image){
+                image_url = image.url();
+              }
+              elements.push({
+                title: item.get('name'),
+                //subtitle: item.get('name'),
+                //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
+                image_url: image_url,
+                buttons: [{
+                  type: "postback",
+                  title: item.get('name'),
+                  payload: "ListProducts-"+item.id+"-"+catIdx,
+                }]
+              })
+          }
+          idx = idx+1; 
+        }
+      });
+    return elements;
 }
 
 // Start server
