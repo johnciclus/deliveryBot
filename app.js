@@ -17,8 +17,10 @@ const
   express = require('express'),
   https = require('https'),  
   request = require('request'),
+  //requestThen = require('then-request'),
   HashMap = require("hashmap"),
   Parse = require('parse/node');
+  //GetProductsParams = require('./models/GetProductsParams')
 
 var ParseModels = require('./ParseModels')
 
@@ -872,65 +874,71 @@ function callSendAPI(messageData) {
 }
 
 function sendMenuMessage(recipientId) {
-    
-    var commerce = new Parse.Query(ParseModels.Customer); 
-    commerce.contains('businessId', BUSINESSID)
-    
-    commerce.find({
-        success: function(results) {
-          console.log(results)
-          
-          var currentUser = Parse.User.current()
-          
-          console.log(currentUser);
-          
-          var image_url = results[0].get('image').url();
-          console.log(image_url)
-          
-          var messageData = {
-              recipient: {
-                id: recipientId
-              },
-              message: {
-                attachment: {
-                  type: "template",
-                  payload: {
-                    template_type: "generic",
-                    //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
-                    elements: [
-                      {
-                        "title":     "Hola, conmigo podras pedir a domicilio",
-                        "subtitle":  "Para ver, comprar y disfrutar nuestros productos, puedes escribir o seleccionar:",
-                        "image_url": image_url,
-                        "buttons":[
-                          {
-                            "type":"postback",
-                            "title":"Categorías",
-                            "payload":"ListCategories-0"
+    request({
+        uri: 'https://graph.facebook.com/v2.6/'+recipientId,
+        qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
+        method: 'GET'
+
+      }, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+          var userData = JSON.parse(body);
+          var commerce = new Parse.Query(ParseModels.Customer); 
+            commerce.contains('businessId', BUSINESSID)
+
+            commerce.find({
+                success: function(results) {
+                  console.log(results)
+
+                  var currentUser = Parse.User.current()
+
+                  console.log(currentUser);
+
+                  var image_url = results[0].get('image').url();
+
+                  var messageData = {
+                      recipient: {
+                        id: recipientId
+                      },
+                      message: {
+                        attachment: {
+                          type: "template",
+                          payload: {
+                            template_type: "generic",
+                            //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
+                            elements: [
+                              {
+                                "title":     "Hola "+userData.first_name+", conmigo podras pedir a domicilio",
+                                "subtitle":  "Para ver, comprar y disfrutar nuestros productos, puedes escribir o seleccionar:",
+                                "image_url": image_url,
+                                "buttons":[
+                                  {
+                                    "type":"postback",
+                                    "title":"Categorías",
+                                    "payload":"ListCategories-0"
+                                  }
+                                ]
+                              }
+                            ]
                           }
-                        ]
+                        }
                       }
-                    ]
-                  }
+                    };
+                    callSendAPI(messageData);
+                },
+                error: function() {
+                  console.log("Lookup failed");
                 }
-              }
-            };
-            callSendAPI(messageData);
-        },
-        error: function() {
-          console.log("Lookup failed");
+            });
+        } else {
+          console.error(response.error);
         }
     });
 }
 
 function listCategories(recipientId, catIdx){
-  var idx = 0      
-  var elements = [];
-    
   Parse.Cloud.run('getProducts', { businessId: BUSINESSID }).then(function(result){
-      elements = getCategories(result.categories, catIdx);
-      idx = 30;
-      
+      var elements = splitCategories(result.categories, catIdx);
+      var idx = Object.keys(result.categories).length;
       var buttons = [];
       var catIni = (catIdx+1)*limit;
       var catFin =  (idx > catIni+limit) ? catIni+limit : idx;
@@ -939,19 +947,17 @@ function listCategories(recipientId, catIdx){
       console.log('limit: '+(catIdx+1)*limit);    
         
       if(idx > (catIdx+1)*limit){
-          buttons.push({
-              type: "postback",
-              title: "Categorias "+(catIni+1)+"-"+catFin,
-              payload: "ListCategories-"+(catIdx+1),
-          });   
-      }
-      
-      if(buttons.length>0){
+        buttons.push({
+          type: "postback",
+          title: "Categorias "+(catIni+1)+"-"+catFin,
+          payload: "ListCategories-"+(catIdx+1),
+        });   
+
         elements.push({
           title: "Más categorias ",
           subtitle: "Categorias disponibles",
           buttons: buttons
-        });    
+        });
       }    
 
       var messageData = {
@@ -978,80 +984,47 @@ function listCategories(recipientId, catIdx){
 }
 
 function listProducts(recipientId, category, proIdx){
-    console.log('List products: '+category +" "+ proIdx);
-
-    Parse.Cloud.run('getProducts', { businessId: BUSINESSID, category: category }, {
-    success: function(result) {
-      var idx = 0;      
-      var elements = [];
-      var lists = [];
-      var products = result.products;
-      
-      for(var i in products){
-          console.log(products[i]);
-      }    
+    Parse.Cloud.run('getProducts', { businessId: BUSINESSID, category: category }).then(function(result) {
         
-      products.forEach(function(item){
-            var image = item.get('image');
-            var image_url = ''
-            if(item && item.get('name')){
-              if(idx >= (proIdx)*limit && idx < (proIdx+1)*limit){
-                if(image){
-                  image_url = image.url();
-                }
-                elements.push({
-                  title: item.get('name') +": $"+ item.get('priceDefault'),
-                  subtitle: item.get('description'),
-                  //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
-                  image_url: image_url,
-                  buttons: [{
-                    type: "postback",
-                    title: "Agregar 1 "+item.get('name'),
-                    payload: "Add-"+item.id,
-                  }]
-                })  
-              }
-              if(idx == (products.length-1)){
-                var buttons = []  
-                if( (proIdx+1)*limit < products.length ){
-                  buttons.push({
-                    type: "postback",
-                    title: "Más productos ",
-                    payload: "ListProducts-"+category+"-1",
-                  });
-                  
-                  elements.push({
-                    title: "Más categorias ",
-                    subtitle: "Categorias disponibles",
-                    buttons: buttons
-                  });
-                }
-                var messageData = {
-                  recipient: {
-                    id: recipientId
-                  },
-                  message: {
-                    attachment: {
-                      type: "template",
-                      payload: {
-                        template_type: "generic",
-                        elements: elements
-                      }
-                    }
-                  }
-                };    
-                callSendAPI(messageData); 
-              }           
-            }
-            idx++
-          
+      var elements = splitProducts(result.products, proIdx);
+      var idx = Object.keys(result.products).length;    
+      var buttons = [];  
+      
+      if( idx > (proIdx+1)*limit ){
+        buttons.push({
+          type: "postback",
+          title: "Más productos ",
+          payload: "ListProducts-"+category+"-"+(proIdx+1),
         });
-    },
-    error: function(error) {
 
-    }
-  });   
-}
+        elements.push({
+          title: "Más categorias ",
+          subtitle: "Categorias disponibles",
+          buttons: buttons
+        });
+      }
+        
+      var messageData = {
+        recipient: {
+          id: recipientId
+        },
+        message: {
+          attachment: {
+            type: "template",
+            payload: {
+              template_type: "generic",
+              elements: elements
+            }
+          }
+        }
+      };    
+      
+      callSendAPI(messageData); 
+    },
+    function(error) {
+
+    })
+  };   
 
 function addProduct(id){
     if(!order.get(id)){
@@ -1073,7 +1046,9 @@ function sendBillMessage(recipientId){
   var total = 0;
   var orderLimit = order.count();
   var ind = 0;
-  
+  var image;
+  var image_url;
+    
   order.forEach(function(value, key){
     var Product = Parse.Object.extend("Product");
     var product = new Parse.Query(Product);
@@ -1081,28 +1056,37 @@ function sendBillMessage(recipientId){
       
     product.get(key, {
       success: function (item) {
-        console.log("ind: "+ind);  
-        console.log("orderLimit: "+orderLimit); 
-        console.log(item.get('name'));
-        console.log(item.get('description'));
-        console.log(item.get('priceDefault'));
-        console.log(item.get('image').url());
+        image = item.get('image');
+        image_url = "http://pro.parse.inoutdelivery.com/parse/files/hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ/2671158f9c1cb43cac1423101b6e451b_image.txt"
+        if(image){
+          image_url = image.url();
+        }          
           
         element = {}
         element['title'] = item.get('name');
         element['subtitle'] = item.get('description');
-        element['quantity'] = order.get(key); //order[i];
+        element['quantity'] = order.get(key);
         element['price'] = parseInt(item.get('priceDefault'));
         element['currency'] = "COP";
-        element['image_url'] = item.get('image').url();  
+        element['image_url'] = image_url;  
         
-        console.log('elemments created')  
         elements.push(element);
         total += element['quantity']*element['price']; 
         
         ind++;
         
         if(ind == orderLimit){
+            
+            request({
+                uri: 'https://graph.facebook.com/v2.6/'+recipientId,
+                qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
+                method: 'GET'
+
+              }, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                  var userData = JSON.parse(body);
+                  console.log(userData)
+            
             var messageData = {
               recipient: {
                 id: recipientId
@@ -1112,9 +1096,9 @@ function sendBillMessage(recipientId){
                     type: "template",
                     payload: {
                       template_type: "receipt",
-                      recipient_name: "John Garavito",
+                      recipient_name: userData.first_name+" "+userData.last_name,
                       order_number: receiptId,
-                      currency: "USD",
+                      currency: "COP",
                       payment_method: "Visa 1234",        
                       timestamp: Math.trunc(Date.now()/1000).toString(),
                       elements: elements,
@@ -1131,21 +1115,24 @@ function sendBillMessage(recipientId){
                         shipping_cost: 2000.00,
                         total_tax: total*0.16,
                         total_cost: total*1.16+2000.00
-                      },
-                      adjustments: [{
-                        name: "New Customer Discount",
-                        amount: -1000
-                      }, {
-                        name: "$1000 Off Coupon",
-                        amount: -1000
-                      }]
+                      }
+                      //adjustments: [{
+                      //  name: "New Customer Discount",
+                      //  amount: -1000
+                      //}, {
+                      //    name: "$1000 Off Coupon",
+                      //    amount: -1000
+                      //}]
                     }
                   }
                 }
               };
               order = new HashMap();
             console.log("callSendAPI(messageData)");
-              callSendAPI(messageData);          
+              callSendAPI(messageData);
+                    
+                    }
+            });
         }
       },
       error: function (error) {
@@ -1155,11 +1142,10 @@ function sendBillMessage(recipientId){
   });
 }
 
-function getCategories(categories, catIdx){
+function splitCategories(categories, catIdx){
     var idx = 0;
     var elements = [];
-    console.log('categories');
-    
+
     categories.forEach(function(item){
         //console.log(item.get('name'));
         if(item && item.get('name')){
@@ -1185,6 +1171,36 @@ function getCategories(categories, catIdx){
           idx = idx+1; 
         }
       });
+    return elements;
+}
+
+function splitProducts(products, proIdx){
+    var idx = 0;      
+    var elements = [];
+    
+    products.forEach(function(item){
+      if(item && item.get('name')){
+        if(idx >= (proIdx)*limit && idx < (proIdx+1)*limit){
+          var image = item.get('image');
+          var image_url = "http://pro.parse.inoutdelivery.com/parse/files/hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ/2671158f9c1cb43cac1423101b6e451b_image.txt"
+          if(image){
+            image_url = image.url();
+          }
+          elements.push({
+            title: item.get('name') +": $"+ item.get('priceDefault'),
+            subtitle: item.get('description'),
+              //item_url: "http://www.mycolombianrecipes.com/fruit-cocktail-salpicon-de-frutas",               
+            image_url: image_url,
+            buttons: [{
+              type: "postback",
+              title: "Agregar 1 "+item.get('name'),
+              payload: "Add-"+item.id,
+            }]
+          })
+        }
+        idx = idx+1;     
+      }
+    });
     return elements;
 }
 

@@ -1,0 +1,53 @@
+* Set Greeting *
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "setting_type":"greeting",
+  "greeting":{
+    "text":"Bienvenido a OXXO!, ahora puedes hacer tus pedidos o comunicarte con un asesor sin dejar el messenger. Por favor dá click en el botón Empezar"
+  }
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD"
+
+* Set Started Button *
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "setting_type":"call_to_actions",
+  "thread_state":"new_thread",
+  "call_to_actions":[
+    {
+      "payload":"Greeting"
+    }
+  ]
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD" 
+
+
+* Set Persistent Menu * 
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "setting_type" : "call_to_actions",
+  "thread_state" : "existing_thread",
+  "call_to_actions":[
+    {
+      "type":"postback",
+      "title":"Menu de productos",
+      "payload":"ListCategories-0"
+    },
+    {
+      "type":"postback",
+      "title":"Carrito",
+      "payload":"ListCategories-0"
+    },
+    {
+      "type":"web_url",
+      "title":"Oxxo Website",
+      "url":"http://www.oxxo.com/"
+    }
+  ]
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD"
+
+
+* Delete Persistent Menu *
+
+curl -X DELETE -H "Content-Type: application/json" -d '{
+  "setting_type":"call_to_actions",
+  "thread_state":"existing_thread"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD"
