@@ -398,7 +398,7 @@ function receivedPostback(event) {
       console.log(params);
       listCategories(senderID, parseInt(params[1]));
     }
-    else if(payload.startsWith("ListProducts")){ 
+    else if(payload.startsWith("ListProducts")){
       var params = payload.split("-");
       listProducts(senderID, params[1], parseInt(params[2]));
     }
@@ -406,8 +406,11 @@ function receivedPostback(event) {
       var params = payload.split("-");
       addProduct(params[1]);  
     }
+    else if(payload.startsWith("ShoppingCart")){ 
+      sendBillMessage(senderID);  
+    }
     else{
-        sendTextMessage(senderID, "Postback called "+payload);      
+      sendTextMessage(senderID, "Postback called "+payload);      
     }
 }
 
@@ -874,12 +877,16 @@ function callSendAPI(messageData) {
 }
 
 function sendMenuMessage(recipientId) {
+    console.log('Typing ON');
+    sendTypingOn(recipientId);
+
     request({
         uri: 'https://graph.facebook.com/v2.6/'+recipientId,
         qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
         method: 'GET'
 
-      }, function (error, response, body) {
+      }, function (error, response, body) {    
+        
         if (!error && response.statusCode == 200) {
           var userData = JSON.parse(body);
           var commerce = new Parse.Query(ParseModels.Customer); 
@@ -923,6 +930,8 @@ function sendMenuMessage(recipientId) {
                         }
                       }
                     };
+                    console.log('Typing OFF')
+                    sendTypingOff(recipientId);
                     callSendAPI(messageData);
                 },
                 error: function() {
@@ -936,7 +945,12 @@ function sendMenuMessage(recipientId) {
 }
 
 function listCategories(recipientId, catIdx){
+  console.log('Typing ON');
+  sendTypingOn(recipientId);
+    
   Parse.Cloud.run('getProducts', { businessId: BUSINESSID }).then(function(result){
+      
+      
       var elements = splitCategories(result.categories, catIdx);
       var idx = Object.keys(result.categories).length;
       var buttons = [];
@@ -974,7 +988,9 @@ function listCategories(recipientId, catIdx){
           }
         }
       };
-        
+      
+      console.log('Typing OFF');
+      sendTypingOff(recipientId);
       callSendAPI(messageData);
       
       },
@@ -984,6 +1000,8 @@ function listCategories(recipientId, catIdx){
 }
 
 function listProducts(recipientId, category, proIdx){
+    sendTypingOn(recipientId);
+    
     Parse.Cloud.run('getProducts', { businessId: BUSINESSID, category: category }).then(function(result) {
         
       var elements = splitProducts(result.products, proIdx);
@@ -1018,7 +1036,8 @@ function listProducts(recipientId, category, proIdx){
           }
         }
       };    
-      
+        
+      sendTypingOff(recipientId);
       callSendAPI(messageData); 
     },
     function(error) {
@@ -1040,6 +1059,8 @@ function addProduct(id){
 
 function sendBillMessage(recipientId){
   // Generate a random receipt ID as the API requires a unique ID
+  sendTypingOn(recipientId);
+    
   var receiptId = "order" + Math.floor(Math.random()*1000);  
   var elements = [];
   var element = {};
@@ -1128,7 +1149,8 @@ function sendBillMessage(recipientId){
                 }
               };
               order = new HashMap();
-            console.log("callSendAPI(messageData)");
+              console.log("callSendAPI(messageData)");
+              sendTypingOff(recipientId);        
               callSendAPI(messageData);
                     
                     }
@@ -1193,7 +1215,7 @@ function splitProducts(products, proIdx){
             image_url: image_url,
             buttons: [{
               type: "postback",
-              title: "Agregar 1 "+item.get('name'),
+              title: "Agregar",
               payload: "Add-"+item.id,
             }]
           })
