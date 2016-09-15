@@ -2,7 +2,7 @@
 
 const Parse = require('parse/node');
 
-
+const User = Parse.Object.extend('User');
 const Customer = Parse.Object.extend('Customer');
 const Cart = Parse.Object.extend('Cart');
 const Consumer = Parse.Object.extend('Consumer');
@@ -19,6 +19,7 @@ const PaymentMethod = Parse.Object.extend('PaymentMethod');
 //Parse.Object.registerSubclass('ConsumerAddress', ConsumerAddress);
 
 module.exports = {
+    User,
     Cart,
     Consumer,
     //ConsumerAddress,

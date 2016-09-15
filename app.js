@@ -11,6 +11,7 @@
 'use strict';
 
 const 
+  _ = require('underscore'),
   bodyParser = require('body-parser'),
   config = require('config'),
   crypto = require('crypto'),
@@ -19,7 +20,8 @@ const
   request = require('request'),
   //requestThen = require('then-request'),
   HashMap = require("hashmap"),
-  Parse = require('parse/node');
+  Parse = require('parse/node'),
+  FB = require('fb');
   //GetProductsParams = require('./models/GetProductsParams')
 
 var ParseModels = require('./ParseModels')
@@ -37,17 +39,17 @@ app.use(express.static('public'));
  */
 
 // App Secret can be retrieved from the App Dashboard
-const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? process.env.MESSENGER_APP_SECRET : config.get('appSecret');
+const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? process.env.MESSENGER_APP_SECRET : config.get('APP_SECRET');
 
 // Arbitrary value used to validate a webhook
-const VALIDATION_TOKEN = (process.env.MESSENGER_VALIDATION_TOKEN) ? (process.env.MESSENGER_VALIDATION_TOKEN) : config.get('validationToken');
+const VALIDATION_TOKEN = (process.env.MESSENGER_VALIDATION_TOKEN) ? (process.env.MESSENGER_VALIDATION_TOKEN) : config.get('VALIDATION_TOKEN');
 
 // Generate a page access token for your page from the App Dashboard
-const PAGE_ACCESS_TOKEN = (process.env.MESSENGER_PAGE_ACCESS_TOKEN) ? (process.env.MESSENGER_PAGE_ACCESS_TOKEN) : config.get('pageAccessToken');
+const PAGE_ACCESS_TOKEN = (process.env.MESSENGER_PAGE_ACCESS_TOKEN) ? (process.env.MESSENGER_PAGE_ACCESS_TOKEN) : config.get('PAGE_ACCESS_TOKEN');
 
 // URL where the app is running (include protocol). Used to point to scripts and 
 // assets located at this address. 
-const SERVER_URL = (process.env.SERVER_URL) ? (process.env.SERVER_URL) : config.get('serverURL');
+const SERVER_URL = (process.env.SERVER_URL) ? (process.env.SERVER_URL) : config.get('SERVER_URL');
 
 const PARSE_APP_ID = (process.env.PARSE_APP_ID) ? (process.env.PARSE_APP_ID) : config.get('PARSE_APP_ID');
 
@@ -55,10 +57,30 @@ const PARSE_SERVER_URL = (process.env.PARSE_SERVER_URL) ? (process.env.PARSE_SER
 
 const BUSINESSID = (process.env.BUSINESSID) ? (process.env.BUSINESSID) : config.get('BUSINESSID');
 
+const FACEBOOK_APP_ID = (process.env.FACEBOOK_APP_ID) ? (process.env.FACEBOOK_APP_ID) : config.get('FACEBOOK_APP_ID');
+
+const REDIRECT_URI = (process.env.REDIRECT_URI) ? (process.env.REDIRECT_URI) : config.get('REDIRECT_URI');
+
 const limit = 9;
 
 Parse.initialize(PARSE_APP_ID);
-Parse.serverURL = PARSE_SERVER_URL
+Parse.serverURL = PARSE_SERVER_URL;
+
+FB.options({
+    appId:          FACEBOOK_APP_ID,
+    appSecret:      APP_SECRET,
+    redirectUri:    REDIRECT_URI
+});
+
+console.log(FB.getLoginUrl({ scope: 'user_about_me' }));
+ /*   
+ Parse.FacebookUtils.init({ // this line replaces FB.init({
+   appId      : FACEBOOK_APP_ID, // Facebook App ID
+   cookie     : true,  // enable cookies to allow Parse to access the session
+   xfbml      : true,  // initialize Facebook social plugins on the page
+   version    : 'v2.4' // point to the latest Facebook Graph API version
+ });
+ */
 
 if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
   console.error("Missing config values");
@@ -72,8 +94,7 @@ var order = new HashMap();
  *
  */
 app.get('/webhook', function(req, res) {
-  if (req.query['hub.mode'] === 'subscribe' &&
-      req.query['hub.verify_token'] === VALIDATION_TOKEN) {
+  if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VALIDATION_TOKEN) {
     console.log("Validating webhook");
     res.status(200).send(req.query['hub.challenge']);
   } else {
@@ -880,68 +901,39 @@ function sendMenuMessage(recipientId) {
     console.log('Typing ON');
     sendTypingOn(recipientId);
 
-    request({
-        uri: 'https://graph.facebook.com/v2.6/'+recipientId,
-        qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
-        method: 'GET'
+    var query = new Parse.Query(ParseModels.User);
+    var consumer = new Parse.Query(ParseModels.Consumer);
 
-      }, function (error, response, body) {    
-        
-        if (!error && response.statusCode == 200) {
-          var userData = JSON.parse(body);
-          var commerce = new Parse.Query(ParseModels.Customer); 
-            commerce.contains('businessId', BUSINESSID)
+    query.find({
+        success: function(results) {
+            console.log(results)
+        },
 
-            commerce.find({
-                success: function(results) {
-                  console.log(results)
-
-                  var currentUser = Parse.User.current()
-
-                  console.log(currentUser);
-
-                  var image_url = results[0].get('image').url();
-
-                  var messageData = {
-                      recipient: {
-                        id: recipientId
-                      },
-                      message: {
-                        attachment: {
-                          type: "template",
-                          payload: {
-                            template_type: "generic",
-                            //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
-                            elements: [
-                              {
-                                "title":     "Hola "+userData.first_name+", conmigo podras pedir a domicilio",
-                                "subtitle":  "Para ver, comprar y disfrutar nuestros productos, puedes escribir o seleccionar:",
-                                "image_url": image_url,
-                                "buttons":[
-                                  {
-                                    "type":"postback",
-                                    "title":"Categorías",
-                                    "payload":"ListCategories-0"
-                                  }
-                                ]
-                              }
-                            ]
-                          }
-                        }
-                      }
-                    };
-                    console.log('Typing OFF')
-                    sendTypingOff(recipientId);
-                    callSendAPI(messageData);
-                },
-                error: function() {
-                  console.log("Lookup failed");
-                }
-            });
-        } else {
-          console.error(response.error);
+        error: function(error) {
+            console.log('error')
+            console.log(error)
+            // error is an instance of Parse.Error.
         }
     });
+
+    query.get('DH6JIZFrGW').then(
+        function(user) {
+            console.log('user');
+            console.log(user);
+            console.log(user.get('customer'));
+            request({
+                uri: 'https://graph.facebook.com/v2.6/'+recipientId,
+                qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
+                method: 'GET'}, renderMenuMessage);
+
+        },
+        function(object, error) {
+            console.log(error);
+            // error is an instance of Parse.Error.
+        }
+    );
+
+
 }
 
 function listCategories(recipientId, catIdx){
@@ -949,8 +941,6 @@ function listCategories(recipientId, catIdx){
   sendTypingOn(recipientId);
     
   Parse.Cloud.run('getProducts', { businessId: BUSINESSID }).then(function(result){
-      
-      
       var elements = splitCategories(result.categories, catIdx);
       var idx = Object.keys(result.categories).length;
       var buttons = [];
@@ -1108,50 +1098,50 @@ function sendBillMessage(recipientId){
                   var userData = JSON.parse(body);
                   console.log(userData)
             
-            var messageData = {
-              recipient: {
-                id: recipientId
-              },
-                message:{
-                  attachment: {
-                    type: "template",
-                    payload: {
-                      template_type: "receipt",
-                      recipient_name: userData.first_name+" "+userData.last_name,
-                      order_number: receiptId,
-                      currency: "COP",
-                      payment_method: "Visa 1234",        
-                      timestamp: Math.trunc(Date.now()/1000).toString(),
-                      elements: elements,
-                      address: {
-                        street_1: "Carrera x con calle x",
-                        street_2: "",
-                        city: "Bucaramanga",
-                        postal_code: "680001",
-                        state: "SA",
-                        country: "CO"
-                      },
-                      summary: {
-                        subtotal: total,
-                        shipping_cost: 2000.00,
-                        total_tax: total*0.16,
-                        total_cost: total*1.16+2000.00
+                var messageData = {
+                  recipient: {
+                    id: recipientId
+                  },
+                    message:{
+                      attachment: {
+                        type: "template",
+                        payload: {
+                          template_type: "receipt",
+                          recipient_name: userData.first_name+" "+userData.last_name,
+                          order_number: receiptId,
+                          currency: "COP",
+                          payment_method: "Visa 1234",        
+                          timestamp: Math.trunc(Date.now()/1000).toString(),
+                          elements: elements,
+                          address: {
+                            street_1: "Carrera x con calle x",
+                            street_2: "",
+                            city: "Bucaramanga",
+                            postal_code: "680001",
+                            state: "SA",
+                            country: "CO"
+                          },
+                          summary: {
+                            subtotal: total,
+                            shipping_cost: 2000.00,
+                            total_tax: total*0.16,
+                            total_cost: total*1.16+2000.00
+                          }
+                          //adjustments: [{
+                          //  name: "New Customer Discount",
+                          //  amount: -1000
+                          //}, {
+                          //    name: "$1000 Off Coupon",
+                          //    amount: -1000
+                          //}]
+                        }
                       }
-                      //adjustments: [{
-                      //  name: "New Customer Discount",
-                      //  amount: -1000
-                      //}, {
-                      //    name: "$1000 Off Coupon",
-                      //    amount: -1000
-                      //}]
                     }
-                  }
-                }
-              };
-              order = new HashMap();
-              console.log("callSendAPI(messageData)");
-              sendTypingOff(recipientId);        
-              callSendAPI(messageData);
+                  };
+                  order = new HashMap();
+                  console.log("callSendAPI(messageData)");
+                  sendTypingOff(recipientId);        
+                  callSendAPI(messageData);
                     
                     }
             });
@@ -1226,6 +1216,63 @@ function splitProducts(products, proIdx){
     return elements;
 }
 
+function renderMenuMessage(error, response, body) {
+    if (!error && response.statusCode == 200) {
+        var pathname = response.request.uri.pathname;
+        var recipientId = pathname.split('/').pop();
+        var userData = JSON.parse(body);
+        var commerce = new Parse.Query(ParseModels.Customer);
+        
+        //user.equalTo('authData', {"facebook":        {"access_token":"EAAPK2ME0gLkBAE6HMBKLP2RfquPvCIyaXNuItGYRdBpJNArGCZC9UzITl9ZBB7EKnmuukylXS93yhHOZAUiHjPwGyNBmnb11VPB7kf0Km9o2Gm2hFSJhDmjpZA1bfZCITRQ45OCMVAIWSR3jHIjkg3cze6tSvZBQjKdGkalGA1V7E0npkZAcMPn51z2yLAPJVRzRpbTqNCTtNPIhxpBr7H2","expiration_date":"2016-10-02T15:16:42.000Z","id":"10210218101474882"}})
+
+        commerce.contains('businessId', BUSINESSID)
+
+        commerce.find().then(function(results){
+            var currentUser = Parse.User.current();   
+            var image_url = results[0].get('image').url();
+
+            console.log(results);
+            console.log(currentUser);
+            console.log(image_url);
+
+            var messageData = {
+                recipient: {
+                    id: recipientId
+                },
+                message: {
+                    attachment: {
+                        type: "template",
+                        payload: {
+                            template_type: "generic",
+                            //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
+                            elements: [{
+                                "title":     "Hola "+userData.first_name+", conmigo podras pedir a domicilio",
+                                "subtitle":  "Para ver, comprar y disfrutar nuestros productos, puedes escribir o seleccionar:",
+                                "image_url": image_url,
+                                "buttons":[
+                                  {
+                                    "type":"postback",
+                                    "title":"Categorías",
+                                    "payload":"ListCategories-0"
+                                  }
+                                ]
+                              }]
+                        }
+                    }
+                }
+            };
+
+            sendTypingOff(recipientId);
+            callSendAPI(messageData);
+        },
+        function(error) {
+          console.log("Lookup failed");
+        });
+    } else {
+      console.error(response.error);
+    }
+}
+    
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
