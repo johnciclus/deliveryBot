@@ -2,13 +2,17 @@
   <library name="Generated files" type="javaScript">
     <properties>
       <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/lib/ParseModels-compiled.js" />
         <item url="file://$PROJECT_DIR$/dist/app-compiled.js" />
+        <item url="file://$PROJECT_DIR$/lib/actionTypes-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/app-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/server-compiled.js" />
       </sourceFilesUrls>
     </properties>
     <CLASSES>
+      <root url="file://$PROJECT_DIR$/lib/ParseModels-compiled.js" />
       <root url="file://$PROJECT_DIR$/dist/app-compiled.js" />
+      <root url="file://$PROJECT_DIR$/lib/actionTypes-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/app-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/server-compiled.js" />
     </CLASSES>
