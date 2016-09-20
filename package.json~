@@ -1,7 +1,7 @@
 {
   "name": "InOutDeliveryBot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Bot for e-commerce",
   "main": "app.js",
   "scripts": {
     "start": "nodemon lib/app.js --exec babel-node",
@@ -15,8 +15,17 @@
   },
   "author": "John Garavito Suárez",
   "license": "MIT",
+  "keywords": [
+    "bot",
+    "e-commerce",
+    "facebook"
+  ],
+  "bugs": {
+    "url": "https://github.com/johnciclus/deliveryBot/issues"
+  },
   "dependencies": {
-    "babel-cli": "^6.0.0",
+    "babel-core": "^6.14.0",
+    "babel-eslint": "^4.1.3",
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "hashmap": "^2.0.6",

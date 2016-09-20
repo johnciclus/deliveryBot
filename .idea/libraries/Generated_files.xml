@@ -4,7 +4,9 @@
       <sourceFilesUrls>
         <item url="file://$PROJECT_DIR$/lib/ParseModels-compiled.js" />
         <item url="file://$PROJECT_DIR$/dist/app-compiled.js" />
-        <item url="file://$PROJECT_DIR$/lib/actionTypes-compiled.js" />
+        <item url="file://$PROJECT_DIR$/lib/bot-compiled.js" />
+        <item url="file://$PROJECT_DIR$/lib/constants/actionTypes-compiled.js" />
+        <item url="file://$PROJECT_DIR$/lib/actions/index-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/app-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/server-compiled.js" />
       </sourceFilesUrls>
@@ -12,7 +14,9 @@
     <CLASSES>
       <root url="file://$PROJECT_DIR$/lib/ParseModels-compiled.js" />
       <root url="file://$PROJECT_DIR$/dist/app-compiled.js" />
-      <root url="file://$PROJECT_DIR$/lib/actionTypes-compiled.js" />
+      <root url="file://$PROJECT_DIR$/lib/bot-compiled.js" />
+      <root url="file://$PROJECT_DIR$/lib/constants/actionTypes-compiled.js" />
+      <root url="file://$PROJECT_DIR$/lib/actions/index-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/app-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/server-compiled.js" />
     </CLASSES>

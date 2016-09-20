@@ -6,6 +6,6 @@
     "SERVER_URL": "https://bot.inoutdelivery.com/",
     "PARSE_APP_ID": "hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ",
     "PARSE_SERVER_URL": "https://pro.parse.inoutdelivery.com/parse",
-    "BUSINESSID": "com.inoutdelivery.oxxo",
+    "BUSINESS_ID": "com.inoutdelivery.oxxo",
     "REDIRECT_URI": "https://bot.inoutdelivery.com/"
 }
