@@ -5,7 +5,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
   "greeting":{
     "text":"Bienvenido a OXXO!, ahora puedes hacer tus pedidos o comunicarte con un asesor sin dejar el messenger. Por favor dá click en el botón Empezar"
   }
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBANLa7F0yA3K9UGEHxh0T77ET5fyu9FoUXhT5PlAmqkigg9NnPTildPAC2GZCL9BBWOfjW40dpo5TQnZACSFZAdnDZAfim6bjvZAscG5MiRtsjxI36dCkF7U99iZCuUWj1M9csjPvxKuXsvbsQtBditZBs0eehmpmgZDZD"
 
 * Set Started Button *
 
@@ -17,7 +17,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "payload":"Greeting"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD" 
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBANLa7F0yA3K9UGEHxh0T77ET5fyu9FoUXhT5PlAmqkigg9NnPTildPAC2GZCL9BBWOfjW40dpo5TQnZACSFZAdnDZAfim6bjvZAscG5MiRtsjxI36dCkF7U99iZCuUWj1M9csjPvxKuXsvbsQtBditZBs0eehmpmgZDZD"
 
 
 * Set Persistent Menu * 
@@ -34,7 +34,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
     {
       "type":"postback",
       "title":"Carrito",
-      "payload":"SendBillMessage"
+      "payload":"SendShoppingCart"
     },
     {
       "type":"web_url",
@@ -42,7 +42,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "url":"http://www.oxxo.com/"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BALYLxJZBfgQ44ZCKxESP7grTOHG3Uvys1rsMsFlZAaYKXSmEcwEZAZBvRxy1rWZA0FqZC4QXJIfBOzMTHZCZB04phAqZA1wk0Fj7aEJhZA9a6JfZBpNbi0mRM4RujeOydm0RI1Tse8lItYLoBUBhjxjMq11i3OBklJhMvgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAKyattDgRGnnzQM05exq80rjY48SQyYTM9skvYySHqNIbWFBVBtudGsKTHVWejRBPhainpgTnsypuZC07ZAOdFYkyDkZBUFail2SuIiJMZCrFzKID26bule4y6ggDlotcfmIY68sQiwGIHTJjM3mNQcRCIAXZAgZDZD"
 
 
 * Delete Persistent Menu *
@@ -50,4 +50,4 @@ curl -X POST -H "Content-Type: application/json" -d '{
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BALYLxJZBfgQ44ZCKxESP7grTOHG3Uvys1rsMsFlZAaYKXSmEcwEZAZBvRxy1rWZA0FqZC4QXJIfBOzMTHZCZB04phAqZA1wk0Fj7aEJhZA9a6JfZBpNbi0mRM4RujeOydm0RI1Tse8lItYLoBUBhjxjMq11i3OBklJhMvgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAKyattDgRGnnzQM05exq80rjY48SQyYTM9skvYySHqNIbWFBVBtudGsKTHVWejRBPhainpgTnsypuZC07ZAOdFYkyDkZBUFail2SuIiJMZCrFzKID26bule4y6ggDlotcfmIY68sQiwGIHTJjM3mNQcRCIAXZAgZDZD"

@@ -5,6 +5,7 @@
     "VALIDATION_TOKEN": "my_voice_is_my_password_verify_me",
     "SERVER_URL": "https://bot.inoutdelivery.com/",
     "PARSE_APP_ID": "hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ",
+    "PARSE_CLIENT_KEY": "V4VjUrR1M7gsOJlcJe2BdZjkPCsLZne2kYf2QNkA",
     "PARSE_SERVER_URL": "https://pro.parse.inoutdelivery.com/parse",
     "BUSINESS_ID": "com.inoutdelivery.oxxo",
     "REDIRECT_URI": "https://bot.inoutdelivery.com/"
