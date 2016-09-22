@@ -29,12 +29,12 @@ curl -X POST -H "Content-Type: application/json" -d '{
     {
       "type":"postback",
       "title":"Menu de productos",
-      "payload":"ListCategories-0"
+      "payload":"SendCategories-0"
     },
     {
       "type":"postback",
       "title":"Carrito",
-      "payload":"ShoppingCart"
+      "payload":"SendBillMessage"
     },
     {
       "type":"web_url",
@@ -42,7 +42,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "url":"http://www.oxxo.com/"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAOY4H8sJ1RhoVURejEVZAnV1eZAxsqKIwYf3HoMQihlQz7eN0lVaM7p7sTlfGTjKq3QiKuo7kxUo8dUe5Xa2ggo3ajMrRplgg6yTj164zbWcbNxQad3vm3ZBq7ZBOpn5SXWBEnRvqZBUkCGcsOdrLlvsjheqUZCAZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BALYLxJZBfgQ44ZCKxESP7grTOHG3Uvys1rsMsFlZAaYKXSmEcwEZAZBvRxy1rWZA0FqZC4QXJIfBOzMTHZCZB04phAqZA1wk0Fj7aEJhZA9a6JfZBpNbi0mRM4RujeOydm0RI1Tse8lItYLoBUBhjxjMq11i3OBklJhMvgZDZD"
 
 
 * Delete Persistent Menu *
@@ -50,4 +50,4 @@ curl -X POST -H "Content-Type: application/json" -d '{
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACZA8vZCrH5WuZCWT4ZAlZB90FwyW2hlsGbzpvSv6ZAy6i5jErzXhAcfZBBAhLKtZAZCWJnfgB8bZB62KVH28BZBVtExPc7drQRZAaBhby7tpOfJceyAjC2WW4CT2NKbSLXMPQE4w7pmNBmnE3CRwadS20qaNgNiEmtyPQZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BALYLxJZBfgQ44ZCKxESP7grTOHG3Uvys1rsMsFlZAaYKXSmEcwEZAZBvRxy1rWZA0FqZC4QXJIfBOzMTHZCZB04phAqZA1wk0Fj7aEJhZA9a6JfZBpNbi0mRM4RujeOydm0RI1Tse8lItYLoBUBhjxjMq11i3OBklJhMvgZDZD"
