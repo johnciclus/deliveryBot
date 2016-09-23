@@ -3,12 +3,15 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.loadConsumer = loadConsumer;
+exports.loadConsumerAddresses = loadConsumerAddresses;
+exports.getConsumerAndAddresses = getConsumerAndAddresses;
+exports.loadCustomer = loadCustomer;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
 exports.addProductToCart = addProductToCart;
 exports.emptyCart = emptyCart;
 exports.facebookDataLoaded = facebookDataLoaded;
-exports.loadConsumer = loadConsumer;
 exports.createConsumer = createConsumer;
 exports.updateConsumer = updateConsumer;
 exports.facebookLogin = facebookLogin;
@@ -70,10 +73,6 @@ var _actionTypes = require('../constants/actionTypes');
 
 var types = _interopRequireWildcard(_actionTypes);
 
-var _parse = require('parse');
-
-var _parse2 = _interopRequireDefault(_parse);
-
 var _config = require('config');
 
 var _config2 = _interopRequireDefault(_config);
@@ -100,15 +99,84 @@ function _interopRequireWildcard(obj) {
   }
 }
 
+/* @flow */
 var BUSINESS_ID = process.env.BUSINESS_ID ? process.env.BUSINESS_ID : _config2.default.get('BUSINESS_ID');
 //const geocoder = new google.maps.Geocoder()
 
 /**
+ * Load Consumer of given user
+ */
+
+//import Parse from 'parse'
+//import { push } from 'react-router-redux'
+function loadConsumer(user) {
+  if (user == null) return;
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.Consumer).equalTo('user', user).first().then(function (consumer) {
+      if (consumer) {
+
+        dispatch({ type: types.CONSUMER_LOADED, data: { consumer: consumer } });
+
+        //dispatch(loadConsumerAddresses(consumer))
+
+        //dispatch(loadConsumerOrders());
+
+        //mainDispatch(push('/'))
+      } else {
+        var authData = user.get('authData');
+        if (authData && authData.hasOwnProperty('facebook')) {
+          if (FB) {
+            loadFacebookUserData(authData.facebook.access_token, dispatch);
+          }
+        }
+        dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
+      }
+    }).fail(function (e) {
+      dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
+    });
+  };
+}
+
+/**
+ * Load Consumer Addresses and dispatch action with the results.
+ */
+function loadConsumerAddresses(consumer) {
+  if (consumer == null) return;
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.ConsumerAddress).equalTo('consumer', consumer).find().then(function (addresses) {
+      dispatch({ type: types.CONSUMER_ADDRESSES_LOADED, data: addresses });
+    }).fail(function (e) {
+      console.log('no addresses');
+      //TODO dispatch action with error
+    });
+  };
+}
+
+function getConsumerAndAddresses(user) {
+  return function (dispatch, getState) {
+    return dispatch(loadConsumer(user)).then(function () {
+      return dispatch(loadConsumerAddresses(getState().consumer.rawParseObject));
+    });
+  };
+}
+
+/**
+ * Load Consumer of given user
+ */
+function loadCustomer(businessId) {
+  if (businessId == null) return;
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.Customer).contains('businessId', businessId).limit(1).first().then(function (customer) {
+      dispatch({ type: types.CUSTOMER_LOADED, data: { customer: customer } });
+    }).fail(function (e) {
+      dispatch({ type: types.CUSTOMER_NOT_FOUND, data: { businessId: businessId } });
+    });
+  };
+}
+
+/**
 * Load products from Parse.
 */
-
-//import { push } from 'react-router-redux'
-/* @flow */
 function loadProducts(lat, lng, category, pointSale) {
   return function (dispatch, getState) {
     var params = new _GetProductsParams2.default(BUSINESS_ID);
@@ -126,7 +194,7 @@ function loadProducts(lat, lng, category, pointSale) {
       params.pointSale = pointSale;
     }
     dispatch({ type: types.LOADING_PRODUCTS });
-    _parse2.default.Cloud.run('getProducts', params).then(function (results) {
+    Parse.Cloud.run('getProducts', params).then(function (results) {
       dispatch({
         type: types.PRODUCTS_LOADED,
         data: results
@@ -204,47 +272,6 @@ function facebookDataLoaded(data) {
 }
 
 /**
-* Load Consumer Addresses and dispatch action with the results.
-*/
-function loadConsumerAddresses(consumer) {
-  if (consumer == null) return;
-  return function (dispatch) {
-    var query = new _parse2.default.Query(_ParseModels.ConsumerAddress).equalTo('consumer', consumer);
-    query.find().then(function (addresses) {
-      dispatch(consumerAddressesLoaded(addresses));
-    }).fail(function (e) {
-      //TODO dispatch action with error
-    });
-  };
-}
-
-/**
-* Load Consumer of given user
-*/
-function loadConsumer(user, mainDispatch) {
-  return function (dispatch) {
-    new _parse2.default.Query(_ParseModels.Consumer).equalTo('user', user).first().then(function (consumer) {
-      if (consumer) {
-        dispatch({ type: types.CONSUMER_LOADED, data: { consumer: consumer } });
-        dispatch(loadConsumerAddresses(consumer));
-        dispatch(loadConsumerOrders());
-        //mainDispatch(push('/'))
-      } else {
-        var authData = user.get('authData');
-        if (authData && authData.hasOwnProperty('facebook')) {
-          if (FB) {
-            loadFacebookUserData(authData.facebook.access_token, dispatch);
-          }
-        }
-        dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
-      }
-    }).fail(function (e) {
-      dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
-    });
-  };
-}
-
-/**
 * Create Consumer
 */
 function createConsumer(consumerData, mainDispatch) {
@@ -292,7 +319,7 @@ function updateConsumer(consumerData) {
 */
 function facebookLogin(mainDispatch) {
   return function (dispatch) {
-    _parse2.default.FacebookUtils.logIn(null, {
+    Parse.FacebookUtils.logIn(null, {
       success: function success(user) {
         if (!user.existed()) {
           dispatch({ type: types.FACEBOOK_REGISTER_SUCCESS });
@@ -315,8 +342,8 @@ function facebookLogin(mainDispatch) {
 function logout(mainDispatch) {
   return function (dispatch) {
 
-    if (_parse2.default.User.current()) {
-      _parse2.default.User.logOut();
+    if (Parse.User.current()) {
+      Parse.User.logOut();
     }
 
     mainDispatch(push('/'));
@@ -331,7 +358,7 @@ function logout(mainDispatch) {
 function emailLogin(userData, mainDispatch) {
   mainDispatch({ type: types.EMAIL_LOGIN });
   return function (dispatch) {
-    _parse2.default.User.logIn(userData.email + BUSINESS_ID, userData.password).then(function (user) {
+    Parse.User.logIn(userData.email + BUSINESS_ID, userData.password).then(function (user) {
       dispatch({
         type: types.EMAIL_LOGIN_SUCCESS,
         data: user
@@ -353,7 +380,7 @@ function emailLogin(userData, mainDispatch) {
 function emailRegister(userData, mainDispatch) {
   mainDispatch({ type: types.EMAIL_REGISTER });
   return function (dispatch) {
-    _parse2.default.User.signUp(userData.email + BUSINESS_ID, userData.password).then(function (user) {
+    Parse.User.signUp(userData.email + BUSINESS_ID, userData.password).then(function (user) {
       dispatch({
         type: types.EMAIL_REGISTER_SUCCESS,
         data: { user: user, userData: userData }
@@ -496,7 +523,7 @@ function hideAddressForm() {
 * Save ConsumerAddress on Parse.
 */
 function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
-  var ConsumerAddress = _parse2.default.Object.extend('ConsumerAddress');
+  var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
   var parseConsumerAddress = new ConsumerAddress();
   if (!consumerAddress.consumer) {
     return;
@@ -506,7 +533,7 @@ function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
   }
   var consumer = consumerAddress.consumer.rawParseObject;
   var location = consumerAddress.location;
-  var parseGeoPoint = new _parse2.default.GeoPoint(location.lat, location.lng);
+  var parseGeoPoint = new Parse.GeoPoint(location.lat, location.lng);
   parseConsumerAddress.set('location', parseGeoPoint);
   parseConsumerAddress.set('consumer', consumer);
   parseConsumerAddress.set('address', consumerAddress.address);
@@ -571,7 +598,7 @@ function hideAddressList() {
 */
 function loadPaymentMethods() {
   return function (dispatch) {
-    _parse2.default.Cloud.run('paymentMethods', {
+    Parse.Cloud.run('paymentMethods', {
       languageCode: 'es'
       //businessId: BUSINESS_ID
     }).then(function (results) {
@@ -732,7 +759,7 @@ function createOrder(cart, mainDispatch) {
 
   var newOrder = new _ParseModels.Order();
   newOrder.set(cartToOrder(cart, items));
-  _parse2.default.Object.saveAll(items).then(function () {
+  Parse.Object.saveAll(items).then(function () {
     return newOrder.save();
   }).then(function (order) {
     mainDispatch({ type: types.ORDER_CREATED, data: order });
@@ -814,7 +841,7 @@ function unsetCurrentOrder() {
 */
 function loadConsumerOrders() {
   return function (dispatch) {
-    _parse2.default.Cloud.run('orders', { businessId: BUSINESS_ID }).then(function (orders) {
+    Parse.Cloud.run('orders', { businessId: BUSINESS_ID }).then(function (orders) {
       dispatch({
         type: types.CONSUMER_ORDERS_LOADED,
         data: orders
@@ -926,7 +953,7 @@ function toggleCart(isOpen) {
 function rateOrder(orderId, score, comment) {
   return function (dispatch) {
     dispatch({ type: types.RATING_ORDER });
-    _parse2.default.Cloud.run('rateOrder', { orderId: orderId, score: score, comment: comment }).then(function () {
+    Parse.Cloud.run('rateOrder', { orderId: orderId, score: score, comment: comment }).then(function () {
       dispatch({ type: types.RATE_ORDER_SUCCESS });
       return dispatch(loadConsumerOrders());
     }).fail(function (e) {
@@ -953,7 +980,7 @@ function hideOutOfCoverageModal() {
 function loadPointSales() {
   var params = { businessId: BUSINESS_ID };
   return function (dispatch) {
-    _parse2.default.Cloud.run('getPointSales', params).then(function (results) {
+    Parse.Cloud.run('getPointSales', params).then(function (results) {
       dispatch({ type: types.POINT_OF_SALES_LOADED, data: results });
     });
   };
@@ -978,6 +1005,10 @@ function hideAddressSearchModal() {
 */
 function showAddressSearchModal() {
   return { type: types.SHOW_ADDRESS_SEARCH_MODAL };
+}
+
+function renderMenuMessage() {
+  return { type: types.RENDER_MENU };
 }
 
 //# sourceMappingURL=index-compiled.js.map

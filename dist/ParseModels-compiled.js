@@ -1,29 +1,41 @@
 'use strict';
 
-// ParseModels.js
+var _parse = require('parse');
 
-var Parse = require('parse/node');
+var _parse2 = _interopRequireDefault(_parse);
 
-var User = Parse.Object.extend('User');
-var Customer = Parse.Object.extend('Customer');
-var Cart = Parse.Object.extend('Cart');
-var Consumer = Parse.Object.extend('Consumer');
-var CustomerPointSale = Parse.Object.extend('CustomerPointSale');
-var Modifier = Parse.Object.extend('Modifier');
-var ModifierGroup = Parse.Object.extend('ModifierGroup');
-var ModifierItem = Parse.Object.extend('ModifierItem');
-var Order = Parse.Object.extend('Order');
-var OrderItem = Parse.Object.extend('OrderItem');
-var OrderItemModifier = Parse.Object.extend('OrderItemModifier');
-var OrderItemModifierGroup = Parse.Object.extend('OrderItemModifierGroup');
-var PaymentMethod = Parse.Object.extend('PaymentMethod');
-var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
+var _ConsumerAddress = require('./models/ConsumerAddress');
+
+var _ConsumerAddress2 = _interopRequireDefault(_ConsumerAddress);
+
+function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { default: obj };
+}
+
+_parse2.default.Object.registerSubclass('ConsumerAddress', _ConsumerAddress2.default);
+
+var User = _parse2.default.Object.extend('User');
+var Category = _parse2.default.Object.extend('Category');
+var Customer = _parse2.default.Object.extend('Customer');
+var Cart = _parse2.default.Object.extend('Cart');
+var Consumer = _parse2.default.Object.extend('Consumer');
+var CustomerPointSale = _parse2.default.Object.extend('CustomerPointSale');
+var Modifier = _parse2.default.Object.extend('Modifier');
+var ModifierGroup = _parse2.default.Object.extend('ModifierGroup');
+var ModifierItem = _parse2.default.Object.extend('ModifierItem');
+var Order = _parse2.default.Object.extend('Order');
+var OrderItem = _parse2.default.Object.extend('OrderItem');
+var OrderItemModifier = _parse2.default.Object.extend('OrderItemModifier');
+var OrderItemModifierGroup = _parse2.default.Object.extend('OrderItemModifierGroup');
+var Product = _parse2.default.Object.extend('Product');
+var PaymentMethod = _parse2.default.Object.extend('PaymentMethod');
 
 module.exports = {
     User: User,
     Cart: Cart,
+    Category: Category,
     Consumer: Consumer,
-    ConsumerAddress: ConsumerAddress,
+    ConsumerAddress: _ConsumerAddress2.default,
     Customer: Customer,
     CustomerPointSale: CustomerPointSale,
     Modifier: Modifier,
@@ -33,7 +45,8 @@ module.exports = {
     OrderItem: OrderItem,
     OrderItemModifier: OrderItemModifier,
     OrderItemModifierGroup: OrderItemModifierGroup,
-    PaymentMethod: PaymentMethod
+    PaymentMethod: PaymentMethod,
+    Product: Product
 };
 
 //# sourceMappingURL=ParseModels-compiled.js.map
