@@ -42,7 +42,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "url":"http://www.oxxo.com/"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAKyattDgRGnnzQM05exq80rjY48SQyYTM9skvYySHqNIbWFBVBtudGsKTHVWejRBPhainpgTnsypuZC07ZAOdFYkyDkZBUFail2SuIiJMZCrFzKID26bule4y6ggDlotcfmIY68sQiwGIHTJjM3mNQcRCIAXZAgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAKPtKh7pWsHDFYmZCnGcZBHYdWLE9KqwD6AEyuDT2vuxJNT4xYIjsaglegf4FWtNNBePXeZBH35OYQrJgD8amRYe0U0OFxLCZCHIDlZBBcNo4PVLrAgEPZCKLVzlTXNBqedWZBQjk8ekZCkfh5QfCu8P5JfQOXdWlAZDZD"
 
 
 * Delete Persistent Menu *
@@ -50,4 +50,4 @@ curl -X POST -H "Content-Type: application/json" -d '{
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAKyattDgRGnnzQM05exq80rjY48SQyYTM9skvYySHqNIbWFBVBtudGsKTHVWejRBPhainpgTnsypuZC07ZAOdFYkyDkZBUFail2SuIiJMZCrFzKID26bule4y6ggDlotcfmIY68sQiwGIHTJjM3mNQcRCIAXZAgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAKPtKh7pWsHDFYmZCnGcZBHYdWLE9KqwD6AEyuDT2vuxJNT4xYIjsaglegf4FWtNNBePXeZBH35OYQrJgD8amRYe0U0OFxLCZCHIDlZBBcNo4PVLrAgEPZCKLVzlTXNBqedWZBQjk8ekZCkfh5QfCu8P5JfQOXdWlAZDZD"

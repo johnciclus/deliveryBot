@@ -28,8 +28,6 @@ var _slicedToArray = function () {
 
 var _server = require('./server');
 
-var _server2 = _interopRequireDefault(_server);
-
 var _bodyParser = require('body-parser');
 
 var _bodyParser2 = _interopRequireDefault(_bodyParser);
@@ -79,10 +77,6 @@ var PAGE_ACCESS_TOKEN = process.env.MESSENGER_PAGE_ACCESS_TOKEN ? process.env.ME
 // assets located at this address.
 var SERVER_URL = process.env.SERVER_URL ? process.env.SERVER_URL : _config2.default.get('SERVER_URL');
 
-var PARSE_APP_ID = process.env.PARSE_APP_ID ? process.env.PARSE_APP_ID : _config2.default.get('PARSE_APP_ID');
-
-var PARSE_SERVER_URL = process.env.PARSE_SERVER_URL ? process.env.PARSE_SERVER_URL : _config2.default.get('PARSE_SERVER_URL');
-
 var FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID ? process.env.FACEBOOK_APP_ID : _config2.default.get('FACEBOOK_APP_ID');
 
 var REDIRECT_URI = process.env.REDIRECT_URI ? process.env.REDIRECT_URI : _config2.default.get('REDIRECT_URI');
@@ -94,7 +88,7 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
     process.exit(1);
 }
 
-_server2.default.use(_bodyParser2.default.json({ verify: verifyRequestSignature }));
+_server.app.use(_bodyParser2.default.json({ verify: verifyRequestSignature }));
 
 var rules = new Map();
 var payloadRules = new Map();
@@ -877,23 +871,18 @@ function findKeyStartsWith(map, str) {
     return undefined;
 }
 
-function getFacebookUser(recipientId) {
-
-    new Parse.Query(ParseModels.Consumer).equalTo('user', user).first().then(function (consumer) {
-        if (consumer) {
-            (0, _request2.default)({
-                uri: 'https://graph.facebook.com/v2.6/' + recipientId,
-                qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
-                method: 'GET'
-            }, function (error, response, body) {
-                var userData = JSON.parse(body);
-                return userData;
-            });
+function getFacebookUser(recipientId, callback) {
+    (0, _request2.default)({
+        uri: 'https://graph.facebook.com/v2.6/' + recipientId,
+        qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
+        method: 'GET'
+    }, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            if (callback) {
+                callback(JSON.parse(body));
+            }
         }
-    }).fail(function (error) {
-        console.log(error);
     });
-
     /*
     if (!error && response.statusCode == 200) {
         var pathname = response.request.uri.pathname;
@@ -962,7 +951,7 @@ function getFacebookUser(recipientId) {
  * setup is the same token used here.
  *
  */
-_server2.default.get('/webhook', function (req, res) {
+_server.app.get('/webhook', function (req, res) {
     if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VALIDATION_TOKEN) {
         console.log("Validating webhook");
         res.status(200).send(req.query['hub.challenge']);
@@ -979,7 +968,7 @@ _server2.default.get('/webhook', function (req, res) {
  * https://developers.facebook.com/docs/messenger-platform/product-overview/setup#subscribe_app
  *
  */
-_server2.default.post('/webhook', function (req, res) {
+_server.app.post('/webhook', function (req, res) {
     var data = req.body;
 
     // Make sure this is a page subscription
@@ -1024,7 +1013,7 @@ _server2.default.post('/webhook', function (req, res) {
  * (sendAccountLinking) is pointed to this URL.
  *
  */
-_server2.default.get('/authorize', function (req, res) {
+_server.app.get('/authorize', function (req, res) {
     var accountLinkingToken = req.query['account_linking_token'];
     var redirectURI = req.query['redirect_uri'];
 
@@ -1045,10 +1034,10 @@ _server2.default.get('/authorize', function (req, res) {
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid
 // certificate authority.
-_server2.default.listen(_server2.default.get('port'), function () {
+_server.app.listen(_server.app.get('port'), function () {
     //console.log('Node app is running on port', app.get('port'));
 });
 
-module.exports = { app: _server2.default, rules: rules, payloadRules: payloadRules, limit: limit, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff };
+module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, limit: limit, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser };
 
 //# sourceMappingURL=bot-compiled.js.map
