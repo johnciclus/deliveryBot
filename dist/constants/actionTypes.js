@@ -3,7 +3,6 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-/* @flow */
 var APP_LOADED = exports.APP_LOADED = 'APP_LOADED';
 //PRODUCTS
 var LOADING_PRODUCTS = exports.LOADING_PRODUCTS = 'LOADING_PRODUCTS';

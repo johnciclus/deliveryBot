@@ -6,8 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-/* @flow */
-
 var GetProductsParams = function GetProductsParams(businessId) {
   _classCallCheck(this, GetProductsParams);
 

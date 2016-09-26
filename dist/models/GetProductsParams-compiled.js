@@ -10,8 +10,6 @@ function _classCallCheck(instance, Constructor) {
   }
 }
 
-/* @flow */
-
 var GetProductsParams = function GetProductsParams(businessId) {
   _classCallCheck(this, GetProductsParams);
 

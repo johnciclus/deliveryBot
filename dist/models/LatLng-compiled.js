@@ -20,7 +20,6 @@ function _classCallCheck(instance, Constructor) {
   }
 }
 
-/* @flow */
 var LatLng = function () {
   function LatLng(lat, lng) {
     _classCallCheck(this, LatLng);

@@ -54,6 +54,7 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
 
 _server.app.use(_bodyParser2.default.json({ verify: verifyRequestSignature }));
 
+var listener = {};
 var rules = new Map();
 var payloadRules = new Map();
 
@@ -178,10 +179,15 @@ function receivedMessage(event) {
     }
 
     if (messageText) {
-
+        console.log(messageText);
         // If we receive a text message, check to see if it matches any special
         // keywords and send back the corresponding example. Otherwise, just echo
         // the text we received.
+        for (var key in listener) {
+            console.log(listener[key].shift());
+        };
+
+        console.log(listener[key]);
 
         messageText = messageText.toLowerCase();
 
@@ -910,6 +916,13 @@ function getFacebookUser(recipientId, callback) {
     }*/
 }
 
+function listenData(recipientId, dataId) {
+    if (!listener[recipientId]) {
+        listener[recipientId] = [];
+    }
+    listener[recipientId].push(dataId);
+}
+
 /*
  * Use your own validation token. Check that the token used in the Webhook
  * setup is the same token used here.
@@ -1002,4 +1015,4 @@ _server.app.listen(_server.app.get('port'), function () {
     //console.log('Node app is running on port', app.get('port'));
 });
 
-module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, limit: limit, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser };
+module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, limit: limit, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser, listenData: listenData };

@@ -39,7 +39,7 @@ function extractParseAttributes(object) {
   });
   result.rawParseObject = object;
   return result;
-} /* @flow */
+}
 /**
 * Map ParseObject to JSON recursively
 */

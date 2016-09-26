@@ -85,7 +85,9 @@ bot.rules.set('cuenta', sendShoppingCart);
 bot.payloadRules.set('Greeting', sendMenu);
 bot.payloadRules.set('SendAddressMenu', sendAddressMenu);
 bot.payloadRules.set('SetAddress', setAddress);
-bot.payloadRules.set('NewAddress', setLocation);
+bot.payloadRules.set('NewAddress', newAddress);
+bot.payloadRules.set('WriteAddress', writeAddress);
+bot.payloadRules.set('SetLocation', setLocation);
 bot.payloadRules.set('SendCategories', sendCategories);
 bot.payloadRules.set('SendProducts', sendProducts);
 bot.payloadRules.set('AddProduct', addProduct);
@@ -217,10 +219,8 @@ store.subscribe(function () {
 //global.FB = FB;
 
 function authentication(recipientId, callback) {
-    var user = undefined;
-    new Parse.Query(ParseModels.FacebookUser).equalTo('facebookId', recipientId).first().then(function (facebookUser) {
-        if (facebookUser) {
-            user = facebookUser;
+    new Parse.Query(ParseModels.User).equalTo('facebookId', recipientId).first().then(function (user) {
+        if (user) {
             if (callback) {
                 callback(user);
             }
@@ -235,17 +235,34 @@ function authentication(recipientId, callback) {
 }
 
 function signup(facebookId, userData, callback) {
+    //1100195690052041
     if (userData) {
-        var facebookUser = new ParseModels.FacebookUser();
-        facebookUser.save(Object.assign(userData, { facebookId: facebookId }), {
+        var facebookUser = new ParseModels.User();
+        facebookUser.save(Object.assign(userData, { username: facebookId.toString(), password: facebookId.toString(), facebookId: facebookId }), {
             success: function success(user) {
-                sendRegisterFacebookUser(facebookId);
-                callback(user);
+                var consumer = new ParseModels.Consumer();
+                consumer.set('name', user.get('first_name') + " " + user.get('last_name'));
+                consumer.set('user', {
+                    __type: "Pointer",
+                    className: "_User",
+                    objectId: user.id
+                });
+                consumer.save(undefined, {
+                    success: function success(consumer) {
+                        sendRegisterFacebookUser(facebookId);
+                        callback(user);
+                    },
+                    error: function error(user, _error) {
+                        // Execute any logic that should take place if the save fails.
+                        // error is a Parse.Error with an error code and message.
+                        console.log('Failed to create new object, with error code: ' + _error.message);
+                    }
+                });
             },
-            error: function error(user, _error) {
+            error: function error(user, _error2) {
                 // Execute any logic that should take place if the save fails.
                 // error is a Parse.Error with an error code and message.
-                console.log('Failed to create new object, with error code: ' + _error.message);
+                console.log('Failed to create new object, with error code: ' + _error2.message);
             }
         });
     }
@@ -272,8 +289,10 @@ function sendMenu(recipientId) {
 
     authentication(recipientId, function (user) {
         if (user) {
-            store.dispatch(Actions.loadConsumer(user)).then(function () {
-                renderMenuMessage(recipientId);
+            store.dispatch(Actions.loadCustomer(BUSINESS_ID)).then(function () {
+                store.dispatch(Actions.loadConsumer(user)).then(function () {
+                    renderMenuMessage(recipientId);
+                });
             });
         } else {
             var messageData = {
@@ -289,8 +308,6 @@ function sendMenu(recipientId) {
             bot.callSendAPI(messageData);
         }
     });
-
-    store.dispatch(Actions.loadCustomer(BUSINESS_ID)).then(function () {});
 }
 
 function renderMenuMessage(recipientId) {
@@ -340,19 +357,23 @@ function renderMenuMessage(recipientId) {
 function sendAddressMenu(recipientId) {
     bot.sendTypingOn(recipientId);
     var consumer = store.getState().consumer;
+    recipientId = parseInt(recipientId);
+
     if (!_.isEmpty(consumer)) {
         store.dispatch(Actions.loadConsumerAddresses(consumer.rawParseObject)).then(function () {
             renderAddressMenuMessage(recipientId);
         });
     } else {
         store.dispatch(Actions.loadCustomer(BUSINESS_ID)).then(function () {
-            new Parse.Query(ParseModels.User).get('y2DqRylTEb').then(function (user) {
-                store.dispatch(Actions.loadConsumer(user)).then(function () {
-                    renderAddressMenuMessage(recipientId);
-                });
-            }, function (object, error) {
-                console.log(error);
-                // error is an instance of Parse.Error.
+            authentication(recipientId, function (user) {
+                if (user) {
+                    store.dispatch(Actions.loadConsumer(user)).then(function () {
+                        consumer = store.getState().consumer;
+                        store.dispatch(Actions.loadConsumerAddresses(consumer.rawParseObject)).then(function () {
+                            renderAddressMenuMessage(recipientId);
+                        });
+                    });
+                }
             });
         });
     }
@@ -360,6 +381,46 @@ function sendAddressMenu(recipientId) {
 
 function renderAddressMenuMessage(recipientId) {
     var addresses = store.getState().addresses;
+    var quick_replies = [];
+
+    console.log(addresses);
+    console.log(addresses.length);
+
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+
+    try {
+        for (var _iterator = addresses[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var address = _step.value;
+
+            if (quick_replies.length <= bot.limit) console.log(address);
+            quick_replies.push({
+                "content_type": "text",
+                "title": address.name,
+                "payload": "SetAddress-" + address.id //"SetAddress-Office"
+            });
+        }
+    } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+            }
+        } finally {
+            if (_didIteratorError) {
+                throw _iteratorError;
+            }
+        }
+    }
+
+    quick_replies.push({
+        "content_type": "text",
+        "title": "Nueva dirección",
+        "payload": "NewAddress"
+    });
 
     var messageData = {
         recipient: {
@@ -367,19 +428,7 @@ function renderAddressMenuMessage(recipientId) {
         },
         message: {
             "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre tus direcciones guardadas o agregar una nueva dirección", //puedes escoger entre tus direcciones almacenadas o registrar una nueva
-            "quick_replies": [{
-                "content_type": "text",
-                "title": "Casa",
-                "payload": "SetAddress-Home"
-            }, {
-                "content_type": "text",
-                "title": "Oficina",
-                "payload": "SetAddress-Office"
-            }, {
-                "content_type": "text",
-                "title": "Nueva dirección",
-                "payload": "NewAddress"
-            }]
+            "quick_replies": quick_replies
         }
     };
 
@@ -390,6 +439,42 @@ function renderAddressMenuMessage(recipientId) {
 function setAddress(recipientId, args) {
     bot.sendTypingOn(recipientId);
     renderAddressConfirmation(recipientId);
+}
+
+function newAddress(recipientId) {
+    bot.sendTypingOff(recipientId);
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "Deseas escribir o enviar tu ubicación actual?",
+            "quick_replies": [{
+                "content_type": "text",
+                "title": "Escribir dirección",
+                "payload": "WriteAddress"
+            }, {
+                "content_type": "text",
+                "title": "Enviar ubicación",
+                "payload": "SetLocation"
+            }]
+        }
+    };
+    bot.callSendAPI(messageData);
+}
+
+function writeAddress(recipientId) {
+    bot.sendTypingOff(recipientId);
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "Por favor escribe tu dirección actual. \n\nEjemplo: Calle 67 #52-20, Medellín, Antioquia, Colombia"
+        }
+    };
+    bot.listenData(recipientId, 'address');
+    bot.callSendAPI(messageData);
 }
 
 function setLocation(recipientId) {
@@ -465,7 +550,7 @@ function sendCategories(recipientId, catIdx) {
             });
 
             elements.push({
-                title: "Más categorias ",
+                title: "Ver más categorias ",
                 subtitle: "Categorias disponibles",
                 buttons: buttons
             });
@@ -569,7 +654,7 @@ function sendProducts(recipientId, category, proIdx) {
             });
 
             elements.push({
-                title: "Más productos ",
+                title: "Ver más productos ",
                 subtitle: "Productos disponibles",
                 buttons: buttons
             });
@@ -733,8 +818,8 @@ function sendShoppingCart(recipientId) {
                         renderShoppingCart(recipientId, elements, total);
                     }
                 },
-                error: function error(_error2) {
-                    alert("Error: " + _error2.code + " " + _error2.message);
+                error: function error(_error3) {
+                    alert("Error: " + _error3.code + " " + _error3.message);
                 }
             });
         });

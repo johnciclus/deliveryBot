@@ -7,6 +7,9 @@ exports.loadConsumer = loadConsumer;
 exports.loadConsumerAddresses = loadConsumerAddresses;
 exports.getConsumerAndAddresses = getConsumerAndAddresses;
 exports.loadCustomer = loadCustomer;
+exports.addressSaved = addressSaved;
+exports.hideAddressForm = hideAddressForm;
+exports.addressSaveError = addressSaveError;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
 exports.addProductToCart = addProductToCart;
@@ -20,14 +23,11 @@ exports.emailLogin = emailLogin;
 exports.emailRegister = emailRegister;
 exports.geolocationPositionAcquired = geolocationPositionAcquired;
 exports.mapAddressChanged = mapAddressChanged;
-exports.addressSaved = addressSaved;
-exports.addressSaveError = addressSaveError;
 exports.mapBoundsChanged = mapBoundsChanged;
 exports.addressTextChanged = addressTextChanged;
 exports.showMapAddress = showMapAddress;
 exports.hideMapAddress = hideMapAddress;
 exports.showAddressForm = showAddressForm;
-exports.hideAddressForm = hideAddressForm;
 exports.consumerAddressChanged = consumerAddressChanged;
 exports.consumerAddressesLoaded = consumerAddressesLoaded;
 exports.setCurrentAddress = setCurrentAddress;
@@ -87,7 +87,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-/* @flow */
 var BUSINESS_ID = process.env.BUSINESS_ID ? process.env.BUSINESS_ID : _config2.default.get('BUSINESS_ID');
 //const geocoder = new google.maps.Geocoder()
 
@@ -160,6 +159,59 @@ function loadCustomer(businessId) {
       dispatch({ type: types.CUSTOMER_NOT_FOUND, data: { businessId: businessId } });
     });
   };
+}
+
+/**
+ * Address Saved
+ */
+function addressSaved(address) {
+  return {
+    type: types.ADDRESS_SAVED,
+    data: address
+  };
+}
+
+/**
+ * HIDE_ADDRESS_FORM action
+ */
+function hideAddressForm() {
+  return { type: types.HIDE_ADDRESS_FORM };
+}
+
+/**
+ * Address Saved Error
+ */
+function addressSaveError() {
+  return { type: types.ADDRESS_SAVE_ERROR };
+}
+
+/**
+ * Save ConsumerAddress on Parse.
+ */
+function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
+  var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
+  var parseConsumerAddress = new ConsumerAddress();
+  if (!consumerAddress.consumer) {
+    return;
+  }
+  if (consumerAddress.objectId) {
+    parseConsumerAddress.objectId = consumerAddress.objectId;
+  }
+  var consumer = consumerAddress.consumer.rawParseObject;
+  var location = consumerAddress.location;
+  var parseGeoPoint = new Parse.GeoPoint(location.lat, location.lng);
+  parseConsumerAddress.set('location', parseGeoPoint);
+  parseConsumerAddress.set('consumer', consumer);
+  parseConsumerAddress.set('address', consumerAddress.address);
+  parseConsumerAddress.set('name', consumerAddress.name);
+  parseConsumerAddress.set('description', consumerAddress.description);
+  parseConsumerAddress.save().then(function (consumerAddress) {
+    dispatch(addressSaved(consumerAddress));
+    dispatch(loadConsumerAddresses(consumer, dispatch));
+    dispatch(hideAddressForm());
+  }).fail(function (e) {
+    dispatch(addressSaveError());
+  });
 }
 
 /**
@@ -408,23 +460,6 @@ function mapAddressChanged(address) {
 }
 
 /**
-* Address Saved
-*/
-function addressSaved(address) {
-  return {
-    type: types.ADDRESS_SAVED,
-    data: address
-  };
-}
-
-/**
-* Address Saved Error
-*/
-function addressSaveError() {
-  return { type: types.ADDRESS_SAVE_ERROR };
-}
-
-/**
 * Geocode Given Location and dispatch MAP_ADDRESS_CHANGED action.
 */
 function geocodeLocation(location, mainDispatch, fromGeoLocation) {
@@ -498,42 +533,6 @@ function hideMapAddress() {
 */
 function showAddressForm() {
   return { type: types.SHOW_ADDRESS_FORM };
-}
-
-/**
-* HIDE_ADDRESS_FORM action
-*/
-function hideAddressForm() {
-  return { type: types.HIDE_ADDRESS_FORM };
-}
-
-/**
-* Save ConsumerAddress on Parse.
-*/
-function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
-  var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
-  var parseConsumerAddress = new ConsumerAddress();
-  if (!consumerAddress.consumer) {
-    return;
-  }
-  if (consumerAddress.objectId) {
-    parseConsumerAddress.objectId = consumerAddress.objectId;
-  }
-  var consumer = consumerAddress.consumer.rawParseObject;
-  var location = consumerAddress.location;
-  var parseGeoPoint = new Parse.GeoPoint(location.lat, location.lng);
-  parseConsumerAddress.set('location', parseGeoPoint);
-  parseConsumerAddress.set('consumer', consumer);
-  parseConsumerAddress.set('address', consumerAddress.address);
-  parseConsumerAddress.set('name', consumerAddress.name);
-  parseConsumerAddress.set('description', consumerAddress.description);
-  parseConsumerAddress.save().then(function (consumerAddress) {
-    dispatch(addressSaved(consumerAddress));
-    dispatch(loadConsumerAddresses(consumer, dispatch));
-    dispatch(hideAddressForm());
-  }).fail(function (e) {
-    dispatch(addressSaveError());
-  });
 }
 
 /**
