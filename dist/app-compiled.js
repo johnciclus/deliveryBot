@@ -50,13 +50,17 @@ var _objectAssign = require('object-assign');
 
 var _objectAssign2 = _interopRequireDefault(_objectAssign);
 
+var _reduxThunk = require('redux-thunk');
+
+var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
+
 var _fb = require('fb');
 
 var _fb2 = _interopRequireDefault(_fb);
 
-var _reduxThunk = require('redux-thunk');
+var _geocoder = require('geocoder');
 
-var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
+var _geocoder2 = _interopRequireDefault(_geocoder);
 
 function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -90,6 +94,12 @@ var REDIRECT_URI = process.env.REDIRECT_URI ? process.env.REDIRECT_URI : _config
 
 var BUSINESS_ID = process.env.BUSINESS_ID ? process.env.BUSINESS_ID : _config2.default.get('BUSINESS_ID');
 
+var GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_KEY ? process.env.GOOGLE_MAPS_KEY : _config2.default.get('GOOGLE_MAPS_KEY');
+
+String.prototype.capitalizeFirstLetter = function () {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+};
+
 _fb2.default.options({
     appId: FACEBOOK_APP_ID,
     appSecret: APP_SECRET,
@@ -97,8 +107,11 @@ _fb2.default.options({
 });
 
 bot.rules.set('hola', sendMenu);
+bot.rules.set('iniciar', sendMenu);
+bot.rules.set('empezar', sendMenu);
+bot.rules.set('comenzar', sendMenu);
 bot.rules.set('buenos dias', sendMenu);
-bot.rules.set('buenos tardes', sendMenu);
+bot.rules.set('buenas tardes', sendMenu);
 bot.rules.set('pedir domicilio', sendAddressMenu);
 bot.rules.set('cuenta', sendShoppingCart);
 
@@ -108,6 +121,7 @@ bot.payloadRules.set('SetAddress', setAddress);
 bot.payloadRules.set('NewAddress', newAddress);
 bot.payloadRules.set('WriteAddress', writeAddress);
 bot.payloadRules.set('SetLocation', setLocation);
+bot.payloadRules.set('ConfirmAddress', confirmAddress);
 bot.payloadRules.set('SendCategories', sendCategories);
 bot.payloadRules.set('SendProducts', sendProducts);
 bot.payloadRules.set('AddProduct', addProduct);
@@ -221,7 +235,7 @@ var reducer = function reducer() {
             return state;
         case types.RENDER_ADDRESS_MENU:
 
-            renderAddressMenuMessage();
+            renderAddressMenu();
 
             return state;
         default:
@@ -381,7 +395,7 @@ function sendAddressMenu(recipientId) {
 
     if (!_.isEmpty(consumer)) {
         store.dispatch(Actions.loadConsumerAddresses(consumer.rawParseObject)).then(function () {
-            renderAddressMenuMessage(recipientId);
+            renderAddressMenu(recipientId);
         });
     } else {
         store.dispatch(Actions.loadCustomer(BUSINESS_ID)).then(function () {
@@ -390,7 +404,7 @@ function sendAddressMenu(recipientId) {
                     store.dispatch(Actions.loadConsumer(user)).then(function () {
                         consumer = store.getState().consumer;
                         store.dispatch(Actions.loadConsumerAddresses(consumer.rawParseObject)).then(function () {
-                            renderAddressMenuMessage(recipientId);
+                            renderAddressMenu(recipientId);
                         });
                     });
                 }
@@ -399,65 +413,96 @@ function sendAddressMenu(recipientId) {
     }
 }
 
-function renderAddressMenuMessage(recipientId) {
+function renderAddressMenu(recipientId) {
     var addresses = store.getState().addresses;
-    var quick_replies = [];
+    var elements = [];
 
-    console.log(addresses);
-    console.log(addresses.length);
+    //"title": "A cual dirección vas hacer tu pedido?",
+    //"subtitle": "Puedes escoger entre tus direcciones guardadas o agregar una nueva dirección",
 
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
+    renderAddressMenuTitle(recipientId, function () {
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
 
-    try {
-        for (var _iterator = addresses[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var address = _step.value;
-
-            if (quick_replies.length <= bot.limit) console.log(address);
-            quick_replies.push({
-                "content_type": "text",
-                "title": address.name,
-                "payload": "SetAddress-" + address.id //"SetAddress-Office"
-            });
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
         try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
+            for (var _iterator = addresses[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var address = _step.value;
+
+                if (elements.length < bot.limit) {
+                    elements.push({
+                        "title": address.name.capitalizeFirstLetter(),
+                        "subtitle": address.address,
+                        "image_url": "https://maps.googleapis.com/maps/api/staticmap?center=" + address.location.lat + "," + address.location.lng + "&zoom=16&size=400x400&markers=color:red%7C" + address.location.lat + "," + address.location.lng + "&key=" + GOOGLE_MAPS_KEY,
+                        "buttons": [{
+                            "type": "postback",
+                            "title": address.name.capitalizeFirstLetter(),
+                            "payload": "SetAddress-" + address.id
+                        }]
+                    });
+                }
             }
+        } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
         } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
+            try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                    _iterator.return();
+                }
+            } finally {
+                if (_didIteratorError) {
+                    throw _iteratorError;
+                }
             }
         }
-    }
 
-    quick_replies.push({
-        "content_type": "text",
-        "title": "Nueva dirección",
-        "payload": "NewAddress"
+        elements.push({
+            "title": "Nueva dirección",
+            "subtitle": "Puedes agregar una nueva dirección",
+            "buttons": [{
+                "type": "postback",
+                "title": "Nueva dirección",
+                "payload": "NewAddress"
+            }]
+        });
+
+        var messageData = {
+            recipient: {
+                id: recipientId
+            },
+            message: {
+                "attachment": {
+                    "type": "template",
+                    "payload": {
+                        "template_type": "generic",
+                        "elements": elements
+                    }
+                }
+            }
+        };
+
+        bot.callSendAPI(messageData);
     });
+}
 
+function renderAddressMenuTitle(recipientId, callback) {
     var messageData = {
         recipient: {
             id: recipientId
         },
         message: {
-            "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre tus direcciones guardadas o agregar una nueva dirección", //puedes escoger entre tus direcciones almacenadas o registrar una nueva
-            "quick_replies": quick_replies
+            "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre tus direcciones guardadas o agregar una nueva dirección"
         }
     };
 
     bot.sendTypingOff(recipientId);
-    bot.callSendAPI(messageData);
+    bot.callSendAPI(messageData, callback);
 }
 
 function setAddress(recipientId, args) {
     bot.sendTypingOn(recipientId);
+    console.log(args);
     renderAddressConfirmation(recipientId);
 }
 
@@ -468,14 +513,14 @@ function newAddress(recipientId) {
             id: recipientId
         },
         message: {
-            "text": "Deseas escribir o enviar tu ubicación actual?",
+            "text": "Deseas escribir o compartir tu ubicación actual?",
             "quick_replies": [{
                 "content_type": "text",
                 "title": "Escribir dirección",
                 "payload": "WriteAddress"
             }, {
                 "content_type": "text",
-                "title": "Enviar ubicación",
+                "title": "Compartir ubicación",
                 "payload": "SetLocation"
             }]
         }
@@ -490,10 +535,156 @@ function writeAddress(recipientId) {
             id: recipientId
         },
         message: {
-            "text": "Por favor escribe tu dirección actual. \n\nEjemplo: Calle 67 #52-20, Medellín, Antioquia, Colombia"
+            "text": "Por favor escribe tu dirección actual. \n\nEjemplo: Calle 67 #52-20, Medellín"
         }
     };
-    bot.listenData(recipientId, 'address');
+    bot.listenData(recipientId, 'address', writeAddressCheck);
+    bot.callSendAPI(messageData);
+}
+
+function sendMapMessage(recipientId, callback) {
+    var userBuffer = bot.buffer[recipientId];
+
+    console.log('sendMapMessage');
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        "message": {
+            "text": "Encontré esta dirección en Google Maps:\n\n" + userBuffer.address + ""
+        }
+    };
+
+    bot.callSendAPI(messageData, callback);
+}
+
+function sendMap(recipientId, callback) {
+    var userBuffer = bot.buffer[recipientId];
+
+    console.log('sendMap');
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        "message": {
+            "attachment": {
+                "type": "image",
+                "payload": {
+                    "url": "https://maps.googleapis.com/maps/api/staticmap?center=" + userBuffer.location.lat + "," + userBuffer.location.lng + "&zoom=16&size=400x400&markers=color:red%7C" + userBuffer.location.lat + "," + userBuffer.location.lng + "&key=" + GOOGLE_MAPS_KEY
+                }
+            }
+        }
+    };
+
+    bot.callSendAPI(messageData, callback);
+}
+
+function writeAddressCheck(recipientId) {
+    bot.sendTypingOff(recipientId);
+    var userBuffer = bot.buffer[recipientId];
+
+    _geocoder2.default.geocode(userBuffer.address, function (error, data) {
+        if (!error && data.status == 'OK') {
+            var result = data.results[0];
+
+            userBuffer.address = result.formatted_address;
+            userBuffer.location = result.geometry.location;
+
+            console.log(userBuffer);
+
+            sendMapMessage(recipientId, function () {
+                sendMap(recipientId, function () {
+                    var messageData = {
+                        recipient: {
+                            id: recipientId
+                        },
+                        message: {
+                            "text": "Es correcta?",
+                            "quick_replies": [{
+                                "content_type": "text",
+                                "title": "Si",
+                                "payload": "ConfirmAddress"
+                            }, {
+                                "content_type": "text",
+                                "title": "No",
+                                "payload": "WriteAddress"
+                            }]
+                        }
+                    };
+                    bot.callSendAPI(messageData);
+                });
+            });
+        } else {
+            console.log('Geocode not found');
+            console.log(error);
+        }
+    });
+}
+
+function writeAddressComplete(recipientId) {
+    var consumer = store.getState().consumer;
+    var userBuffer = bot.buffer[recipientId];
+
+    console.log(userBuffer);
+
+    var location = new Parse.GeoPoint({ latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng) });
+
+    var consumerAddress = new ParseModels.ConsumerAddress();
+    consumerAddress.set('name', userBuffer['address-name']);
+    consumerAddress.set('address', userBuffer.address);
+    consumerAddress.set('consumer', {
+        __type: "Pointer",
+        className: "Consumer",
+        objectId: consumer.rawParseObject.id
+    });
+    consumerAddress.set('location', location);
+
+    consumerAddress.save(undefined, {
+        success: function success(result) {
+
+            delete userBuffer.address;
+            delete userBuffer.location;
+            delete userBuffer['address-name'];
+
+            console.log(userBuffer);
+
+            console.log('Consumer Address');
+        },
+        error: function error(user, _error3) {
+            // Execute any logic that should take place if the save fails.
+            // error is a Parse.Error with an error code and message.
+            console.log('Failed to create new object, with error code: ' + _error3.message);
+        }
+    });
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "La dirección ha sido almacenada."
+        }
+    };
+
+    bot.callSendAPI(messageData, sendAddressMenu);
+}
+
+function confirmAddress(recipientId) {
+    bot.sendTypingOff(recipientId);
+
+    var userBuffer = bot.buffer[recipientId];
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "Por favor coloca un nombre a esta dirección. \n\nEjemplo: casa, apartamento o oficina"
+        }
+    };
+    bot.listenData(recipientId, 'address-name', writeAddressComplete);
     bot.callSendAPI(messageData);
 }
 
@@ -519,7 +710,7 @@ function renderAddressConfirmation(recipientId) {
             id: recipientId
         },
         message: {
-            "text": "Perfecto, ya guardé tu dirección para próximos pedidos"
+            "text": "Perfecto, ya seleccioné tu dirección para este pedido" //Perfecto, ya guardé tu dirección para próximos pedidos
         }
     };
     bot.sendTypingOff(recipientId);
@@ -565,13 +756,13 @@ function sendCategories(recipientId, catIdx) {
         if (idx > (catIdx + 1) * bot.limit) {
             buttons.push({
                 type: "postback",
-                title: "Categorias " + (catIni + 1) + "-" + catFin,
+                title: "Categorías " + (catIni + 1) + "-" + catFin,
                 payload: "SendCategories-" + (catIdx + 1)
             });
 
             elements.push({
                 title: "Ver más categorias ",
-                subtitle: "Categorias disponibles",
+                subtitle: "Categorías disponibles",
                 buttons: buttons
             });
         }
@@ -838,8 +1029,8 @@ function sendShoppingCart(recipientId) {
                         renderShoppingCart(recipientId, elements, total);
                     }
                 },
-                error: function error(_error3) {
-                    alert("Error: " + _error3.code + " " + _error3.message);
+                error: function error(_error4) {
+                    alert("Error: " + _error4.code + " " + _error4.message);
                 }
             });
         });

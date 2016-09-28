@@ -9,5 +9,6 @@
     "PARSE_MASTER_KEY": "zyFraI2LrwTEG0oRPgNZsWQqv695jW706a7E3iNV",
     "PARSE_SERVER_URL": "https://pro.parse.inoutdelivery.com/parse",
     "BUSINESS_ID": "com.inoutdelivery.oxxo",
-    "REDIRECT_URI": "https://bot.inoutdelivery.com/"
+    "REDIRECT_URI": "https://bot.inoutdelivery.com/",
+    "GOOGLE_MAPS_KEY": "AIzaSyDe2X7qvYFpfEFb1V6ANA-7OhCeukb6lnI"
 }

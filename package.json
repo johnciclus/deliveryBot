@@ -7,7 +7,8 @@
     "start": "nodemon lib/app.js --exec babel-node",
     "test": "mocha --compilers js:babel-register",
     "build": "babel lib/ -d dist/",
-    "serve": "node dist/app.js"
+    "serve": "node dist/app.js",
+    "clear": "rm -R dist/"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,7 @@
   "license": "MIT",
   "keywords": [
     "bot",
+    "messenger",
     "e-commerce",
     "facebook"
   ],

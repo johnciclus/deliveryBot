@@ -55,6 +55,7 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
 _server.app.use(_bodyParser2.default.json({ verify: verifyRequestSignature }));
 
 var listener = {};
+var buffer = {};
 var rules = new Map();
 var payloadRules = new Map();
 
@@ -179,24 +180,38 @@ function receivedMessage(event) {
     }
 
     if (messageText) {
-        console.log(messageText);
+        //console.log(messageText);
         // If we receive a text message, check to see if it matches any special
         // keywords and send back the corresponding example. Otherwise, just echo
         // the text we received.
-        for (var key in listener) {
-            console.log(listener[key].shift());
-        };
 
-        console.log(listener[key]);
+        //Object.keys(listener);
+        var userListeners = listener[senderID];
 
-        messageText = messageText.toLowerCase();
+        if (!_.isEmpty(userListeners)) {
+            if (!buffer[senderID]) {
+                buffer[senderID] = {};
+            }
+            var keys = Object.keys(userListeners);
+            var key = keys.shift();
 
-        if (rules.get(messageText)) {
-            rules.get(messageText)(senderID);
+            buffer[senderID][key] = messageText;
+
+            userListeners[key](senderID);
+
+            delete userListeners[key];
+        } else {
+            messageText = messageText.toLowerCase();
+
+            rules.forEach(function (value, key) {
+                if (messageText.includes(key)) {
+                    value(senderID);
+                }
+            });
         }
 
         /*
-        switch (messageText) {
+          switch (messageText) {
             case 'image':
                 sendImageMessage(senderID);
                 break;
@@ -397,7 +412,7 @@ function receivedAccountLink(event) {
  */
 function callSendAPI(messageData, callback) {
     (0, _request2.default)({
-        uri: 'https://graph.facebook.com/v2.6/me/messages',
+        uri: 'https://graph.facebook.com/v2.7/me/messages',
         qs: { access_token: PAGE_ACCESS_TOKEN },
         method: 'POST',
         json: messageData
@@ -843,7 +858,7 @@ function findKeyStartsWith(map, str) {
 
 function getFacebookUser(recipientId, callback) {
     (0, _request2.default)({
-        uri: 'https://graph.facebook.com/v2.6/' + recipientId,
+        uri: 'https://graph.facebook.com/v2.7/' + recipientId,
         qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
         method: 'GET'
     }, function (error, response, body) {
@@ -916,11 +931,28 @@ function getFacebookUser(recipientId, callback) {
     }*/
 }
 
-function listenData(recipientId, dataId) {
+function listenData(recipientId, dataId, callback) {
     if (!listener[recipientId]) {
-        listener[recipientId] = [];
+        listener[recipientId] = {};
     }
-    listener[recipientId].push(dataId);
+
+    listener[recipientId][dataId] = callback;
+
+    /*
+     // input dataId =  consumerAddress[address]
+     var id;
+    var ref = listener[recipientId]
+    var elements = dataId.split(/[\[|\]]+/g).filter(function(el) {return el.length != 0});
+     while(elements.length != 0){
+        id = elements.shift();
+        if(elements.length == 0){
+            ref[id] = callback
+        }
+        else if(!ref[id]){
+            ref[id] = {}
+        }
+        ref = ref[id];
+    };*/
 }
 
 /*
@@ -1015,4 +1047,4 @@ _server.app.listen(_server.app.get('port'), function () {
     //console.log('Node app is running on port', app.get('port'));
 });
 
-module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, limit: limit, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser, listenData: listenData };
+module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, buffer: buffer, limit: limit, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser, listenData: listenData };

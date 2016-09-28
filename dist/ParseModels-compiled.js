@@ -1,15 +1,9 @@
 'use strict';
 
-var _ConsumerAddress = require('./models/ConsumerAddress');
+//import Parse from 'parse'
+//import ConsumerAddress from './models/ConsumerAddress'
 
-var _ConsumerAddress2 = _interopRequireDefault(_ConsumerAddress);
-
-function _interopRequireDefault(obj) {
-    return obj && obj.__esModule ? obj : { default: obj };
-}
-
-Parse.Object.registerSubclass('ConsumerAddress', _ConsumerAddress2.default); //import Parse from 'parse'
-
+//Parse.Object.registerSubclass('ConsumerAddress', ConsumerAddress);
 
 var User = Parse.Object.extend('User');
 var FacebookUser = Parse.Object.extend('FacebookUser');
@@ -17,6 +11,7 @@ var Category = Parse.Object.extend('Category');
 var Customer = Parse.Object.extend('Customer');
 var Cart = Parse.Object.extend('Cart');
 var Consumer = Parse.Object.extend('Consumer');
+var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
 var CustomerPointSale = Parse.Object.extend('CustomerPointSale');
 var Modifier = Parse.Object.extend('Modifier');
 var ModifierGroup = Parse.Object.extend('ModifierGroup');
@@ -34,7 +29,7 @@ module.exports = {
     Cart: Cart,
     Category: Category,
     Consumer: Consumer,
-    ConsumerAddress: _ConsumerAddress2.default,
+    ConsumerAddress: ConsumerAddress,
     Customer: Customer,
     CustomerPointSale: CustomerPointSale,
     Modifier: Modifier,
