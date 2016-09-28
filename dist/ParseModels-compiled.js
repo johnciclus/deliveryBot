@@ -1,17 +1,13 @@
 'use strict';
 
-//import Parse from 'parse'
-//import ConsumerAddress from './models/ConsumerAddress'
+// ParseModels.js
 
-//Parse.Object.registerSubclass('ConsumerAddress', ConsumerAddress);
+var Parse = require('parse/node');
 
 var User = Parse.Object.extend('User');
-var FacebookUser = Parse.Object.extend('FacebookUser');
-var Category = Parse.Object.extend('Category');
 var Customer = Parse.Object.extend('Customer');
 var Cart = Parse.Object.extend('Cart');
 var Consumer = Parse.Object.extend('Consumer');
-var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
 var CustomerPointSale = Parse.Object.extend('CustomerPointSale');
 var Modifier = Parse.Object.extend('Modifier');
 var ModifierGroup = Parse.Object.extend('ModifierGroup');
@@ -20,14 +16,12 @@ var Order = Parse.Object.extend('Order');
 var OrderItem = Parse.Object.extend('OrderItem');
 var OrderItemModifier = Parse.Object.extend('OrderItemModifier');
 var OrderItemModifierGroup = Parse.Object.extend('OrderItemModifierGroup');
-var Product = Parse.Object.extend('Product');
 var PaymentMethod = Parse.Object.extend('PaymentMethod');
+var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
 
 module.exports = {
     User: User,
-    FacebookUser: FacebookUser,
     Cart: Cart,
-    Category: Category,
     Consumer: Consumer,
     ConsumerAddress: ConsumerAddress,
     Customer: Customer,
@@ -39,8 +33,7 @@ module.exports = {
     OrderItem: OrderItem,
     OrderItemModifier: OrderItemModifier,
     OrderItemModifierGroup: OrderItemModifierGroup,
-    PaymentMethod: PaymentMethod,
-    Product: Product
+    PaymentMethod: PaymentMethod
 };
 
 //# sourceMappingURL=ParseModels-compiled.js.map

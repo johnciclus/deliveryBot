@@ -3,18 +3,12 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.loadConsumer = loadConsumer;
-exports.loadConsumerAddresses = loadConsumerAddresses;
-exports.getConsumerAndAddresses = getConsumerAndAddresses;
-exports.loadCustomer = loadCustomer;
-exports.addressSaved = addressSaved;
-exports.hideAddressForm = hideAddressForm;
-exports.addressSaveError = addressSaveError;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
 exports.addProductToCart = addProductToCart;
 exports.emptyCart = emptyCart;
 exports.facebookDataLoaded = facebookDataLoaded;
+exports.loadConsumer = loadConsumer;
 exports.createConsumer = createConsumer;
 exports.updateConsumer = updateConsumer;
 exports.facebookLogin = facebookLogin;
@@ -23,11 +17,14 @@ exports.emailLogin = emailLogin;
 exports.emailRegister = emailRegister;
 exports.geolocationPositionAcquired = geolocationPositionAcquired;
 exports.mapAddressChanged = mapAddressChanged;
+exports.addressSaved = addressSaved;
+exports.addressSaveError = addressSaveError;
 exports.mapBoundsChanged = mapBoundsChanged;
 exports.addressTextChanged = addressTextChanged;
 exports.showMapAddress = showMapAddress;
 exports.hideMapAddress = hideMapAddress;
 exports.showAddressForm = showAddressForm;
+exports.hideAddressForm = hideAddressForm;
 exports.consumerAddressChanged = consumerAddressChanged;
 exports.consumerAddressesLoaded = consumerAddressesLoaded;
 exports.setCurrentAddress = setCurrentAddress;
@@ -73,6 +70,10 @@ var _actionTypes = require('../constants/actionTypes');
 
 var types = _interopRequireWildcard(_actionTypes);
 
+var _parse = require('parse');
+
+var _parse2 = _interopRequireDefault(_parse);
+
 var _config = require('config');
 
 var _config2 = _interopRequireDefault(_config);
@@ -103,132 +104,11 @@ var BUSINESS_ID = process.env.BUSINESS_ID ? process.env.BUSINESS_ID : _config2.d
 //const geocoder = new google.maps.Geocoder()
 
 /**
- * Load Consumer of given user
- */
-
-//import Parse from 'parse'
-//import { push } from 'react-router-redux'
-function loadConsumer(user) {
-  if (user == null) return;
-  return function (dispatch) {
-    return new Parse.Query(_ParseModels.Consumer).equalTo('user', user).first().then(function (consumer) {
-      if (consumer) {
-
-        dispatch({ type: types.CONSUMER_LOADED, data: { consumer: consumer } });
-
-        //dispatch(loadConsumerAddresses(consumer))
-
-        //dispatch(loadConsumerOrders());
-
-        //mainDispatch(push('/'))
-      } else {
-        var authData = user.get('authData');
-        if (authData && authData.hasOwnProperty('facebook')) {
-          if (FB) {
-            loadFacebookUserData(authData.facebook.access_token, dispatch);
-          }
-        }
-        dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
-      }
-    }).fail(function (e) {
-      dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
-    });
-  };
-}
-
-/**
- * Load Consumer Addresses and dispatch action with the results.
- */
-function loadConsumerAddresses(consumer) {
-  if (consumer == null) return;
-  return function (dispatch) {
-    return new Parse.Query(_ParseModels.ConsumerAddress).equalTo('consumer', consumer).find().then(function (addresses) {
-      dispatch({ type: types.CONSUMER_ADDRESSES_LOADED, data: addresses });
-    }).fail(function (e) {
-      console.log('no addresses');
-      //TODO dispatch action with error
-    });
-  };
-}
-
-function getConsumerAndAddresses(user) {
-  return function (dispatch, getState) {
-    return dispatch(loadConsumer(user)).then(function () {
-      return dispatch(loadConsumerAddresses(getState().consumer.rawParseObject));
-    });
-  };
-}
-
-/**
- * Load Consumer of given user
- */
-function loadCustomer(businessId) {
-  if (businessId == null) return;
-  return function (dispatch) {
-    return new Parse.Query(_ParseModels.Customer).contains('businessId', businessId).limit(1).first().then(function (customer) {
-      dispatch({ type: types.CUSTOMER_LOADED, data: { customer: customer } });
-    }).fail(function (e) {
-      dispatch({ type: types.CUSTOMER_NOT_FOUND, data: { businessId: businessId } });
-    });
-  };
-}
-
-/**
- * Address Saved
- */
-function addressSaved(address) {
-  return {
-    type: types.ADDRESS_SAVED,
-    data: address
-  };
-}
-
-/**
- * HIDE_ADDRESS_FORM action
- */
-function hideAddressForm() {
-  return { type: types.HIDE_ADDRESS_FORM };
-}
-
-/**
- * Address Saved Error
- */
-function addressSaveError() {
-  return { type: types.ADDRESS_SAVE_ERROR };
-}
-
-/**
- * Save ConsumerAddress on Parse.
- */
-function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
-  var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
-  var parseConsumerAddress = new ConsumerAddress();
-  if (!consumerAddress.consumer) {
-    return;
-  }
-  if (consumerAddress.objectId) {
-    parseConsumerAddress.objectId = consumerAddress.objectId;
-  }
-  var consumer = consumerAddress.consumer.rawParseObject;
-  var location = consumerAddress.location;
-  var parseGeoPoint = new Parse.GeoPoint(location.lat, location.lng);
-  parseConsumerAddress.set('location', parseGeoPoint);
-  parseConsumerAddress.set('consumer', consumer);
-  parseConsumerAddress.set('address', consumerAddress.address);
-  parseConsumerAddress.set('name', consumerAddress.name);
-  parseConsumerAddress.set('description', consumerAddress.description);
-  parseConsumerAddress.save().then(function (consumerAddress) {
-    dispatch(addressSaved(consumerAddress));
-    dispatch(loadConsumerAddresses(consumer, dispatch));
-    dispatch(hideAddressForm());
-  }).fail(function (e) {
-    dispatch(addressSaveError());
-  });
-}
-
-/**
 * Load products from Parse.
 */
+
+//import { push } from 'react-router-redux'
+
 function loadProducts(lat, lng, category, pointSale) {
   return function (dispatch, getState) {
     var params = new _GetProductsParams2.default(BUSINESS_ID);
@@ -246,7 +126,7 @@ function loadProducts(lat, lng, category, pointSale) {
       params.pointSale = pointSale;
     }
     dispatch({ type: types.LOADING_PRODUCTS });
-    Parse.Cloud.run('getProducts', params).then(function (results) {
+    _parse2.default.Cloud.run('getProducts', params).then(function (results) {
       dispatch({
         type: types.PRODUCTS_LOADED,
         data: results
@@ -324,6 +204,47 @@ function facebookDataLoaded(data) {
 }
 
 /**
+* Load Consumer Addresses and dispatch action with the results.
+*/
+function loadConsumerAddresses(consumer) {
+  if (consumer == null) return;
+  return function (dispatch) {
+    var query = new _parse2.default.Query(_ParseModels.ConsumerAddress).equalTo('consumer', consumer);
+    query.find().then(function (addresses) {
+      dispatch(consumerAddressesLoaded(addresses));
+    }).fail(function (e) {
+      //TODO dispatch action with error
+    });
+  };
+}
+
+/**
+* Load Consumer of given user
+*/
+function loadConsumer(user, mainDispatch) {
+  return function (dispatch) {
+    new _parse2.default.Query(_ParseModels.Consumer).equalTo('user', user).first().then(function (consumer) {
+      if (consumer) {
+        dispatch({ type: types.CONSUMER_LOADED, data: { consumer: consumer } });
+        dispatch(loadConsumerAddresses(consumer));
+        dispatch(loadConsumerOrders());
+        //mainDispatch(push('/'))
+      } else {
+        var authData = user.get('authData');
+        if (authData && authData.hasOwnProperty('facebook')) {
+          if (FB) {
+            loadFacebookUserData(authData.facebook.access_token, dispatch);
+          }
+        }
+        dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
+      }
+    }).fail(function (e) {
+      dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
+    });
+  };
+}
+
+/**
 * Create Consumer
 */
 function createConsumer(consumerData, mainDispatch) {
@@ -371,7 +292,7 @@ function updateConsumer(consumerData) {
 */
 function facebookLogin(mainDispatch) {
   return function (dispatch) {
-    Parse.FacebookUtils.logIn(null, {
+    _parse2.default.FacebookUtils.logIn(null, {
       success: function success(user) {
         if (!user.existed()) {
           dispatch({ type: types.FACEBOOK_REGISTER_SUCCESS });
@@ -394,8 +315,8 @@ function facebookLogin(mainDispatch) {
 function logout(mainDispatch) {
   return function (dispatch) {
 
-    if (Parse.User.current()) {
-      Parse.User.logOut();
+    if (_parse2.default.User.current()) {
+      _parse2.default.User.logOut();
     }
 
     mainDispatch(push('/'));
@@ -410,7 +331,7 @@ function logout(mainDispatch) {
 function emailLogin(userData, mainDispatch) {
   mainDispatch({ type: types.EMAIL_LOGIN });
   return function (dispatch) {
-    Parse.User.logIn(userData.email + BUSINESS_ID, userData.password).then(function (user) {
+    _parse2.default.User.logIn(userData.email + BUSINESS_ID, userData.password).then(function (user) {
       dispatch({
         type: types.EMAIL_LOGIN_SUCCESS,
         data: user
@@ -432,7 +353,7 @@ function emailLogin(userData, mainDispatch) {
 function emailRegister(userData, mainDispatch) {
   mainDispatch({ type: types.EMAIL_REGISTER });
   return function (dispatch) {
-    Parse.User.signUp(userData.email + BUSINESS_ID, userData.password).then(function (user) {
+    _parse2.default.User.signUp(userData.email + BUSINESS_ID, userData.password).then(function (user) {
       dispatch({
         type: types.EMAIL_REGISTER_SUCCESS,
         data: { user: user, userData: userData }
@@ -469,6 +390,23 @@ function mapAddressChanged(address) {
     type: types.MAP_ADDRESS_CHANGED,
     data: address
   };
+}
+
+/**
+* Address Saved
+*/
+function addressSaved(address) {
+  return {
+    type: types.ADDRESS_SAVED,
+    data: address
+  };
+}
+
+/**
+* Address Saved Error
+*/
+function addressSaveError() {
+  return { type: types.ADDRESS_SAVE_ERROR };
 }
 
 /**
@@ -548,6 +486,42 @@ function showAddressForm() {
 }
 
 /**
+* HIDE_ADDRESS_FORM action
+*/
+function hideAddressForm() {
+  return { type: types.HIDE_ADDRESS_FORM };
+}
+
+/**
+* Save ConsumerAddress on Parse.
+*/
+function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
+  var ConsumerAddress = _parse2.default.Object.extend('ConsumerAddress');
+  var parseConsumerAddress = new ConsumerAddress();
+  if (!consumerAddress.consumer) {
+    return;
+  }
+  if (consumerAddress.objectId) {
+    parseConsumerAddress.objectId = consumerAddress.objectId;
+  }
+  var consumer = consumerAddress.consumer.rawParseObject;
+  var location = consumerAddress.location;
+  var parseGeoPoint = new _parse2.default.GeoPoint(location.lat, location.lng);
+  parseConsumerAddress.set('location', parseGeoPoint);
+  parseConsumerAddress.set('consumer', consumer);
+  parseConsumerAddress.set('address', consumerAddress.address);
+  parseConsumerAddress.set('name', consumerAddress.name);
+  parseConsumerAddress.set('description', consumerAddress.description);
+  parseConsumerAddress.save().then(function (consumerAddress) {
+    dispatch(addressSaved(consumerAddress));
+    dispatch(loadConsumerAddresses(consumer, dispatch));
+    dispatch(hideAddressForm());
+  }).fail(function (e) {
+    dispatch(addressSaveError());
+  });
+}
+
+/**
 * CONSUMER_ADDRESS_CHANGED action
 */
 function consumerAddressChanged(consumerAddress, dispatch, pendingOrder, cart) {
@@ -597,7 +571,7 @@ function hideAddressList() {
 */
 function loadPaymentMethods() {
   return function (dispatch) {
-    Parse.Cloud.run('paymentMethods', {
+    _parse2.default.Cloud.run('paymentMethods', {
       languageCode: 'es'
       //businessId: BUSINESS_ID
     }).then(function (results) {
@@ -758,7 +732,7 @@ function createOrder(cart, mainDispatch) {
 
   var newOrder = new _ParseModels.Order();
   newOrder.set(cartToOrder(cart, items));
-  Parse.Object.saveAll(items).then(function () {
+  _parse2.default.Object.saveAll(items).then(function () {
     return newOrder.save();
   }).then(function (order) {
     mainDispatch({ type: types.ORDER_CREATED, data: order });
@@ -840,7 +814,7 @@ function unsetCurrentOrder() {
 */
 function loadConsumerOrders() {
   return function (dispatch) {
-    Parse.Cloud.run('orders', { businessId: BUSINESS_ID }).then(function (orders) {
+    _parse2.default.Cloud.run('orders', { businessId: BUSINESS_ID }).then(function (orders) {
       dispatch({
         type: types.CONSUMER_ORDERS_LOADED,
         data: orders
@@ -952,7 +926,7 @@ function toggleCart(isOpen) {
 function rateOrder(orderId, score, comment) {
   return function (dispatch) {
     dispatch({ type: types.RATING_ORDER });
-    Parse.Cloud.run('rateOrder', { orderId: orderId, score: score, comment: comment }).then(function () {
+    _parse2.default.Cloud.run('rateOrder', { orderId: orderId, score: score, comment: comment }).then(function () {
       dispatch({ type: types.RATE_ORDER_SUCCESS });
       return dispatch(loadConsumerOrders());
     }).fail(function (e) {
@@ -979,7 +953,7 @@ function hideOutOfCoverageModal() {
 function loadPointSales() {
   var params = { businessId: BUSINESS_ID };
   return function (dispatch) {
-    Parse.Cloud.run('getPointSales', params).then(function (results) {
+    _parse2.default.Cloud.run('getPointSales', params).then(function (results) {
       dispatch({ type: types.POINT_OF_SALES_LOADED, data: results });
     });
   };
@@ -1004,10 +978,6 @@ function hideAddressSearchModal() {
 */
 function showAddressSearchModal() {
   return { type: types.SHOW_ADDRESS_SEARCH_MODAL };
-}
-
-function renderMenuMessage() {
-  return { type: types.RENDER_MENU };
 }
 
 //# sourceMappingURL=index-compiled.js.map

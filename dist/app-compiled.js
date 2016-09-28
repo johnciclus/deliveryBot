@@ -218,6 +218,12 @@ var reducer = function reducer() {
             var customer = (0, _ParseUtils.extractParseAttributes)(action.data.customer);
             (0, _objectAssign2.default)(state, { customer: customer });
             return _extends({}, state);
+        case types.PAYMENT_METHODS_LOADED:
+            var paymentMethods = action.data.map(function (p) {
+                return (0, _ParseUtils.extractParseAttributes)(p);
+            });
+            (0, _objectAssign2.default)(state, { paymentMethods: paymentMethods });
+            return _extends({}, state);
         case types.RENDER_MENU:
             /*
             console.log('Store');
@@ -238,6 +244,7 @@ var reducer = function reducer() {
             renderAddressMenu();
 
             return state;
+
         default:
             return state;
     }
@@ -437,7 +444,7 @@ function renderAddressMenu(recipientId) {
                         "buttons": [{
                             "type": "postback",
                             "title": address.name.capitalizeFirstLetter(),
-                            "payload": "SetAddress-" + address.id
+                            "payload": "SetAddress-" + address.objectId
                         }]
                     });
                 }
@@ -502,6 +509,7 @@ function renderAddressMenuTitle(recipientId, callback) {
 
 function setAddress(recipientId, args) {
     bot.sendTypingOn(recipientId);
+    console.log('setAddress');
     console.log(args);
     renderAddressConfirmation(recipientId);
 }
@@ -637,7 +645,7 @@ function writeAddressComplete(recipientId) {
     consumerAddress.set('consumer', {
         __type: "Pointer",
         className: "Consumer",
-        objectId: consumer.rawParseObject.id
+        objectId: consumer.objectId
     });
     consumerAddress.set('location', location);
 
@@ -1136,11 +1144,21 @@ function renderShoppingCartConfirmation(recipientId) {
 
 function checkout(recipientId) {
     bot.sendTypingOn(recipientId);
-
-    renderCheckout(recipientId);
+    //ParseModels.PaymentMethod
+    store.dispatch(Actions.loadPaymentMethods()).then(function () {
+        renderCheckout(recipientId);
+    });
 }
 
 function renderCheckout(recipientId) {
+    var paymentMethods = store.getState().paymentMethods;
+
+    console.log('paymentMethods');
+
+    for (var i in paymentMethods) {
+        console.log(paymentMethods[i]);
+    }
+
     var messageData = {
         recipient: {
             id: recipientId

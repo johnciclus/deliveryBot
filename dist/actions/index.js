@@ -10,6 +10,7 @@ exports.loadCustomer = loadCustomer;
 exports.addressSaved = addressSaved;
 exports.hideAddressForm = hideAddressForm;
 exports.addressSaveError = addressSaveError;
+exports.loadPaymentMethods = loadPaymentMethods;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
 exports.addProductToCart = addProductToCart;
@@ -33,7 +34,6 @@ exports.consumerAddressesLoaded = consumerAddressesLoaded;
 exports.setCurrentAddress = setCurrentAddress;
 exports.showAddressList = showAddressList;
 exports.hideAddressList = hideAddressList;
-exports.loadPaymentMethods = loadPaymentMethods;
 exports.selectPaymentMethod = selectPaymentMethod;
 exports.createNewAddress = createNewAddress;
 exports.getGeoLocation = getGeoLocation;
@@ -212,6 +212,23 @@ function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
   }).fail(function (e) {
     dispatch(addressSaveError());
   });
+}
+
+/**
+ * Load Payment Methods.
+ */
+function loadPaymentMethods() {
+  return function (dispatch) {
+    return Parse.Cloud.run('paymentMethods', {
+      languageCode: 'es'
+      //businessId: BUSINESS_ID
+    }).then(function (results) {
+      dispatch({
+        type: types.PAYMENT_METHODS_LOADED,
+        data: results
+      });
+    });
+  };
 }
 
 /**
@@ -578,23 +595,6 @@ function showAddressList() {
 */
 function hideAddressList() {
   return { type: types.HIDE_ADDRESS_LIST };
-}
-
-/**
-* Load Payment Methods.
-*/
-function loadPaymentMethods() {
-  return function (dispatch) {
-    Parse.Cloud.run('paymentMethods', {
-      languageCode: 'es'
-      //businessId: BUSINESS_ID
-    }).then(function (results) {
-      dispatch({
-        type: types.PAYMENT_METHODS_LOADED,
-        data: results
-      });
-    });
-  };
 }
 
 /**
