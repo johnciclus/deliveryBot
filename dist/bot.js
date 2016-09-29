@@ -105,6 +105,8 @@ function receivedAuthentication(event) {
     // authentication callback with the 'Send to Messenger' click event. This is
     // a way to do account linking when the user clicks the 'Send to Messenger'
     // plugin.
+
+    senderID = parseInt(senderID);
     var passThroughParam = event.optin.ref;
 
     console.log("Received authentication for user %d and page %d with pass " + "through param '%s' at %d", senderID, recipientID, passThroughParam, timeOfAuth);
@@ -147,6 +149,8 @@ function receivedMessage(event) {
     var messageAttachments = message.attachments;
     var quickReply = message.quick_reply;
 
+    senderID = parseInt(senderID);
+
     if (isEcho) {
         // Just logging message echoes to console
         console.log("Received echo for message %s and app %d with metadata %s", messageId, appId, metadata);
@@ -159,6 +163,8 @@ function receivedMessage(event) {
         if (quickReplyPayload.includes('-')) {
             var params = quickReplyPayload.split('-');
             payloadFunction = payloadRules.get(params[0]);
+            //console.log(senderID);
+            //console.log(typeof senderID);
             if (payloadFunction) {
                 payloadFunction(senderID, params[1]);
             }
@@ -177,9 +183,7 @@ function receivedMessage(event) {
         //sendTextMessage(senderID, "Quick reply tapped");
 
         return;
-    }
-
-    if (messageText) {
+    } else if (messageText) {
         //console.log(messageText);
         // If we receive a text message, check to see if it matches any special
         // keywords and send back the corresponding example. Otherwise, just echo
@@ -187,7 +191,8 @@ function receivedMessage(event) {
 
         //Object.keys(listener);
         var userListeners = listener[senderID];
-
+        //console.log(senderID);
+        //console.log(typeof senderID);
         if (!_.isEmpty(userListeners)) {
             if (!buffer[senderID]) {
                 buffer[senderID] = {};
@@ -269,7 +274,25 @@ function receivedMessage(event) {
          }
          */
     } else if (messageAttachments) {
-        sendTextMessage(senderID, "Message with attachment received");
+        if (messageAttachments[0].type == 'location') {
+            var location = messageAttachments[0].payload.coordinates;
+            var userListeners = listener[senderID];
+            //console.log(senderID);
+            //console.log(typeof senderID);
+            if (!_.isEmpty(userListeners)) {
+                if (!buffer[senderID]) {
+                    buffer[senderID] = {};
+                }
+                var keys = Object.keys(userListeners);
+                var key = keys.shift();
+
+                buffer[senderID][key] = { lat: location.lat, lng: location.long };
+                userListeners[key](senderID);
+
+                delete userListeners[key];
+            }
+        }
+        //sendTextMessage(senderID, "Message with attachment received");
     }
 }
 
@@ -288,13 +311,15 @@ function receivedDeliveryConfirmation(event) {
     var watermark = delivery.watermark;
     var sequenceNumber = delivery.seq;
 
+    senderID = parseInt(senderID);
+
     if (messageIDs) {
         messageIDs.forEach(function (messageID) {
-            console.log("Received delivery confirmation for message ID: %s", messageID);
+            //console.log("Received delivery confirmation for message ID: %s", messageID);
         });
     }
 
-    console.log("All message before %d were delivered.", watermark);
+    //console.log("All message before %d were delivered.", watermark);
 }
 
 /*
@@ -321,10 +346,13 @@ function receivedPostback(event) {
     var payloadFunction;
 
     var params = payload.split('-');
-    console.log('payload');
-    console.log(payload);
 
     payloadFunction = payloadRules.get(params[0]);
+    senderID = parseInt(senderID);
+
+    //console.log(senderID);
+    //console.log(typeof senderID);
+
     if (payloadFunction) {
         switch (params.length) {
             case 1:
@@ -386,6 +414,8 @@ function receivedMessageRead(event) {
     var watermark = event.read.watermark;
     var sequenceNumber = event.read.seq;
 
+    senderID = parseInt(senderID);
+
     console.log("Received message read event for watermark %d and sequence " + "number %d", watermark, sequenceNumber);
 }
 
@@ -403,6 +433,8 @@ function receivedAccountLink(event) {
 
     var status = event.account_linking.status;
     var authCode = event.account_linking.authorization_code;
+
+    senderID = parseInt(senderID);
 
     console.log("Received account link event with for user %d with status %s " + "and auth code %s ", senderID, status, authCode);
 }

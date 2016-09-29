@@ -22,6 +22,7 @@ var OrderItemModifier = Parse.Object.extend('OrderItemModifier');
 var OrderItemModifierGroup = Parse.Object.extend('OrderItemModifierGroup');
 var Product = Parse.Object.extend('Product');
 var PaymentMethod = Parse.Object.extend('PaymentMethod');
+var PaymentMethodLanguage = Parse.Object.extend('PaymentMethodLanguage');
 
 module.exports = {
     User: User,
@@ -40,5 +41,6 @@ module.exports = {
     OrderItemModifier: OrderItemModifier,
     OrderItemModifierGroup: OrderItemModifierGroup,
     PaymentMethod: PaymentMethod,
+    PaymentMethodLanguage: PaymentMethodLanguage,
     Product: Product
 };

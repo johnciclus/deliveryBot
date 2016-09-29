@@ -3,14 +3,16 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.loadCustomer = loadCustomer;
 exports.loadConsumer = loadConsumer;
 exports.loadConsumerAddresses = loadConsumerAddresses;
+exports.setAddress = setAddress;
+exports.loadPaymentMethods = loadPaymentMethods;
+exports.setPaymentMethod = setPaymentMethod;
 exports.getConsumerAndAddresses = getConsumerAndAddresses;
-exports.loadCustomer = loadCustomer;
 exports.addressSaved = addressSaved;
 exports.hideAddressForm = hideAddressForm;
 exports.addressSaveError = addressSaveError;
-exports.loadPaymentMethods = loadPaymentMethods;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
 exports.addProductToCart = addProductToCart;
@@ -31,7 +33,6 @@ exports.hideMapAddress = hideMapAddress;
 exports.showAddressForm = showAddressForm;
 exports.consumerAddressChanged = consumerAddressChanged;
 exports.consumerAddressesLoaded = consumerAddressesLoaded;
-exports.setCurrentAddress = setCurrentAddress;
 exports.showAddressList = showAddressList;
 exports.hideAddressList = hideAddressList;
 exports.selectPaymentMethod = selectPaymentMethod;
@@ -96,13 +97,27 @@ var BUSINESS_ID = process.env.BUSINESS_ID ? process.env.BUSINESS_ID : _config2.d
 
 //import Parse from 'parse'
 //import { push } from 'react-router-redux'
-function loadConsumer(user) {
+function loadCustomer(recipientId, businessId) {
+  if (businessId == null) return;
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.Customer).contains('businessId', businessId).limit(1).first().then(function (customer) {
+      dispatch({ type: types.CUSTOMER_LOADED, data: { recipientId: recipientId, customer: customer } });
+    }).fail(function (e) {
+      dispatch({ type: types.CUSTOMER_NOT_FOUND, data: { recipientId: recipientId, businessId: businessId } });
+    });
+  };
+}
+
+/**
+ * Load Consumer of given user
+ */
+function loadConsumer(recipientId, user) {
   if (user == null) return;
   return function (dispatch) {
     return new Parse.Query(_ParseModels.Consumer).equalTo('user', user).first().then(function (consumer) {
       if (consumer) {
 
-        dispatch({ type: types.CONSUMER_LOADED, data: { consumer: consumer } });
+        dispatch({ type: types.CONSUMER_LOADED, data: { recipientId: recipientId, consumer: consumer } });
 
         //dispatch(loadConsumerAddresses(consumer))
 
@@ -127,13 +142,53 @@ function loadConsumer(user) {
 /**
  * Load Consumer Addresses and dispatch action with the results.
  */
-function loadConsumerAddresses(consumer) {
+function loadConsumerAddresses(recipientId, consumer) {
   if (consumer == null) return;
   return function (dispatch) {
     return new Parse.Query(_ParseModels.ConsumerAddress).equalTo('consumer', consumer).find().then(function (addresses) {
-      dispatch({ type: types.CONSUMER_ADDRESSES_LOADED, data: addresses });
-    }).fail(function (e) {
-      console.log('no addresses');
+      dispatch({ type: types.CONSUMER_ADDRESSES_LOADED, data: { recipientId: recipientId, addresses: addresses } });
+    }).fail(function (error) {
+      console.log('Error ' + error);
+      //TODO dispatch action with error
+    });
+  };
+}
+
+/**
+ * SET_CURRENT_ADDRESS action
+ */
+function setAddress(recipientId, id) {
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.ConsumerAddress).get(id).then(function (address) {
+      console.log("Action: " + address);
+      dispatch({ type: types.SET_CURRENT_ADDRESS, data: { recipientId: recipientId, address: address } });
+    }).fail(function (error) {
+      console.log('Error ' + error);
+      //TODO dispatch action with error
+    });
+  };
+}
+
+/**
+ * Load Payment Methods.
+ */
+function loadPaymentMethods(recipientId) {
+  return function (dispatch) {
+    return new Parse.Cloud.run('paymentMethods', {
+      languageCode: 'es'
+      //businessId: BUSINESS_ID
+    }).then(function (paymentMethods) {
+      dispatch({ type: types.PAYMENT_METHODS_LOADED, data: { recipientId: recipientId, paymentMethods: paymentMethods } });
+    });
+  };
+}
+
+function setPaymentMethod(recipientId, id) {
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.PaymentMethodLanguage).get(id).then(function (paymentMethod) {
+      dispatch({ type: types.SET_PAYMENT_METHOD, data: { recipientId: recipientId, paymentMethod: paymentMethod } });
+    }).fail(function (error) {
+      console.log('Error ' + error);
       //TODO dispatch action with error
     });
   };
@@ -141,22 +196,8 @@ function loadConsumerAddresses(consumer) {
 
 function getConsumerAndAddresses(user) {
   return function (dispatch, getState) {
-    return dispatch(loadConsumer(user)).then(function () {
+    return dispatch(recipientId, loadConsumer(user)).then(function () {
       return dispatch(loadConsumerAddresses(getState().consumer.rawParseObject));
-    });
-  };
-}
-
-/**
- * Load Consumer of given user
- */
-function loadCustomer(businessId) {
-  if (businessId == null) return;
-  return function (dispatch) {
-    return new Parse.Query(_ParseModels.Customer).contains('businessId', businessId).limit(1).first().then(function (customer) {
-      dispatch({ type: types.CUSTOMER_LOADED, data: { customer: customer } });
-    }).fail(function (e) {
-      dispatch({ type: types.CUSTOMER_NOT_FOUND, data: { businessId: businessId } });
     });
   };
 }
@@ -212,23 +253,6 @@ function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
   }).fail(function (e) {
     dispatch(addressSaveError());
   });
-}
-
-/**
- * Load Payment Methods.
- */
-function loadPaymentMethods() {
-  return function (dispatch) {
-    return Parse.Cloud.run('paymentMethods', {
-      languageCode: 'es'
-      //businessId: BUSINESS_ID
-    }).then(function (results) {
-      dispatch({
-        type: types.PAYMENT_METHODS_LOADED,
-        data: results
-      });
-    });
-  };
 }
 
 /**
@@ -570,16 +594,6 @@ function consumerAddressesLoaded(consumerAddresses) {
   return {
     type: types.CONSUMER_ADDRESSES_LOADED,
     data: consumerAddresses
-  };
-}
-
-/**
-* SET_CURRENT_ADDRESS action
-*/
-function setCurrentAddress(address) {
-  return {
-    type: types.SET_CURRENT_ADDRESS,
-    data: address
   };
 }
 
@@ -994,6 +1008,6 @@ function showAddressSearchModal() {
   return { type: types.SHOW_ADDRESS_SEARCH_MODAL };
 }
 
-function renderMenuMessage() {
+function renderMenu() {
   return { type: types.RENDER_MENU };
 }
