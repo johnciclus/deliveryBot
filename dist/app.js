@@ -70,6 +70,8 @@ var APP_SECRET = process.env.MESSENGER_APP_SECRET ? process.env.MESSENGER_APP_SE
 
 var PAGE_ACCESS_TOKEN = process.env.MESSENGER_PAGE_ACCESS_TOKEN ? process.env.MESSENGER_PAGE_ACCESS_TOKEN : _config2.default.get('PAGE_ACCESS_TOKEN');
 
+var SERVER_URL = process.env.SERVER_URL ? process.env.SERVER_URL : _config2.default.get('SERVER_URL');
+
 var PARSE_APP_ID = process.env.PARSE_APP_ID ? process.env.PARSE_APP_ID : _config2.default.get('PARSE_APP_ID');
 
 var PARSE_SERVER_URL = process.env.PARSE_SERVER_URL ? process.env.PARSE_SERVER_URL : _config2.default.get('PARSE_SERVER_URL');
@@ -114,7 +116,7 @@ bot.payloadRules.set('SendPurchaseOptions', sendPurchaseOptions);
 bot.payloadRules.set('Checkout', checkout);
 bot.payloadRules.set('CheckPayment', checkPayment);
 bot.payloadRules.set('RegisterCreditCard', registerCreditCard);
-bot.payloadRules.set('ConfirmRegisterCreditCard', confirmRegisterCreditCard);
+bot.payloadRules.set('SendRegisteredCreditCards', sendRegisteredCreditCards);
 bot.payloadRules.set('CancelRegisterCreditCard', cancelRegisterCreditCard);
 bot.payloadRules.set('PayWithCreditCard', payWithCreditCard);
 bot.payloadRules.set('SetRating', setRating);
@@ -241,6 +243,13 @@ var reducer = function reducer() {
             });
             return _extends({}, state);
 
+        case types.USER_CREDITCARDS_LOADED:
+            var creditCards = data.creditCards.map(function (a) {
+                return (0, _ParseUtils.extractParseAttributes)(a);
+            });
+            (0, _objectAssign2.default)(state.userData[data.recipientId], { creditCards: creditCards });
+            return _extends({}, state);
+
         case types.RENDER_MENU:
             /*
             console.log('Store');
@@ -293,6 +302,8 @@ function getData(recipientId, property) {
 }
 
 function authentication(recipientId, callback) {
+    console.log(recipientId);
+
     new Parse.Query(ParseModels.User).equalTo('facebookId', recipientId).first().then(function (user) {
         if (user) {
             if (callback) {
@@ -300,7 +311,7 @@ function authentication(recipientId, callback) {
             }
         } else {
             bot.getFacebookUser(recipientId, function (userData) {
-                signup(recipientId, userData, callback);
+                signUp(recipientId, userData, callback);
             });
         }
     }, function (object, error) {
@@ -308,12 +319,14 @@ function authentication(recipientId, callback) {
     });
 }
 
-function signup(facebookId, userData, callback) {
+function signUp(facebookId, userData, callback) {
     //1100195690052041
     if (userData) {
         var facebookUser = new ParseModels.User();
-        facebookUser.save(Object.assign(userData, { username: facebookId.toString(), password: facebookId.toString(), facebookId: facebookId }), {
+
+        facebookUser.signUp(Object.assign(userData, { username: facebookId.toString(), password: facebookId.toString(), facebookId: facebookId }), {
             success: function success(user) {
+                console.log('success sign up of User');
                 var consumer = new ParseModels.Consumer();
                 consumer.set('name', user.get('first_name') + " " + user.get('last_name'));
                 consumer.set('user', {
@@ -1584,32 +1597,50 @@ function renderCash(recipientId) {
 }
 
 function renderCreditCard(recipientId) {
-    var messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?",
-            "quick_replies": [{
-                "content_type": "text",
-                "title": "Si",
-                "payload": "RegisterCreditCard"
-            }, {
-                "content_type": "text",
-                "title": "No",
-                "payload": "CheckPayment"
-            }]
+    var creditCards = getData(recipientId, 'creditCards');
+    var consumer = getData(recipientId, 'consumer');
+
+    console.log('creditCards');
+    if (creditCards == undefined) {
+        if (!_.isEmpty(consumer.user)) {
+            store.dispatch(Actions.loadUserCreditCards(recipientId, consumer.user)).then(function () {
+                creditCards = getData(recipientId, 'creditCards');
+
+                if (creditCards.length == 0) {
+                    var messageData = {
+                        recipient: {
+                            id: recipientId
+                        },
+                        message: {
+                            "text": "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?",
+                            "quick_replies": [{
+                                "content_type": "text",
+                                "title": "Si",
+                                "payload": "RegisterCreditCard"
+                            }, {
+                                "content_type": "text",
+                                "title": "No",
+                                "payload": "CheckPayment"
+                            }]
+                        }
+                    };
+
+                    saveCart(recipientId);
+
+                    bot.sendTypingOff(recipientId);
+                    bot.callSendAPI(messageData);
+                } else {
+                    sendRegisteredCreditCards(recipientId);
+                }
+            });
         }
-    };
-
-    saveCart(recipientId);
-
-    bot.sendTypingOff(recipientId);
-    bot.callSendAPI(messageData);
+    }
 }
 
 function registerCreditCard(recipientId) {
     bot.sendTypingOn(recipientId);
+    var consumer = getData(recipientId, 'consumer');
+
     var messageData = {
         recipient: {
             id: recipientId
@@ -1622,7 +1653,7 @@ function registerCreditCard(recipientId) {
                     "text": "Por razones de seguidad te vamos a redireccionar a una página web segura para que agregues tu tarjeta y finalizaremos tu pedido.\n\nEstas de acuerdo?",
                     "buttons": [{
                         "type": "web_url",
-                        "url": "https://bot.inoutdelivery.com/creditcard",
+                        "url": SERVER_URL + "creditcard?id=" + consumer.objectId,
                         "title": "Si"
                     }, {
                         "type": "postback",
@@ -1634,7 +1665,7 @@ function registerCreditCard(recipientId) {
         }
     };
     bot.sendTypingOff(recipientId);
-    bot.callSendAPI(messageData, confirmRegisterCreditCard);
+    bot.callSendAPI(messageData);
 }
 
 function cancelRegisterCreditCard(recipientId) {
@@ -1648,26 +1679,68 @@ function cancelRegisterCreditCard(recipientId) {
         }
     };
     bot.sendTypingOff(recipientId);
-    bot.callSendAPI(messageData, checkout);
+    bot.callSendAPI(messageData, checkPayment);
 }
 
-function confirmRegisterCreditCard(recipientId) {
+function sendRegisteredCreditCards(recipientId) {
     bot.sendTypingOn(recipientId);
+    var consumer = getData(recipientId, 'consumer');
+
+    if (!_.isEmpty(consumer.user)) {
+        store.dispatch(Actions.loadUserCreditCards(recipientId, consumer.user)).then(function () {
+            renderRegisteredCreditCards(recipientId);
+        });
+    }
+}
+
+function renderRegisteredCreditCards(recipientId) {
+    var creditCards = getData(recipientId, 'creditCards');
+    var quick_replies = [];
+
+    quick_replies.push({
+        "content_type": "text",
+        "title": "Agregar tarjeta",
+        "payload": "RegisterCreditCard"
+    });
+
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
+
+    try {
+        for (var _iterator5 = creditCards[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            var card = _step5.value;
+
+            if (quick_replies.length < bot.limit) {
+                quick_replies.push({
+                    "content_type": "text",
+                    "title": card.type + " xxxx-" + card.lastFour,
+                    "payload": "PayWithCreditCard-" + card.lastFour
+                });
+            }
+        }
+    } catch (err) {
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
+            }
+        } finally {
+            if (_didIteratorError5) {
+                throw _iteratorError5;
+            }
+        }
+    }
+
     var messageData = {
         recipient: {
             id: recipientId
         },
         message: {
             "text": "Con cual tarjeta quieres pagar?",
-            "quick_replies": [{
-                "content_type": "text",
-                "title": "xxxx-xxxx-xxxx-9876",
-                "payload": "PayWithCreditCard-9876"
-            }, {
-                "content_type": "text",
-                "title": "Agregar tarjeta",
-                "payload": "RegisterCreditCard"
-            }]
+            "quick_replies": quick_replies
         }
     };
     bot.sendTypingOff(recipientId);
@@ -1897,6 +1970,11 @@ function splitSearchResult(products, index) {
     });
     return elements;
 }
+
+bot.app.post('/CreditCardRegistered', function (req, res) {
+    var data = req.body;
+    sendRegisteredCreditCards(data.recipientId);
+});
 
 var paymentTypes = new Map();
 

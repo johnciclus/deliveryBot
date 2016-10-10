@@ -13,6 +13,7 @@ exports.getConsumerAndAddresses = getConsumerAndAddresses;
 exports.addressSaved = addressSaved;
 exports.hideAddressForm = hideAddressForm;
 exports.addressSaveError = addressSaveError;
+exports.loadUserCreditCards = loadUserCreditCards;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
 exports.addProductToCart = addProductToCart;
@@ -253,6 +254,18 @@ function saveConsumerAddress(consumerAddress, dispatch, pendingOrder, cart) {
   }).fail(function (e) {
     dispatch(addressSaveError());
   });
+}
+
+function loadUserCreditCards(recipientId, user) {
+  if (user == null) return;
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.CreditCard).equalTo('user', user).find().then(function (creditCards) {
+      dispatch({ type: types.USER_CREDITCARDS_LOADED, data: { recipientId: recipientId, creditCards: creditCards } });
+    }).fail(function (error) {
+      console.log('Error ' + error);
+      //TODO dispatch action with error
+    });
+  };
 }
 
 /**

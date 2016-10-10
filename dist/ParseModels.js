@@ -13,6 +13,7 @@ var Cart = Parse.Object.extend('Cart');
 var Consumer = Parse.Object.extend('Consumer');
 var ConsumerAddress = Parse.Object.extend('ConsumerAddress');
 var CustomerPointSale = Parse.Object.extend('CustomerPointSale');
+var CreditCard = Parse.Object.extend('CreditCard');
 var Modifier = Parse.Object.extend('Modifier');
 var ModifierGroup = Parse.Object.extend('ModifierGroup');
 var ModifierItem = Parse.Object.extend('ModifierItem');
@@ -33,6 +34,7 @@ module.exports = {
     ConsumerAddress: ConsumerAddress,
     Customer: Customer,
     CustomerPointSale: CustomerPointSale,
+    CreditCard: CreditCard,
     Modifier: Modifier,
     ModifierGroup: ModifierGroup,
     ModifierItem: ModifierItem,

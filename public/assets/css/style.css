@@ -1,0 +1,96 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto:400,900,700,500);
+body {
+  padding: 40px 0px;
+  background-color: #f2f2f2;
+  margin: 0 auto;
+  width: 400px;
+}
+.body-text {
+  padding-bottom: 40px;
+  font-family: "Roboto";
+  font-size: .9em;
+  color: #fff;
+}
+.form-container {
+  width: 100%;
+}
+.card-wrapper {
+  background-color: #6FB7E9;
+  width: 100%;
+  padding: 10px 0px;
+}
+.personal-information {
+  background-color: #00a6ea;
+  color: #fff;
+  padding: 1px 0px;
+  text-align: center;
+}
+
+.important-message {
+    background-color: #e39c14;
+    color: #fff;
+    padding: 1px 0px;
+    text-align: center;
+}
+
+
+h1 {
+  font-size: 1.3em;
+  font-family: "Roboto"
+}
+input {
+  margin: 1px 0px;
+}
+input[type="text"]{
+  display: block;
+  height: 40px;
+  padding-left: 10px;
+  border: none;
+}
+input[type="email"]{
+  display: block;
+  height: 40px;
+  padding-left: 10px;
+  border: none;
+}
+input[type="submit"]{
+  display: block;
+  height: 60px;
+  border: none;
+  background-color: #e39c14;
+  color: #fff;
+  margin-top: 2px;
+  curson: pointer;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+input[type="submit"]:hover{
+  background-color: #6FB7E9;
+  transition: 0.3s ease;
+}
+.column-left {
+  width: 47.4%;
+  float: left;
+  margin-bottom: 2px;
+}
+.column-right {
+  width: 47%;
+  float: right;
+  margin-bottom: 2px;
+}
+
+.input-field {
+  width: 100%;
+  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+  box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+.input-button {
+    width: 100%;
+}
+
+.clear{
+    clear: both
+}

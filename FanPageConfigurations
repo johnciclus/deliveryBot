@@ -5,7 +5,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
   "greeting":{
     "text":"Bienvenido a OXXO!, ahora puedes hacer tus pedidos o comunicarte con un asesor sin dejar el messenger. Por favor dá click en el botón Empezar"
   }
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBANLa7F0yA3K9UGEHxh0T77ET5fyu9FoUXhT5PlAmqkigg9NnPTildPAC2GZCL9BBWOfjW40dpo5TQnZACSFZAdnDZAfim6bjvZAscG5MiRtsjxI36dCkF7U99iZCuUWj1M9csjPvxKuXsvbsQtBditZBs0eehmpmgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
 
 * Set Started Button *
 
@@ -17,7 +17,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "payload":"Greeting"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBANLa7F0yA3K9UGEHxh0T77ET5fyu9FoUXhT5PlAmqkigg9NnPTildPAC2GZCL9BBWOfjW40dpo5TQnZACSFZAdnDZAfim6bjvZAscG5MiRtsjxI36dCkF7U99iZCuUWj1M9csjPvxKuXsvbsQtBditZBs0eehmpmgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
 
 
 * Set Persistent Menu * 
@@ -42,7 +42,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "url":"http://www.oxxo.com/"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAKPtKh7pWsHDFYmZCnGcZBHYdWLE9KqwD6AEyuDT2vuxJNT4xYIjsaglegf4FWtNNBePXeZBH35OYQrJgD8amRYe0U0OFxLCZCHIDlZBBcNo4PVLrAgEPZCKLVzlTXNBqedWZBQjk8ekZCkfh5QfCu8P5JfQOXdWlAZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
 
 
 * Delete Persistent Menu *
