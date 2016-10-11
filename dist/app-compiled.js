@@ -1802,16 +1802,16 @@ function cancelRegisterCreditCard(recipientId) {
 function sendRegisteredCreditCards(recipientId) {
     bot.sendTypingOn(recipientId);
     var consumer = getData(recipientId, 'consumer');
-    var creditCards = getData(recipientId, 'creditCards');
 
-    if (creditCards.length == 0) {
-        saveCart(recipientId);
-        renderNoRegisteredCreditCards(recipientId);
-    } else {
-        store.dispatch(Actions.loadUserCreditCards(recipientId, consumer.user)).then(function () {
+    store.dispatch(Actions.loadUserCreditCards(recipientId, consumer.user)).then(function () {
+        var creditCards = getData(recipientId, 'creditCards');
+        if (creditCards.length == 0) {
+            //saveCart(recipientId);
+            renderNoRegisteredCreditCards(recipientId);
+        } else {
             renderRegisteredCreditCards(recipientId);
-        });
-    }
+        }
+    });
 }
 
 function renderNoRegisteredCreditCards(recipientId) {
