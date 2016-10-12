@@ -193,6 +193,7 @@ function receivedMessage(event) {
         var existRule = false;
         //console.log(senderID);
         //console.log(typeof senderID);
+
         if (!_.isEmpty(userListeners)) {
             if (!buffer[senderID]) {
                 buffer[senderID] = {};
@@ -200,10 +201,10 @@ function receivedMessage(event) {
             var keys = Object.keys(userListeners);
             var key = keys.shift();
 
-            console.log('User Listeners');
+            //console.log('User Listeners');
 
             while (key) {
-                console.log(key);
+                //console.log(key);
                 if (userListeners[key].type == 'text') {
                     buffer[senderID][key] = messageText;
                     userListeners[key].callback(senderID);

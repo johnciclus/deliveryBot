@@ -134,6 +134,8 @@ var REDIRECT_URI = process.env.REDIRECT_URI ? process.env.REDIRECT_URI : _config
 
 var BUSINESS_ID = process.env.BUSINESS_ID ? process.env.BUSINESS_ID : _config2.default.get('BUSINESS_ID');
 
+var GOOGLE_MAPS_URL = process.env.GOOGLE_MAPS_URL ? process.env.GOOGLE_MAPS_URL : _config2.default.get('GOOGLE_MAPS_URL');
+
 var GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_KEY ? process.env.GOOGLE_MAPS_KEY : _config2.default.get('GOOGLE_MAPS_KEY');
 
 _fb2.default.options({
@@ -158,6 +160,7 @@ bot.payloadRules.set('SetAddress', setAddress);
 bot.payloadRules.set('NewAddress', newAddress);
 bot.payloadRules.set('SetLocation', setLocation);
 bot.payloadRules.set('ConfirmAddress', confirmAddress);
+bot.payloadRules.set('SetAddressComplement', setAddressComplement);
 bot.payloadRules.set('SendCategories', sendCategories);
 bot.payloadRules.set('SendProducts', sendProducts);
 bot.payloadRules.set('AddProduct', addProduct);
@@ -387,7 +390,7 @@ function signUp(facebookId, userData, callback) {
                 });
                 consumer.save(undefined, {
                     success: function success(consumer) {
-                        sendRegisterFacebookUser(facebookId);
+                        //sendRegisterFacebookUser(facebookId);
                         callback(user);
                     },
                     error: function error(user, _error) {
@@ -431,18 +434,6 @@ function sendMenu(recipientId) {
                     renderMenu(recipientId);
                 });
             });
-        } else {
-            var messageData = {
-                recipient: {
-                    id: recipientId
-                },
-                message: {
-                    "text": "Usuario no registrado en el sistema, informacion obtenida: first_name, last_name, locale, timezone, gender"
-                }
-            };
-
-            bot.sendTypingOff(recipientId);
-            bot.callSendAPI(messageData);
         }
     });
 }
@@ -463,7 +454,7 @@ function renderMenu(recipientId) {
                     template_type: "generic",
                     //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
                     elements: [{
-                        "title": "Hola " + consumer.name + ", Bienvenido a OXXO. ",
+                        "title": "Hola " + consumer.name + ", Bienvenido a " + customer.name,
                         "subtitle": "Aquí puedes pedir un domicilio, escribe o selecciona alguna de las opciones:",
                         "image_url": image_url,
                         "buttons": [{
@@ -519,11 +510,11 @@ function renderAddressMenu(recipientId) {
 
     //"title": "A cual dirección vas hacer tu pedido?",
     //"subtitle": "Puedes escoger entre tus direcciones guardadas o agregar una nueva dirección",
-
     renderAddressMenuTitle(recipientId, function () {
         elements.push({
             "title": "Nueva dirección",
             "subtitle": "Puedes agregar una nueva dirección",
+            "image_url": SERVER_URL + "assets/new_address_blue.jpg",
             "buttons": [{
                 "type": "postback",
                 "title": "Nueva dirección",
@@ -542,8 +533,8 @@ function renderAddressMenu(recipientId) {
                 if (elements.length < bot.limit) {
                     elements.push({
                         "title": address.name.capitalizeFirstLetter(),
-                        "subtitle": address.address,
-                        "image_url": "https://maps.googleapis.com/maps/api/staticmap?center=" + address.location.lat + "," + address.location.lng + "&zoom=16&size=400x400&markers=color:red%7C" + address.location.lat + "," + address.location.lng + "&key=" + GOOGLE_MAPS_KEY,
+                        "subtitle": address.address + ", " + address.description + ", " + address.city + ", " + address.state,
+                        "image_url": GOOGLE_MAPS_URL + "?center=" + address.location.lat + "," + address.location.lng + "&zoom=16&size=400x400&markers=color:red%7C" + address.location.lat + "," + address.location.lng + "&key=" + GOOGLE_MAPS_KEY,
                         "buttons": [{
                             "type": "postback",
                             "title": address.name.capitalizeFirstLetter(),
@@ -592,7 +583,7 @@ function renderAddressMenuTitle(recipientId, callback) {
             id: recipientId
         },
         message: {
-            "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre tus direcciones guardadas o agregar una nueva dirección"
+            "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o tus direcciones guardadas"
         }
     };
 
@@ -604,6 +595,13 @@ function setAddress(recipientId, id) {
     bot.sendTypingOn(recipientId);
 
     store.dispatch(Actions.setAddress(recipientId, id)).then(function () {
+        var address = getData(recipientId, 'address');
+        console.log();
+        Parse.Cloud.run('isInsideCoverage', { lat: address.location.lat, lng: address.location.lng }).then(function (result) {}, function (error) {
+            console.log('error');
+            console.log(error);
+        });
+
         renderAddressConfirmation(recipientId);
     });
 }
@@ -634,12 +632,12 @@ function newAddress(recipientId) {
         "payload": "SetLocation"
     },*/
 
-    bot.setListener(recipientId, 'address', 'text', writeAddressCheck);
+    bot.setListener(recipientId, 'address', 'text', addressCheck);
     bot.setListener(recipientId, 'location', 'attachment', setLocationCheck);
     bot.callSendAPI(messageData);
 }
 
-function writeAddressComplement(recipientId) {
+function setAddressComplement(recipientId) {
     bot.sendTypingOff(recipientId);
     var messageData = {
         recipient: {
@@ -649,8 +647,7 @@ function writeAddressComplement(recipientId) {
             "text": "Por favor escribe el complemento de tu dirección actual. \n\nEjemplo: Oficina 1068"
         }
     };
-
-    bot.setListener(recipientId, 'complement', writeAddressComplete);
+    bot.setListener(recipientId, 'complement', 'text', confirmAddress);
     bot.callSendAPI(messageData);
 }
 
@@ -678,7 +675,7 @@ function sendMap(recipientId, callback) {
             "attachment": {
                 "type": "image",
                 "payload": {
-                    "url": "https://maps.googleapis.com/maps/api/staticmap?center=" + userBuffer.location.lat + "," + userBuffer.location.lng + "&zoom=16&size=400x400&markers=color:red%7C" + userBuffer.location.lat + "," + userBuffer.location.lng + "&key=" + GOOGLE_MAPS_KEY
+                    "url": GOOGLE_MAPS_URL + "?center=" + userBuffer.location.lat + "," + userBuffer.location.lng + "&zoom=16&size=400x400&markers=color:red%7C" + userBuffer.location.lat + "," + userBuffer.location.lng + "&key=" + GOOGLE_MAPS_KEY
                 }
             }
         }
@@ -687,7 +684,7 @@ function sendMap(recipientId, callback) {
     bot.callSendAPI(messageData, callback);
 }
 
-function writeAddressCheck(recipientId) {
+function addressCheck(recipientId) {
     bot.sendTypingOff(recipientId);
     var userBuffer = bot.buffer[recipientId];
 
@@ -706,14 +703,19 @@ function writeAddressCheck(recipientId) {
                 for (var _iterator2 = result.address_components[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                     var component = _step2.value;
 
-                    if (component.types.includes('locality')) {
+                    if (component.types.includes('route')) {
+                        userBuffer.route = component.long_name;
+                    } else if (component.types.includes('street_number')) {
+                        userBuffer.street_number = component.short_name;
+                    } else if (component.types.includes('locality')) {
                         userBuffer.locality = component.short_name;
                     } else if (component.types.includes('administrative_area_level_1')) {
                         userBuffer.state = component.short_name;
                     } else if (component.types.includes('administrative_area_level_2')) {
                         userBuffer.administrative_area = component.short_name;
                     } else if (component.types.includes('country')) {
-                        userBuffer.country = component.short_name;
+                        userBuffer.country = component.long_name;
+                        userBuffer.country_code = component.short_name;
                     } else if (component.types.includes('postal_code')) {
                         userBuffer.postal_code = component.short_name;
                     }
@@ -744,7 +746,7 @@ function writeAddressCheck(recipientId) {
                             "quick_replies": [{
                                 "content_type": "text",
                                 "title": "Si",
-                                "payload": "ConfirmAddress"
+                                "payload": "SetAddressComplement"
                             }, {
                                 "content_type": "text",
                                 "title": "No",
@@ -766,11 +768,13 @@ function writeAddressComplete(recipientId) {
     var consumer = getData(recipientId, 'consumer');
     var userBuffer = bot.buffer[recipientId];
 
+    console.log(userBuffer);
+
     var location = new Parse.GeoPoint({ latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng) });
 
     var consumerAddress = new ParseModels.ConsumerAddress();
     consumerAddress.set('name', userBuffer['address-name']);
-    consumerAddress.set('address', userBuffer.address);
+    consumerAddress.set('address', userBuffer.route + " # " + userBuffer.street_number);
     consumerAddress.set('consumer', {
         __type: "Pointer",
         className: "Consumer",
@@ -778,18 +782,32 @@ function writeAddressComplete(recipientId) {
     });
     consumerAddress.set('location', location);
     consumerAddress.set('city', userBuffer.locality);
-    consumerAddress.set('countryCode', userBuffer.country);
+    consumerAddress.set('country', userBuffer.country);
+    consumerAddress.set('countryCode', userBuffer.country_code);
     consumerAddress.set('postalCode', userBuffer.postal_code);
     consumerAddress.set('state', userBuffer.state);
+    consumerAddress.set('description', userBuffer.complement);
 
     consumerAddress.save(undefined, {
         success: function success(result) {
 
             delete userBuffer.address;
             delete userBuffer.location;
+            delete userBuffer.complement;
             delete userBuffer['address-name'];
 
-            //console.log(userBuffer);
+            var messageData = {
+                recipient: {
+                    id: recipientId
+                },
+                message: {
+                    "text": "La dirección ha sido almacenada."
+                }
+            };
+
+            bot.callSendAPI(messageData, function () {
+                setAddress(recipientId, result.id);
+            });
         },
         error: function error(user, _error3) {
             // Execute any logic that should take place if the save fails.
@@ -797,30 +815,17 @@ function writeAddressComplete(recipientId) {
             console.log('Failed to create new object, with error code: ' + _error3.message);
         }
     });
-
-    var messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "La dirección ha sido almacenada."
-        }
-    };
-
-    bot.callSendAPI(messageData, sendAddressMenu);
 }
 
 function confirmAddress(recipientId) {
     bot.sendTypingOff(recipientId);
 
-    var userBuffer = bot.buffer[recipientId];
-
     var messageData = {
         recipient: {
             id: recipientId
         },
         message: {
-            "text": "Por favor coloca un nombre a esta dirección. \n\nEjemplo: casa, apartamento o oficina"
+            "text": "Por favor coloca un nombre a esta dirección para guardarla. \n\nEjemplo: casa, apartamento o oficina"
         }
     };
     bot.setListener(recipientId, 'address-name', 'text', writeAddressComplete);
@@ -1039,7 +1044,10 @@ function sendCategories(recipientId, index) {
 
         bot.sendTypingOff(recipientId);
         bot.callSendAPI(messageData);
-    }, function (error) {});
+    }, function (error) {
+        console.log('error');
+        console.log(error);
+    });
 }
 
 function splitCategories(categories, index) {
@@ -1101,7 +1109,7 @@ function sendProducts(recipientId, category, proIdx) {
     }
 
     Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, category: category }).then(function (result) {
-        var elements = splitProducts(result.products, proIdx);
+        var elements = splitProducts(recipientId, result.products, proIdx);
         var idx = Object.keys(result.products).length;
         var buttons = [];
         var catIni = (proIdx + 1) * bot.limit;
@@ -1143,10 +1151,20 @@ function sendProducts(recipientId, category, proIdx) {
 
         bot.sendTypingOff(recipientId);
         bot.callSendAPI(messageData);
-    }, function (error) {});
+    }, function (error) {
+        console.log('error');
+        console.log(error);
+    });
 }
 
-function splitProducts(products, proIdx) {
+function splitProducts(recipientId, products, proIdx) {
+    var customer = getData(recipientId, 'customer');
+    var customer_image_url;
+
+    if (typeof customer != 'undefined') {
+        customer_image_url = customer.image.url;
+    }
+
     var idx = 0;
     var elements = [];
 
@@ -1154,7 +1172,7 @@ function splitProducts(products, proIdx) {
         if (item && item.get('name')) {
             if (idx >= proIdx * bot.limit && idx < (proIdx + 1) * bot.limit) {
                 var image = item.get('image');
-                var image_url = "http://pro.parse.inoutdelivery.com/parse/files/hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ/2671158f9c1cb43cac1423101b6e451b_image.txt";
+                var image_url = customer_image_url;
                 if (image) {
                     image_url = image.url();
                 }
@@ -1494,6 +1512,12 @@ function sendShoppingCart(recipientId) {
     var consumer = getData(recipientId, 'consumer');
     var cart = getData(recipientId, 'cart');
     var address = getData(recipientId, 'address');
+    var customer = getData(recipientId, 'customer');
+    var customer_image_url;
+
+    if (typeof customer != 'undefined') {
+        customer_image_url = customer.image.url;
+    }
 
     if (cart == undefined) {
         cart = createCart(recipientId);
@@ -1525,7 +1549,7 @@ function sendShoppingCart(recipientId) {
             product.get(key, {
                 success: function success(item) {
                     image = item.get('image');
-                    image_url = "http://pro.parse.inoutdelivery.com/parse/files/hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ/2671158f9c1cb43cac1423101b6e451b_image.txt";
+                    image_url = customer_image_url;
                     if (image) {
                         image_url = image.url();
                     }
@@ -1569,7 +1593,7 @@ function renderShoppingCartEmpty(recipientId) {
 }
 
 function renderShoppingCart(recipientId, elements, total) {
-    var receiptId = "rder" + Math.floor(Math.random() * 1000);
+    var receiptId = "Order" + Math.floor(Math.random() * 1000);
     var address = getData(recipientId, 'address');
     var payment_method = getData(recipientId, 'payment_method');
 
@@ -1661,13 +1685,13 @@ function renderCheckPayment(recipientId) {
     var paymentMethods = getData(recipientId, 'paymentMethods');
     var quick_replies = [];
 
-    //console.log(paymentMethods);
+    console.log(paymentMethods);
 
     for (var i in paymentMethods) {
 
         quick_replies.push({
             "content_type": "text",
-            "title": paymentMethods[i].name,
+            "title": paymentMethods[i].name.substring(0, 20),
             "payload": "Checkout-" + paymentMethods[i].objectId
         });
     }
@@ -1688,14 +1712,14 @@ function renderCheckPayment(recipientId) {
 
 function checkout(recipientId, id) {
     bot.sendTypingOn(recipientId);
-    //console.log('checkout');
-    //console.log(id);
+    console.log('checkout');
+    console.log(id);
     store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(function () {
 
         var paymentMethod = getData(recipientId, 'paymentMethod');
-        //console.log(paymentMethod);
+        console.log(paymentMethod);
         var paymentFunction = paymentTypes.get(paymentMethod.method.objectId);
-        //console.log(paymentFunction);
+        console.log(paymentFunction);
 
         paymentFunction(recipientId);
         /*

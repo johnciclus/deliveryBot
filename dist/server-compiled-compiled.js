@@ -24,7 +24,9 @@ var _request = require('request');
 
 var _request2 = _interopRequireDefault(_request);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { default: obj };
+}
 
 var PARSE_APP_ID = process.env.PARSE_APP_ID ? process.env.PARSE_APP_ID : _config2.default.get('PARSE_APP_ID');
 
@@ -105,3 +107,7 @@ app.post('/registerCreditCard', function (req, res) {
 });
 
 module.exports = { app: app, Parse: _node2.default };
+
+//# sourceMappingURL=server-compiled.js.map
+
+//# sourceMappingURL=server-compiled-compiled.js.map

@@ -7,6 +7,14 @@ curl -X POST -H "Content-Type: application/json" -d '{
   }
 }' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
 
+
+* Delete Greeting *
+
+curl -X DELETE -H "Content-Type: application/json" -d '{
+  "setting_type":"greeting"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
+
+
 * Set Started Button *
 
 curl -X POST -H "Content-Type: application/json" -d '{
@@ -18,6 +26,14 @@ curl -X POST -H "Content-Type: application/json" -d '{
     }
   ]
 }' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
+
+
+* Delete Started Button *
+
+curl -X DELETE -H "Content-Type: application/json" -d '{
+  "setting_type":"call_to_actions",
+  "thread_state":"new_thread"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
 
 
 * Set Persistent Menu * 
@@ -50,4 +66,4 @@ curl -X POST -H "Content-Type: application/json" -d '{
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BABWUHIDsHZCxp0FOZAtJOdvZBwKn5s33fe4DZCLe7ZAXRCInS94yIYZAk9ZCGjVp1Uo7SSYPAkPAOEZBhjXlcQ0mt9PE412tFOMd3MglZAKC7TyGi3rA4tDQZCHyvxC0Lt3OC4sGxgVP0hJPbY4qdLQMmblhtHP0IjkwZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
