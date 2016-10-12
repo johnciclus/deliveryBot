@@ -3,16 +3,16 @@
 curl -X POST -H "Content-Type: application/json" -d '{
   "setting_type":"greeting",
   "greeting":{
-    "text":"Bienvenido a OXXO!, ahora puedes hacer tus pedidos o comunicarte con un asesor sin dejar el messenger. Por favor dá click en el botón Empezar"
+    "text":"Bienvenido a Sandwich Or Salad!, ahora puedes hacer tus pedidos o comunicarte sin dejar el messenger. Por favor dá click en el botón Empezar"
   }
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAF2rhSzYuZB13P2KK1G3imYWNZCeZAyTI90aCrPp3NBVnPFXUSfzysirU20b6uCzQJFdgJCgOUvFseZAbvdH5AniZClPEOjIIPxHZBRV0uCrVpeWJjLy2GZA6pPUCzgfClJkZBRNGwU3AbQFv84l0B1bf3GvBPYm1QZDZD"
 
 
 * Delete Greeting *
 
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"greeting"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAHhJh6N0SAZCjStQItRvUL3Ah53nYHDcW559wZAzeXbJbMImucmfsYkv6R5L9OLntDn9Uimv8vNzSFP1JdVoYU9B7KI4URaYlNBAZBLJk4SMo3CAxrULEZCDv918phGIPbvhRvCj7sH8Ax7qZCHAZB4MC7AKVgTwZDZD"
 
 
 * Set Started Button *
@@ -25,7 +25,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "payload":"Greeting"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAF2rhSzYuZB13P2KK1G3imYWNZCeZAyTI90aCrPp3NBVnPFXUSfzysirU20b6uCzQJFdgJCgOUvFseZAbvdH5AniZClPEOjIIPxHZBRV0uCrVpeWJjLy2GZA6pPUCzgfClJkZBRNGwU3AbQFv84l0B1bf3GvBPYm1QZDZD"
 
 
 * Delete Started Button *
@@ -33,7 +33,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"new_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAHhJh6N0SAZCjStQItRvUL3Ah53nYHDcW559wZAzeXbJbMImucmfsYkv6R5L9OLntDn9Uimv8vNzSFP1JdVoYU9B7KI4URaYlNBAZBLJk4SMo3CAxrULEZCDv918phGIPbvhRvCj7sH8Ax7qZCHAZB4MC7AKVgTwZDZD"
 
 
 * Set Persistent Menu * 
@@ -53,17 +53,26 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "payload":"SendShoppingCart"
     },
     {
-      "type":"web_url",
-      "title":"Oxxo Website",
-      "url":"http://www.oxxo.com/"
-    }
+      "type":"postback",
+      "title":"Mis ordenes",
+      "payload":"Orders"
+    },
+    {
+      "type":"postback",
+      "title":"Mi cuenta",
+      "payload":"MyAccount"
+    },
+    {
+      "type":"postback",
+      "title":"Ayuda",
+      "payload":"Help"
+    }	
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAGzxnRsXGW2NRMjYEZBufMR0boDBmHP4C4ZCTZCgiq5pSRwPGI4DZAMOdZBrxbBJZBryNURCIDdyN7cYkIIvSbjEJ9zGTxdgkn5CUsKdnfbIjkL5rm88D5hu3lMHyVT6nuQog4sCBZAi1zLaze3lwppCkzjumc0EAZDZD"
-
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAF2rhSzYuZB13P2KK1G3imYWNZCeZAyTI90aCrPp3NBVnPFXUSfzysirU20b6uCzQJFdgJCgOUvFseZAbvdH5AniZClPEOjIIPxHZBRV0uCrVpeWJjLy2GZA6pPUCzgfClJkZBRNGwU3AbQFv84l0B1bf3GvBPYm1QZDZD"
 
 * Delete Persistent Menu *
 
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAHhJh6N0SAZCjStQItRvUL3Ah53nYHDcW559wZAzeXbJbMImucmfsYkv6R5L9OLntDn9Uimv8vNzSFP1JdVoYU9B7KI4URaYlNBAZBLJk4SMo3CAxrULEZCDv918phGIPbvhRvCj7sH8Ax7qZCHAZB4MC7AKVgTwZDZD"

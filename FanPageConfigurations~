@@ -3,9 +3,17 @@
 curl -X POST -H "Content-Type: application/json" -d '{
   "setting_type":"greeting",
   "greeting":{
-    "text":"Bienvenido a OXXO!, ahora puedes hacer tus pedidos o comunicarte con un asesor sin dejar el messenger. Por favor dá click en el botón Empezar"
+    "text":"Bienvenido a Sandwich Or Salad!, ahora puedes hacer tus pedidos o comunicarte sin dejar el messenger. Por favor dá click en el botón Empezar"
   }
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAEZCXUHN8RkBAISiswtKzJ7SkALzbtiUhmeHHQ5ZAAOm1m3iZBopv61RhnaDH45ujaZCx9cAKjTl8crZAXabzCru2pglxsZCqcoPMbyuWoe1lTFZBLhc339u0fDx6BrRbKJ7BJW7lv014vZB8sj4pBAO9Qfw2dsQZCkJskwN3lWTUgZDZD"
+
+
+* Delete Greeting *
+
+curl -X DELETE -H "Content-Type: application/json" -d '{
+  "setting_type":"greeting"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
+
 
 * Set Started Button *
 
@@ -17,7 +25,15 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "payload":"Greeting"
     }
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BANRq04x4ipd6ZCc9XUbAISEEgq2YWxKa4MQ4hzLkORfoYemBSRbVa2UAsLtNi7ynHQUX5ZBKJr9TrsAi3bZCyogL5HeYxWKWSVUrUCKK6eQE4zMFEKnTSQpxuqvUrfAoMamDPZBHHt4WGUepmiuaf0VUTfFglgZDZD" 
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAEZCXUHN8RkBAISiswtKzJ7SkALzbtiUhmeHHQ5ZAAOm1m3iZBopv61RhnaDH45ujaZCx9cAKjTl8crZAXabzCru2pglxsZCqcoPMbyuWoe1lTFZBLhc339u0fDx6BrRbKJ7BJW7lv014vZB8sj4pBAO9Qfw2dsQZCkJskwN3lWTUgZDZD"
+
+
+* Delete Started Button *
+
+curl -X DELETE -H "Content-Type: application/json" -d '{
+  "setting_type":"call_to_actions",
+  "thread_state":"new_thread"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"
 
 
 * Set Persistent Menu * 
@@ -29,20 +45,30 @@ curl -X POST -H "Content-Type: application/json" -d '{
     {
       "type":"postback",
       "title":"Menu de productos",
-      "payload":"ListCategories-0"
+      "payload":"SendCategories-0"
     },
     {
       "type":"postback",
       "title":"Carrito",
-      "payload":"ShoppingCart"
+      "payload":"SendShoppingCart"
     },
     {
-      "type":"web_url",
-      "title":"Oxxo Website",
-      "url":"http://www.oxxo.com/"
-    }
+      "type":"postback",
+      "title":"Mis ordenes",
+      "payload":"Orders"
+    },
+    {
+      "type":"postback",
+      "title":"Mi cuenta",
+      "payload":"MyAccount"
+    },
+    {
+      "type":"postback",
+      "title":"Ayuda",
+      "payload":"Help"
+    }	
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAHX6GwLn5llP1UACKNpRAgzDQVYiuPPcOn1qAOwXRSyZA5qXUBMaCzSOlVdBeKla02IZCJMY713ZARXmPPLzXMysy0kOZCZCYP25kECX9cRmz9HVuQpkq8kFCxZCDDhYu6hoP0oX7jOBcrO7bDOMPED88E4nnELQZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAEZCXUHN8RkBAISiswtKzJ7SkALzbtiUhmeHHQ5ZAAOm1m3iZBopv61RhnaDH45ujaZCx9cAKjTl8crZAXabzCru2pglxsZCqcoPMbyuWoe1lTFZBLhc339u0fDx6BrRbKJ7BJW7lv014vZB8sj4pBAO9Qfw2dsQZCkJskwN3lWTUgZDZD"
 
 
 * Delete Persistent Menu *
@@ -50,4 +76,4 @@ curl -X POST -H "Content-Type: application/json" -d '{
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAHX6GwLn5llP1UACKNpRAgzDQVYiuPPcOn1qAOwXRSyZA5qXUBMaCzSOlVdBeKla02IZCJMY713ZARXmPPLzXMysy0kOZCZCYP25kECX9cRmz9HVuQpkq8kFCxZCDDhYu6hoP0oX7jOBcrO7bDOMPED88E4nnELQZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAH4Y8AUHr8BAFOqce2cLkr5xTZB2WfC11d8tZADhIFRA7cWvHD3KrZAPP5IdehZAnWJnYSuPfrcBUYT0Hosm6K49ewOR5KbqdNr4rhNoEP1vABqZAyrJZBpZCTpo0WueIIdYXKuNXpQZAXiWmbesykL17EU3SjGZA42LaWphZCUfKigZDZD"

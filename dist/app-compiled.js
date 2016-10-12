@@ -155,26 +155,30 @@ bot.rules.set('carrito', sendShoppingCart);
 bot.rules.set('cuenta', sendShoppingCart);
 
 bot.payloadRules.set('Greeting', sendMenu);
+
 bot.payloadRules.set('SendAddressMenu', sendAddressMenu);
-bot.payloadRules.set('SetAddress', setAddress);
 bot.payloadRules.set('NewAddress', newAddress);
-bot.payloadRules.set('SetLocation', setLocation);
-bot.payloadRules.set('ConfirmAddress', confirmAddress);
 bot.payloadRules.set('SetAddressComplement', setAddressComplement);
+bot.payloadRules.set('ConfirmAddress', confirmAddress);
+bot.payloadRules.set('SetAddress', setAddress);
+
 bot.payloadRules.set('SendCategories', sendCategories);
 bot.payloadRules.set('SendProducts', sendProducts);
 bot.payloadRules.set('AddProduct', addProduct);
+
 bot.payloadRules.set('Search', searchProducts);
 bot.payloadRules.set('SendShoppingCart', sendShoppingCart);
 bot.payloadRules.set('SendPurchaseOptions', sendPurchaseOptions);
+
 bot.payloadRules.set('Checkout', checkout);
 bot.payloadRules.set('CheckPayment', checkPayment);
+bot.payloadRules.set('CheckAddress', checkAddress);
+bot.payloadRules.set('CheckOrder', checkOrder);
 bot.payloadRules.set('RegisterCreditCard', registerCreditCard);
 bot.payloadRules.set('SendRegisteredCreditCards', sendRegisteredCreditCards);
 bot.payloadRules.set('CancelRegisterCreditCard', cancelRegisterCreditCard);
 bot.payloadRules.set('PayWithCreditCard', payWithCreditCard);
 bot.payloadRules.set('SetRating', setRating);
-//bot.payloadRules.set('WriteAddress', writeAddress);
 
 bot.defaultSearch = searchProducts;
 
@@ -302,6 +306,11 @@ var reducer = function reducer() {
                 return (0, _ParseUtils.extractParseAttributes)(a);
             });
             (0, _objectAssign2.default)(state.userData[data.recipientId], { creditCards: creditCards });
+            return _extends({}, state);
+
+        case types.SET_CUSTOMER_POINT_SALE:
+            var pointSale = (0, _ParseUtils.extractParseAttributes)(data.pointSale);
+            (0, _objectAssign2.default)(state.userData[data.recipientId], { pointSale: pointSale });
             return _extends({}, state);
 
         case types.RENDER_MENU:
@@ -583,27 +592,12 @@ function renderAddressMenuTitle(recipientId, callback) {
             id: recipientId
         },
         message: {
-            "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o tus direcciones guardadas"
+            "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o seleccionar una de tus direcciones guardadas"
         }
     };
 
     bot.sendTypingOff(recipientId);
     bot.callSendAPI(messageData, callback);
-}
-
-function setAddress(recipientId, id) {
-    bot.sendTypingOn(recipientId);
-
-    store.dispatch(Actions.setAddress(recipientId, id)).then(function () {
-        var address = getData(recipientId, 'address');
-        console.log();
-        Parse.Cloud.run('isInsideCoverage', { lat: address.location.lat, lng: address.location.lng }).then(function (result) {}, function (error) {
-            console.log('error');
-            console.log(error);
-        });
-
-        renderAddressConfirmation(recipientId);
-    });
 }
 
 function newAddress(recipientId) {
@@ -614,23 +608,11 @@ function newAddress(recipientId) {
         },
         message: {
             "text": "Puedes escribir o compartir tu ubicación actual?\n\nEjemplo: Calle 67 #52-20, Medellín",
-            "quick_replies": [
-            /*{
-                "content_type": "text",
-                "title": "Escribir dirección",
-                "payload": "WriteAddress"
-            },*/
-            {
+            "quick_replies": [{
                 "content_type": "location"
             }]
         }
     };
-    /*
-    {
-        "content_type": "text",
-        "title": "Compartir ubicación",
-        "payload": "SetLocation"
-    },*/
 
     bot.setListener(recipientId, 'address', 'text', addressCheck);
     bot.setListener(recipientId, 'location', 'attachment', setLocationCheck);
@@ -832,22 +814,37 @@ function confirmAddress(recipientId) {
     bot.callSendAPI(messageData);
 }
 
-function setLocation(recipientId) {
+function setEmail(recipientId) {
     bot.sendTypingOff(recipientId);
     var messageData = {
         recipient: {
             id: recipientId
         },
         message: {
-            "text": "Por favor confirma el envio de tu dirección actual",
-            "quick_replies": [{
-                "content_type": "location"
-            }]
+            "text": "Por favor escribe tu email:"
         }
     };
-    bot.setListener(recipientId, 'location', 'text', setLocationCheck);
+    bot.setListener(recipientId, 'email', 'text', setEmailCheck);
     bot.callSendAPI(messageData);
 }
+
+function setEmailCheck(recipientId) {}
+
+function setTelephone(recipientId) {
+    bot.sendTypingOff(recipientId);
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "Por favor escribe tu número telefónico:"
+        }
+    };
+    bot.setListener(recipientId, 'telephone', 'text', setTelephoneCheck);
+    bot.callSendAPI(messageData);
+}
+
+function setTelephoneCheck(recipientId) {}
 
 function setLocationCheck(recipientId) {
     bot.sendTypingOff(recipientId);
@@ -922,50 +919,65 @@ function setLocationCheck(recipientId) {
             console.log('Geocode not found');
         }
     });
+}
 
-    /*
-    geocoder.geocode(userBuffer.address, (error, data) =>{
-        if(!error && data.status == 'OK'){
-            let result = data.results[0];
-             userBuffer.address = result.formatted_address;
-            userBuffer.location = result.geometry.location;
-             console.log(userBuffer)
-             sendMapMessage(recipientId, () => {
-                sendMap(recipientId, () => {
-                    var messageData = {
-                        recipient: {
-                            id: recipientId
-                        },
-                        message: {
-                            "text": "Es correcta?",
-                            "quick_replies":[
-                                {
-                                    "content_type": "text",
-                                    "title": "Si",
-                                    "payload": "ConfirmAddress"
-                                },
-                                {
-                                    "content_type": "text",
-                                    "title": "No",
-                                    "payload": "WriteAddress"
-                                }
-                            ]
-                        }
-                    };
-                    bot.callSendAPI(messageData);
-                });
+function setAddress(recipientId, id) {
+    bot.sendTypingOn(recipientId);
+
+    store.dispatch(Actions.setAddress(recipientId, id)).then(function () {
+        var address = getData(recipientId, 'address');
+
+        Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, lat: address.location.lat, lng: address.location.lng }).then(function (result) {
+            var pointSale = result.pointSale;
+
+            store.dispatch(Actions.setCustomerPointSale(recipientId, pointSale.id)).then(function () {
+                renderAddressConfirmation(recipientId);
             });
+        }, function (error) {
+            if (error.code == '141') {
+                renderAddressOutOfCoverage(recipientId);
+            } else {
+                console.log('error');
+                console.log(error);
+            }
+        });
+        /*
+        Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(
+            function(result){
+                var pointSale = result.pointSale
+                console.log('\nPoint Sale');
+                console.log(pointSale);
+                 Parse.Cloud.run('isInsideCoverage', {lat: address.location.lat, lng: address.location.lng, pointSale: pointSale.id } ).then(
+                    function(result){
+                        console.log(result);
+                    },
+                    function(error) {
+                        console.log('error');
+                        console.log(error);
+                    });
+            },
+            function(error) {
+                console.log('error');
+                console.log(error);
+            });
+            */
+    });
+}
+
+function renderAddressOutOfCoverage(recipientId) {
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección"
         }
-        else{
-            console.log('Geocode not found');
-            console.log(error);
-        }
-     });
-    */
+    };
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData, sendAddressMenu);
 }
 
 function renderAddressConfirmation(recipientId) {
-
     var messageData = {
         recipient: {
             id: recipientId
@@ -1399,6 +1411,7 @@ function saveOrder(recipientId) {
     var cart = getData(recipientId, 'cart');
     var address = getData(recipientId, 'address');
     var paymentMethod = getData(recipientId, 'paymentMethod');
+    var pointSale = getData(recipientId, 'pointSale');
     var state0 = orderStates.get('HUIPd800xH');
     var total = 0;
 
@@ -1409,6 +1422,7 @@ function saveOrder(recipientId) {
     console.log(address);
     console.log(state0);
     console.log(cart);
+    console.log(pointSale.objectId);
 
     cart.items.forEach(function (value, key) {
         console.log(value);
@@ -1417,7 +1431,7 @@ function saveOrder(recipientId) {
 
     order.set('consumer', { __type: 'Pointer', className: 'Consumer', objectId: consumer.objectId });
     order.set('consumerAddress', { __type: 'Pointer', className: 'ConsumerAddress', objectId: address.objectId });
-    order.set('pointSale', { __type: 'Pointer', className: 'CustomerPointSale', objectId: 'fAAa91nJw0' });
+    order.set('pointSale', { __type: 'Pointer', className: 'CustomerPointSale', objectId: pointSale.objectId });
     order.set('state', state0);
     order.set('items', cart.itemsPointers);
     order.set('deliveryCost', 10000);
@@ -1508,7 +1522,6 @@ function sendPurchaseOptions(recipientId) {
 function sendShoppingCart(recipientId) {
     // Generate a random receipt ID as the API requires a unique ID
     var Product = Parse.Object.extend("Product");
-    var userData = getData(recipientId);
     var consumer = getData(recipientId, 'consumer');
     var cart = getData(recipientId, 'cart');
     var address = getData(recipientId, 'address');
@@ -1522,6 +1535,8 @@ function sendShoppingCart(recipientId) {
     if (cart == undefined) {
         cart = createCart(recipientId);
     }
+
+    console.log(cart);
 
     var items = cart.items;
 
@@ -1537,10 +1552,7 @@ function sendShoppingCart(recipientId) {
 
     //console.log('Shopping Cart');
     //console.log(orderLimit);
-
-    if (address == undefined) {
-        sendAddressMenu(recipientId);
-    } else if (orderLimit == 0) {
+    if (orderLimit == 0) {
         renderShoppingCartEmpty(recipientId);
     } else {
         items.forEach(function (value, key) {
@@ -1568,7 +1580,7 @@ function sendShoppingCart(recipientId) {
                     ind++;
 
                     if (ind == orderLimit) {
-                        renderShoppingCart(recipientId, elements, total);
+                        renderShoppingCart(recipientId, cart.id, elements, total);
                     }
                 },
                 error: function error(_error7) {
@@ -1592,13 +1604,25 @@ function renderShoppingCartEmpty(recipientId) {
     bot.callSendAPI(messageData, sendPurchaseOptions);
 }
 
-function renderShoppingCart(recipientId, elements, total) {
-    var receiptId = "Order" + Math.floor(Math.random() * 1000);
+function renderShoppingCart(recipientId, cartId, elements, total) {
+    //var receiptId = "Order" + Math.floor(Math.random()*1000);
     var address = getData(recipientId, 'address');
     var payment_method = getData(recipientId, 'payment_method');
+    var addressData = undefined;
 
     if (payment_method == undefined) {
         payment_method = { name: 'Sin definir' };
+    }
+
+    if (address != undefined) {
+        addressData = {
+            street_1: address.address,
+            street_2: "",
+            city: address.city,
+            postal_code: address.postalCode,
+            state: address.state,
+            country: address.countryCode
+        };
     }
 
     authentication(recipientId, function (user) {
@@ -1613,24 +1637,17 @@ function renderShoppingCart(recipientId, elements, total) {
                         payload: {
                             template_type: "receipt",
                             recipient_name: user.get('first_name') + " " + user.get('last_name'),
-                            order_number: receiptId,
+                            order_number: cartId,
                             currency: "COP",
                             payment_method: payment_method.name,
                             timestamp: Math.trunc(Date.now() / 1000).toString(),
                             elements: elements,
-                            address: {
-                                street_1: address.address,
-                                street_2: "",
-                                city: address.city,
-                                postal_code: address.postalCode,
-                                state: address.state,
-                                country: address.countryCode
-                            },
+                            address: addressData,
                             summary: {
                                 subtotal: total,
                                 shipping_cost: 2000.00,
-                                total_tax: total * 0.16,
-                                total_cost: total * 1.16 + 2000.00
+                                //total_tax: 0,
+                                total_cost: total + 2000.00
                             }
                             //adjustments: [{
                             //  name: "New Customer Discount",
@@ -1660,7 +1677,7 @@ function renderShoppingCartConfirmation(recipientId) {
             "quick_replies": [{
                 "content_type": "text",
                 "title": "Si",
-                "payload": "CheckPayment"
+                "payload": "CheckOrder"
             }, {
                 "content_type": "text",
                 "title": "No",
@@ -1672,6 +1689,10 @@ function renderShoppingCartConfirmation(recipientId) {
     bot.callSendAPI(messageData);
 }
 
+function checkOrder(recipientId) {
+    checkPayment(recipientId);
+}
+
 function checkPayment(recipientId) {
     bot.sendTypingOn(recipientId);
     //ParseModels.PaymentMethod
@@ -1680,6 +1701,8 @@ function checkPayment(recipientId) {
         renderCheckPayment(recipientId);
     });
 }
+
+function checkAddress(recipientId) {}
 
 function renderCheckPayment(recipientId) {
     var paymentMethods = getData(recipientId, 'paymentMethods');
@@ -1714,6 +1737,7 @@ function checkout(recipientId, id) {
     bot.sendTypingOn(recipientId);
     console.log('checkout');
     console.log(id);
+
     store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(function () {
 
         var paymentMethod = getData(recipientId, 'paymentMethod');

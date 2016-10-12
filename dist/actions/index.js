@@ -14,6 +14,7 @@ exports.addressSaved = addressSaved;
 exports.hideAddressForm = hideAddressForm;
 exports.addressSaveError = addressSaveError;
 exports.loadUserCreditCards = loadUserCreditCards;
+exports.setCustomerPointSale = setCustomerPointSale;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
 exports.addProductToCart = addProductToCart;
@@ -260,6 +261,17 @@ function loadUserCreditCards(recipientId, user) {
   return function (dispatch) {
     return new Parse.Query(_ParseModels.CreditCard).equalTo('user', user).find().then(function (creditCards) {
       dispatch({ type: types.USER_CREDITCARDS_LOADED, data: { recipientId: recipientId, creditCards: creditCards } });
+    }).fail(function (error) {
+      console.log('Error ' + error);
+      //TODO dispatch action with error
+    });
+  };
+}
+
+function setCustomerPointSale(recipientId, id) {
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.CustomerPointSale).get(id).then(function (pointSale) {
+      dispatch({ type: types.SET_CUSTOMER_POINT_SALE, data: { recipientId: recipientId, pointSale: pointSale } });
     }).fail(function (error) {
       console.log('Error ' + error);
       //TODO dispatch action with error
