@@ -100,6 +100,10 @@ var _geocoder = require('geocoder');
 
 var _geocoder2 = _interopRequireDefault(_geocoder);
 
+var _path = require('path');
+
+var _path2 = _interopRequireDefault(_path);
+
 function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
 }
@@ -151,8 +155,8 @@ bot.rules.set('comenzar', sendMenu);
 bot.rules.set('buenos dias', sendMenu);
 bot.rules.set('buenas tardes', sendMenu);
 bot.rules.set('pedir domicilio', sendAddressMenu);
-bot.rules.set('carrito', sendShoppingCart);
-bot.rules.set('cuenta', sendShoppingCart);
+bot.rules.set('carrito', sendCart);
+bot.rules.set('cuenta', sendCart);
 
 bot.payloadRules.set('Greeting', sendMenu);
 
@@ -167,7 +171,10 @@ bot.payloadRules.set('SendProducts', sendProducts);
 bot.payloadRules.set('AddProduct', addProduct);
 
 bot.payloadRules.set('Search', searchProducts);
-bot.payloadRules.set('SendShoppingCart', sendShoppingCart);
+bot.payloadRules.set('SendCart', sendCart);
+bot.payloadRules.set('SendCartDetails', sendCartDetails);
+bot.payloadRules.set('EditCart', editCart);
+bot.payloadRules.set('ClearCart', clearCart);
 bot.payloadRules.set('SendPurchaseOptions', sendPurchaseOptions);
 
 bot.payloadRules.set('Checkout', checkout);
@@ -179,6 +186,7 @@ bot.payloadRules.set('SendRegisteredCreditCards', sendRegisteredCreditCards);
 bot.payloadRules.set('CancelRegisterCreditCard', cancelRegisterCreditCard);
 bot.payloadRules.set('PayWithCreditCard', payWithCreditCard);
 bot.payloadRules.set('SetRating', setRating);
+bot.payloadRules.set('Help', sendHelp);
 
 bot.defaultSearch = searchProducts;
 
@@ -416,21 +424,6 @@ function signUp(facebookId, userData, callback) {
             }
         });
     }
-}
-
-function sendRegisterFacebookUser(recipientId) {
-    bot.sendTypingOn(recipientId);
-    var messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Registro exitoso."
-
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    bot.callSendAPI(messageData);
 }
 
 function sendMenu(recipientId) {
@@ -1101,7 +1094,7 @@ function renderProductsInitialMessage(recipientId, categoryId) {
                 id: recipientId
             },
             message: {
-                text: "Tenemos los siguientes " + category.get('name') + ":"
+                text: category.get('name') + ":"
             }
         };
         bot.sendTypingOff(recipientId);
@@ -1380,11 +1373,9 @@ function saveCart(recipientId) {
                      delete userBuffer.location;
                      delete userBuffer['address-name'];
                       console.log(userBuffer);
-                     */
-
-                    console.log('\nConsumer kart');
-                    console.log(result);
-
+                     console.log('\nConsumer kart');
+                     console.log(result);
+                    */
                     cart['id'] = result.id;
                     cart['rawParseObject'] = result;
                     cart['itemsPointers'] = itemsPointers;
@@ -1415,17 +1406,17 @@ function saveOrder(recipientId) {
     var state0 = orderStates.get('HUIPd800xH');
     var total = 0;
 
-    console.log(consumer);
+    /*console.log(consumer);
     console.log(consumer.name);
     console.log(customer);
     console.log(paymentMethod.method);
     console.log(address);
     console.log(state0);
     console.log(cart);
-    console.log(pointSale.objectId);
+    console.log(pointSale);*/
 
     cart.items.forEach(function (value, key) {
-        console.log(value);
+        //console.log(value);
         total += value.quantity * value.price;
     });
 
@@ -1434,11 +1425,11 @@ function saveOrder(recipientId) {
     order.set('pointSale', { __type: 'Pointer', className: 'CustomerPointSale', objectId: pointSale.objectId });
     order.set('state', state0);
     order.set('items', cart.itemsPointers);
-    order.set('deliveryCost', 10000);
+    order.set('deliveryCost', pointSale.deliveryCost);
     order.set('total', total);
     order.set('paymentMethod', paymentMethod.method);
     order.set('name', consumer.name);
-    order.set('comment', "Pedido de prueba");
+    //order.set('comment', "Orden");
 
     console.log('Setting Order');
 
@@ -1453,19 +1444,6 @@ function saveOrder(recipientId) {
             console.log('Failed to create new object, with error code: ' + _error6.message);
             console.log(_error6);
         }
-    });
-}
-
-function updateCart(recipientId) {
-    var consumerCart = new ParseModels.Cart();
-    var localCart = getData(recipientId, 'cart');
-
-    new Parse.Query(consumerCart).get(localCart.id).then(function (cart) {
-        //console.log('updateCart');
-        console.log(cart);
-    }, function (object, error) {
-        console.log(error);
-        // error is an instance of Parse.Error.
     });
 }
 
@@ -1484,7 +1462,7 @@ function renderAddProductConfirmation(recipientId, productId) {
                 }, {
                     "content_type": "text",
                     "title": "Ver carrito",
-                    "payload": "SendShoppingCart"
+                    "payload": "SendCart"
                 }]
             }
         };
@@ -1503,15 +1481,15 @@ function sendPurchaseOptions(recipientId) {
             id: recipientId
         },
         message: {
-            "text": "Deseas agregar otro producto o terminar tu pedido?",
+            "text": "Tenemos las siguientes opciones disponibles:",
             "quick_replies": [{
                 "content_type": "text",
-                "title": "Seguir pidiendo",
+                "title": "Ver categorias",
                 "payload": "SendCategories-0"
             }, {
                 "content_type": "text",
                 "title": "Ver carrito",
-                "payload": "SendShoppingCart"
+                "payload": "SendCart"
             }]
         }
     };
@@ -1519,7 +1497,7 @@ function sendPurchaseOptions(recipientId) {
     bot.callSendAPI(messageData);
 }
 
-function sendShoppingCart(recipientId) {
+function sendCart(recipientId) {
     // Generate a random receipt ID as the API requires a unique ID
     var Product = Parse.Object.extend("Product");
     var consumer = getData(recipientId, 'consumer');
@@ -1535,8 +1513,6 @@ function sendShoppingCart(recipientId) {
     if (cart == undefined) {
         cart = createCart(recipientId);
     }
-
-    console.log(cart);
 
     var items = cart.items;
 
@@ -1591,22 +1567,17 @@ function sendShoppingCart(recipientId) {
     }
 }
 
-function renderShoppingCartEmpty(recipientId) {
-    var messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Tu carrito de compras está vacío."
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    bot.callSendAPI(messageData, sendPurchaseOptions);
+function sendCartDetails(recipientId) {
+    var cart = getData(recipientId, 'cart');
+    cart.items.forEach(function (value, key) {
+        console.log(value);
+    });
 }
 
 function renderShoppingCart(recipientId, cartId, elements, total) {
     //var receiptId = "Order" + Math.floor(Math.random()*1000);
     var address = getData(recipientId, 'address');
+    var pointSale = getData(recipientId, 'pointSale');
     var payment_method = getData(recipientId, 'payment_method');
     var addressData = undefined;
 
@@ -1632,7 +1603,7 @@ function renderShoppingCart(recipientId, cartId, elements, total) {
                     id: recipientId
                 },
                 message: {
-                    attachment: {
+                    "attachment": {
                         type: "template",
                         payload: {
                             template_type: "receipt",
@@ -1645,9 +1616,9 @@ function renderShoppingCart(recipientId, cartId, elements, total) {
                             address: addressData,
                             summary: {
                                 subtotal: total,
-                                shipping_cost: 2000.00,
+                                shipping_cost: pointSale.deliveryCost,
                                 //total_tax: 0,
-                                total_cost: total + 2000.00
+                                total_cost: total + pointSale.deliveryCost
                             }
                             //adjustments: [{
                             //  name: "New Customer Discount",
@@ -1657,36 +1628,99 @@ function renderShoppingCart(recipientId, cartId, elements, total) {
                             //    amount: -1000
                             //}]
                         }
-                    }
+                    },
+                    "quick_replies": [{
+                        "content_type": "text",
+                        "title": "Finalizar pedido",
+                        "payload": "CheckOrder"
+                    }, {
+                        "content_type": "text",
+                        "title": "Seguir Pidiendo",
+                        "payload": "SendCategories-0"
+                    }, {
+                        "content_type": "text",
+                        "title": "Modificar pedido",
+                        "payload": "SendCartDetails"
+                    }, {
+                        "content_type": "text",
+                        "title": "Borrar carrito",
+                        "payload": "ClearCart"
+                    }]
                 }
             };
             //console.log("callSendAPI(messageData)");
             bot.sendTypingOff(recipientId);
-            bot.callSendAPI(messageData, renderShoppingCartConfirmation);
+            bot.callSendAPI(messageData);
         }
     });
 }
 
-function renderShoppingCartConfirmation(recipientId) {
+function renderShoppingCartEmpty(recipientId) {
     var messageData = {
         recipient: {
             id: recipientId
         },
         message: {
-            "text": "Es correcto, deseas finalizar tu pedido?",
-            "quick_replies": [{
-                "content_type": "text",
-                "title": "Si",
-                "payload": "CheckOrder"
-            }, {
-                "content_type": "text",
-                "title": "No",
-                "payload": "SendPurchaseOptions"
-            }]
+            "text": "Tu carrito de compras está vacío."
+        }
+    };
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData, sendPurchaseOptions);
+}
+
+function editCart(recipientId) {
+    var cart = getData(recipientId, 'cart');
+
+    bot.sendTypingOn(recipientId);
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [{
+                        "title": "Opciones",
+                        //"item_url": "https://petersfancyapparel.com/classic_white_tshirt",
+                        "image_url": SERVER_URL + "assets/thinking.jpg",
+                        //"subtitle": "Soft white cotton t-shirt is back in style",
+                        "buttons": [{
+                            "type": "web_url",
+                            "url": SERVER_URL + "cart?" + cart.id,
+                            "title": "Remover producto",
+                            "webview_height_ratio": "tall"
+                        }]
+                    }]
+                }
+            }
         }
     };
     bot.sendTypingOff(recipientId);
     bot.callSendAPI(messageData);
+}
+
+function clearCart(recipientId) {
+    var cart = getData(recipientId, 'cart');
+    var items = cart.items;
+    cart.itemsPointers = [];
+
+    items.forEach(function (value, key) {
+        new Parse.Query(ParseModels.OrderItem).get(value.id, {
+            success: function success(orderItem) {
+                orderItem.destroy({});
+                items.delete(key);
+                if (items.size == 0) {
+                    sendCart(recipientId);
+                }
+            },
+            error: function error(orderItem, _error8) {
+                console.log('error');
+                console.log(_error8);
+            }
+        });
+    });
 }
 
 function checkOrder(recipientId) {
@@ -1814,16 +1848,21 @@ function registerCreditCard(recipientId) {
             "attachment": {
                 "type": "template",
                 "payload": {
-                    "template_type": "button",
-                    "text": "Por razones de seguidad te vamos a redireccionar a una página web segura para que agregues tu tarjeta y finalizaremos tu pedido.\n\nEstas de acuerdo?",
-                    "buttons": [{
-                        "type": "web_url",
-                        "url": SERVER_URL + "creditcard?id=" + consumer.objectId,
-                        "title": "Si"
-                    }, {
-                        "type": "postback",
-                        "title": "No",
-                        "payload": "CancelRegisterCreditCard"
+                    "template_type": "generic",
+                    "elements": [{
+                        "title": "Registro de tarjeta de credito y finalización de tu pedido.\n\nEstas de acuerdo?",
+                        "image_url": SERVER_URL + "assets/money.jpg",
+                        "subtitle": "Por razones de seguridad te redireccionaremos a una página web segura.",
+                        "buttons": [{
+                            "type": "web_url",
+                            "title": "Si",
+                            "url": SERVER_URL + "creditcard?id=" + consumer.objectId,
+                            "webview_height_ratio": "tall"
+                        }, {
+                            "type": "postback",
+                            "title": "No",
+                            "payload": "CancelRegisterCreditCard"
+                        }]
                     }]
                 }
             }
@@ -1906,7 +1945,7 @@ function renderRegisteredCreditCards(recipientId) {
             if (quick_replies.length < bot.limit) {
                 quick_replies.push({
                     "content_type": "text",
-                    "title": card.type + " xxxx-" + card.lastFour,
+                    "title": card.type + " " + card.lastFour,
                     "payload": "PayWithCreditCard-" + card.lastFour
                 });
             }
@@ -2167,9 +2206,153 @@ function splitSearchResult(products, index) {
     return elements;
 }
 
+function sendHelp(recipientId) {
+    bot.sendTypingOn(recipientId);
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "InOut Bot.\n\nTe permite visualizar las opciones de productos, agregarlos al carrito y realizar tu compra por medio del chat de facebook.\n\nFuncionalidades disponibles: \n\n'Hola', para iniciar la conversación\n'Pedir Domicilio', si quieres realizar un domicilio\n'Carrito', para ver el estado actual de tu carrito"
+        }
+    };
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData, sendContactUs);
+}
+
+function sendContactUs(recipientId) {
+    bot.sendTypingOn(recipientId);
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": " Para mayor información puedes contactarnos en:\n\n Web: http://www.inoutdelivery.com/\n\n Email: john.garavito@inoutdelivery.com"
+        }
+    };
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData);
+}
+
+function sendRegisterFacebookUser(recipientId) {
+    bot.sendTypingOn(recipientId);
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "Registro exitoso."
+
+        }
+    };
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData);
+}
+
+function renderShoppingCartOptions(recipientId) {
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            "text": "Opciones del carrito",
+            "quick_replies": [{
+                "content_type": "text",
+                "title": "Finalizar pedido",
+                "payload": "CheckOrder"
+            }, {
+                "content_type": "text",
+                "title": "Seguir Pidiendo",
+                "payload": "SendCategories-0"
+            }, {
+                "content_type": "text",
+                "title": "Borrar carrito",
+                "payload": "ClearCart"
+            }]
+        }
+    };
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData);
+}
+
+function updateCart(recipientId) {
+    var consumerCart = new ParseModels.Cart();
+    var localCart = getData(recipientId, 'cart');
+
+    new Parse.Query(consumerCart).get(localCart.id).then(function (cart) {
+        //console.log('updateCart');
+        console.log(cart);
+    }, function (object, error) {
+        console.log(error);
+        // error is an instance of Parse.Error.
+    });
+}
+
 bot.app.post('/CreditCardRegistered', function (req, res) {
     var data = req.body;
     sendRegisteredCreditCards(data.recipientId);
+});
+
+bot.app.get('/creditcard', function (req, res) {
+    res.sendFile(_path2.default.join(__dirname + '/views/cardForm.html'));
+});
+
+bot.app.post('/registerCreditCard', function (req, res) {
+    var User = Parse.Object.extend('User');
+    var Consumer = Parse.Object.extend('Consumer');
+    var consumerID = req.body['consumerID'];
+    var data = req.body;
+
+    console.log('registerCreditCard');
+
+    new Parse.Query(Consumer).get(consumerID).then(function (consumer) {
+        if (consumer) {
+            new Parse.Query(User).get(consumer.get('user').id).then(function (user) {
+                var username = user.get('username');
+                var recipientId = user.get('facebookId');
+                Parse.User.logIn(username, username, {
+                    success: function success(userData) {
+                        var expiry = data['expiry'].replace(/\s+/g, "").split('/');
+
+                        _request2.default.post({
+                            url: PARSE_SERVER_URL + '/functions/addCreditCard',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=UTF-8',
+                                'X-Parse-Application-Id': PARSE_APP_ID,
+                                'X-Parse-Session-Token': userData.getSessionToken()
+                            },
+                            json: { "number": data['number'].replace(/\s+/g, ""),
+                                "verificationNumber": data['CCV'],
+                                "expirationMonth": expiry[0],
+                                "expirationYear": expiry[1],
+                                "holderName": data['first-name'] + ' ' + data['last-name']
+                            }
+                        }, function callback(error, response, body) {
+                            if (!error && response.statusCode == 200) {
+
+                                _request2.default.post({
+                                    url: SERVER_URL + 'CreditCardRegistered',
+                                    json: { "recipientId": recipientId }
+                                });
+                            } else {
+                                console.log(response.statusCode);
+                                console.log('error');
+                                console.log(error);
+                            }
+                        });
+                    },
+                    error: function error(user, _error9) {
+                        console.log('error');
+                        console.log(_error9);
+                    }
+                });
+            });
+
+            res.sendFile(_path2.default.join(__dirname + '/views/cardRegistered.html'));
+        }
+    }, function (object, error) {
+        console.log(error);
+    });
 });
 
 var paymentTypes = new Map();

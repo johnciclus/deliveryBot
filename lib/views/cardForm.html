@@ -1,42 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
     <title>In Out Delivery</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+    <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="assets/css/styles.css" rel="stylesheet">
 </head>
 <body>
-<form action="/registerCreditCard" method="post">
-    <div class="form-container">
-        <div class="personal-information">
-            <h1>Payment Information</h1>
-        </div> <!-- end of personal-information -->
+<div class="wrapper">
+    <div class="column col-sm-12 col-xs-12" id="main">
+        <div class="full col-sm-12">
+            <div class="row">
+                <div class="well">
+                    <form class="form-horizontal" role="form" action="/registerCreditCard" method="post">
+                        <div class="form-container">
+                            <div class="personal-information">
+                                <h1>Registro de tarjeta</h1>
+                            </div> <!-- end of personal-information -->
 
-        <div>
-            <input class="column-left" type="text" name="first-name" placeholder="First Name"/>
-            <input class="column-right" type="text" name="last-name" placeholder="Surname"/>
-            <div class="clear"></div>
+                            <div class="form-group">
+                                <label for="first-name">First Name:</label>
+                                <input class="form-control" type="text" id="first-name" name="first-name" placeholder="First Name"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="last-name">Surname:</label>
+                                <input class="form-control" type="text" id="last-name" name="last-name" placeholder="Surname"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="number">Card number:</label>
+                                <input class="form-control" type="text" id="number" name="number" placeholder="Card Number"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="expiry">MM / YYYY:</label>
+                                <input class="form-control" type="text" id="expiry" name="expiry" placeholder="MM / YYYY"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="CCV">CCV:</label>
+                                <input class="form-control" type="text" id="CCV" name="CCV" placeholder="CCV"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="telephone">Telephone:</label>
+                                <input class="form-control" type="text" id="telephone" name="telephone" placeholder="Telephone"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Telephone:</label>
+                                <input class="form-control" type="email" id="email" name="email" placeholder="Email"/>
+                            </div>
+
+                            <button class="btn btn-primary" type="submit">Complete Payment</button>
+
+                            <div class="card-wrapper"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <div>
-            <input class="input-field" type="text" name="number" placeholder="Card Number"/>
-        </div>
-
-        <div>
-            <input class="column-left" type="text" name="expiry" placeholder="MM / YYYY"/>
-            <input class="column-right" type="text" name="CCV" placeholder="CCV"/>
-            <div class="clear"></div>
-        </div>
-
-        <div class="card-wrapper"></div>
-
-        <input class="input-field" type="text" name="telephone" required="required" autocomplete="on" maxlength="45" placeholder="Telephone"/>
-
-        <input class="input-field" type="email" name="email" required="required" autocomplete="on" maxlength="40" placeholder="Email"/>
-
-        <input class="input-button" type="submit" value="Complete Payment"/>
-</form>
+    </div>
+</div>
 </body>
+<script src="assets/js/bootstrap.min.js"></script>
+<script src="assets/js/scripts.js"></script>
 <script src='assets/js/jquery.min.js'></script>
 <script src='assets/js/card.js'></script>
 <script src='assets/js/jquery.card.js'></script>

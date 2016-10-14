@@ -10,7 +10,7 @@ $('<input>').attr({
 
 $('form').card({
     container: '.card-wrapper',
-    width: 350,
+    width: 200,
 
     formSelectors: {
         nameInput: 'input[name="first-name"], input[name="last-name"]'

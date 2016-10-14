@@ -2,66 +2,70 @@
   <library name="Generated files" type="javaScript">
     <properties>
       <sourceFilesUrls>
-        <item url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/utils-compiled-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/ParseModels-compiled-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/ParseModels-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/models/ConsumerAddress-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/models/GetProductsParams-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/models/LatLng-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/actions/index-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/ParseUtils-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/actions/index-compiled-compiled.js" />
+        <item url="file://$PROJECT_DIR$/public/assets/js/bootstrap.min-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/constants/actionTypes-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/bot-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/utils-compiled.js" />
         <item url="file://$PROJECT_DIR$/public/assets/js/jquery.card-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/ParseModels-compiled.js" />
         <item url="file://$PROJECT_DIR$/public/assets/js/jquery.min-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/server-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/app-compiled.js" />
         <item url="file://$PROJECT_DIR$/public/assets/js/card-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/models/LatLng-compiled.js" />
         <item url="file://$PROJECT_DIR$/public/assets/js/index-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/server-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/app-compiled-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/ParseModels-compiled-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/bot-compiled-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/utils-compiled-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/server-compiled-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/models/ConsumerAddress-compiled.js" />
+        <item url="file://$PROJECT_DIR$/public/assets/js/scripts-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/models/GetProductsParams-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/actions/index-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/bot-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/utils-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/ParseModels-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/server-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/bot-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/ParseUtils-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/app-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/app-compiled-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/actions/index-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/app-compiled.js" />
-        <item url="file://$PROJECT_DIR$/dist/actions/index-compiled-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/bot-compiled-compiled.js" />
+        <item url="file://$PROJECT_DIR$/dist/server-compiled-compiled.js" />
       </sourceFilesUrls>
     </properties>
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/utils-compiled-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/ParseModels-compiled-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/ParseModels-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/models/ConsumerAddress-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/models/GetProductsParams-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/models/LatLng-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/actions/index-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/ParseUtils-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/actions/index-compiled-compiled.js" />
+      <root url="file://$PROJECT_DIR$/public/assets/js/bootstrap.min-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/constants/actionTypes-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/utils-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/bot-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/utils-compiled.js" />
       <root url="file://$PROJECT_DIR$/public/assets/js/jquery.card-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/ParseModels-compiled.js" />
       <root url="file://$PROJECT_DIR$/public/assets/js/jquery.min-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/server-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/app-compiled.js" />
       <root url="file://$PROJECT_DIR$/public/assets/js/card-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/models/LatLng-compiled.js" />
       <root url="file://$PROJECT_DIR$/public/assets/js/index-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/server-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/app-compiled-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/ParseModels-compiled-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/bot-compiled-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/utils-compiled-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/server-compiled-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/models/ConsumerAddress-compiled.js" />
+      <root url="file://$PROJECT_DIR$/public/assets/js/scripts-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/models/GetProductsParams-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/actions/index-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/bot-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/utils-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/constants/actionTypes-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/ParseModels-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/server-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/bot-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/ParseUtils-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/app-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/app-compiled-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/actions/index-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/app-compiled.js" />
-      <root url="file://$PROJECT_DIR$/dist/actions/index-compiled-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/bot-compiled-compiled.js" />
+      <root url="file://$PROJECT_DIR$/dist/server-compiled-compiled.js" />
     </CLASSES>
     <SOURCES />
   </library>
