@@ -119,6 +119,9 @@ bot.payloadRules.set('SetAddress', setAddress);
 bot.payloadRules.set('SendCategories', sendCategories);
 bot.payloadRules.set('SendProducts', sendProducts);
 bot.payloadRules.set('AddProduct', addProduct);
+bot.payloadRules.set('RemoveProduct', removeProduct);
+bot.payloadRules.set('IncreaseOneProduct', increaseOneProduct);
+bot.payloadRules.set('DecreaseOneProduct', decreaseOneProduct);
 
 bot.payloadRules.set('Search', searchProducts);
 bot.payloadRules.set('SendCart', sendCart);
@@ -957,7 +960,7 @@ function sendCategories(recipientId, index) {
     }
 
     Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(function (result) {
-        var elements = splitCategories(result.categories, index);
+        var elements = splitCategories(recipientId, result.categories, index);
         var idx = Object.keys(result.categories).length;
         var buttons = [];
         var catIni = (index + 1) * bot.limit;
@@ -1005,17 +1008,17 @@ function sendCategories(recipientId, index) {
     });
 }
 
-function splitCategories(categories, index) {
+function splitCategories(recipientId, categories, index) {
+    var customer = getData(recipientId, 'customer');
+    var image_url = customer.image.url;
+
     var idx = 0;
     var elements = [];
 
     categories.forEach(function (item) {
-        //console.log(item.get('name'));
         if (item && item.get('name')) {
-            //console.log(elements.length);
             if (idx >= index * bot.limit && idx < (index + 1) * bot.limit) {
                 var image = item.get('image');
-                var image_url = "http://pro.parse.inoutdelivery.com/parse/files/hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ/2671158f9c1cb43cac1423101b6e451b_image.txt";
                 if (image) {
                     image_url = image.url();
                 }
@@ -1114,10 +1117,10 @@ function sendProducts(recipientId, category, proIdx) {
 
 function splitProducts(recipientId, products, proIdx) {
     var customer = getData(recipientId, 'customer');
-    var customer_image_url;
+    var image_url = customer.image.url;
 
     if (typeof customer != 'undefined') {
-        customer_image_url = customer.image.url;
+        image_url = customer.image.url;
     }
 
     var idx = 0;
@@ -1127,7 +1130,6 @@ function splitProducts(recipientId, products, proIdx) {
         if (item && item.get('name')) {
             if (idx >= proIdx * bot.limit && idx < (proIdx + 1) * bot.limit) {
                 var image = item.get('image');
-                var image_url = customer_image_url;
                 if (image) {
                     image_url = image.url();
                 }
@@ -1165,7 +1167,6 @@ function addProduct(recipientId, productId) {
     //console.log("Add product: "+productId);
     //console.log("Order.count: "+order.count());
     var product = new ParseModels.Product();
-    var userData = getData(recipientId);
     var cart = getData(recipientId, 'cart');
 
     if (cart == undefined) {
@@ -1190,6 +1191,122 @@ function addProduct(recipientId, productId) {
     });
 }
 
+function removeProduct(recipientId, productId) {
+    var cart = getData(recipientId, 'cart');
+    console.log('Remove product ' + productId);
+    if (cart == undefined) {
+        cart = createCart(recipientId);
+    }
+
+    var items = cart.items;
+    var item = items.get(productId);
+
+    new Parse.Query(ParseModels.OrderItem).get(item.id, {
+        success: function success(orderItem) {
+            orderItem.destroy({});
+            items.delete(productId);
+            var itemsPointers = [];
+
+            var _iteratorNormalCompletion4 = true;
+            var _didIteratorError4 = false;
+            var _iteratorError4 = undefined;
+
+            try {
+                for (var _iterator4 = items[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    var _step4$value = _slicedToArray(_step4.value, 2);
+
+                    var key = _step4$value[0];
+                    var value = _step4$value[1];
+
+                    itemsPointers.push({ "__type": "Pointer", "className": "OrderItem", "objectId": value.id });
+                }
+            } catch (err) {
+                _didIteratorError4 = true;
+                _iteratorError4 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                        _iterator4.return();
+                    }
+                } finally {
+                    if (_didIteratorError4) {
+                        throw _iteratorError4;
+                    }
+                }
+            }
+
+            cart.itemsPointers = itemsPointers;
+            if (items.size == 0) {
+                sendCart(recipientId);
+            } else {
+                sendCartDetails(recipientId);
+            }
+        },
+        error: function error(orderItem, _error4) {
+            console.log('error');
+            console.log(_error4);
+        }
+    });
+}
+
+function increaseOneProduct(recipientId, productId) {
+    var cart = getData(recipientId, 'cart');
+
+    if (cart == undefined) {
+        cart = createCart(recipientId);
+    }
+
+    var items = cart.items;
+    var item = items.get(productId);
+
+    item.quantity++;
+
+    new Parse.Query(ParseModels.OrderItem).get(item.id, {
+        success: function success(orderItem) {
+            orderItem.set('amount', item.quantity);
+            orderItem.save();
+            sendCartDetails(recipientId);
+        },
+        error: function error(orderItem, _error5) {
+            console.log('error');
+            console.log(_error5);
+        }
+    });
+}
+
+function decreaseOneProduct(recipientId, productId) {
+    var cart = getData(recipientId, 'cart');
+
+    if (cart == undefined) {
+        cart = createCart(recipientId);
+    }
+
+    var items = cart.items;
+    var item = items.get(productId);
+
+    item.quantity--;
+    console.log('Order Item');
+    console.log(item);
+
+    if (item.quantity > 0) {
+        new Parse.Query(ParseModels.OrderItem).get(item.id, {
+            success: function success(orderItem) {
+                orderItem.set('amount', item.quantity);
+                orderItem.save();
+                sendCartDetails(recipientId);
+            },
+            error: function error(orderItem, _error6) {
+                console.log('error');
+                console.log(_error6);
+            }
+        });
+    } else {
+        console.log('remove');
+        console.log(item);
+        removeProduct(recipientId, productId);
+    }
+}
+
 function saveCart(recipientId) {
     var consumerCart = new ParseModels.Cart();
     var consumer = getData(recipientId, 'consumer');
@@ -1199,16 +1316,16 @@ function saveCart(recipientId) {
     var items = [];
     var item;
 
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
 
     try {
-        for (var _iterator4 = cart.items[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-            var _step4$value = _slicedToArray(_step4.value, 2);
+        for (var _iterator5 = cart.items[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            var _step5$value = _slicedToArray(_step5.value, 2);
 
-            var id = _step4$value[0];
-            var properties = _step4$value[1];
+            var id = _step5$value[0];
+            var properties = _step5$value[1];
 
             //console.log('\n'+id);
             //console.log(properties);
@@ -1249,16 +1366,16 @@ function saveCart(recipientId) {
             */
         }
     } catch (err) {
-        _didIteratorError4 = true;
-        _iteratorError4 = err;
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                _iterator4.return();
+            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
             }
         } finally {
-            if (_didIteratorError4) {
-                throw _iteratorError4;
+            if (_didIteratorError5) {
+                throw _iteratorError5;
             }
         }
     }
@@ -1266,13 +1383,13 @@ function saveCart(recipientId) {
     Parse.Object.saveAll(items, {
         success: function success(result) {
             var itemsPointers = [];
-            var _iteratorNormalCompletion5 = true;
-            var _didIteratorError5 = false;
-            var _iteratorError5 = undefined;
+            var _iteratorNormalCompletion6 = true;
+            var _didIteratorError6 = false;
+            var _iteratorError6 = undefined;
 
             try {
-                for (var _iterator5 = result[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                    var item = _step5.value;
+                for (var _iterator6 = result[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                    var item = _step6.value;
 
                     var itemId = item.get('product').objectId;
                     cart.items.get(itemId).id = item.id;
@@ -1283,16 +1400,16 @@ function saveCart(recipientId) {
                 //console.log(cart.items);
                 //console.log(itemsPointers);
             } catch (err) {
-                _didIteratorError5 = true;
-                _iteratorError5 = err;
+                _didIteratorError6 = true;
+                _iteratorError6 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                        _iterator5.return();
+                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                        _iterator6.return();
                     }
                 } finally {
-                    if (_didIteratorError5) {
-                        throw _iteratorError5;
+                    if (_didIteratorError6) {
+                        throw _iteratorError6;
                     }
                 }
             }
@@ -1330,17 +1447,17 @@ function saveCart(recipientId) {
                     cart['rawParseObject'] = result;
                     cart['itemsPointers'] = itemsPointers;
                 },
-                error: function error(user, _error4) {
+                error: function error(user, _error7) {
                     // Execute any logic that should take place if the save fails.
                     // error is a Parse.Error with an error code and message.
-                    console.log('Failed to create new object, with error code: ' + _error4.message);
+                    console.log('Failed to create new object, with error code: ' + _error7.message);
                 }
             });
         },
-        error: function error(user, _error5) {
+        error: function error(user, _error8) {
             // Execute any logic that should take place if the save fails.
             // error is a Parse.Error with an error code and message.
-            console.log('Failed to create new object, with error code: ' + _error5.message);
+            console.log('Failed to create new object, with error code: ' + _error8.message);
         }
     });
 }
@@ -1388,11 +1505,11 @@ function saveOrder(recipientId) {
             console.log('Save Order');
             console.log(result);
         },
-        error: function error(user, _error6) {
+        error: function error(user, _error9) {
             // Execute any logic that should take place if the save fails.
             // error is a Parse.Error with an error code and message.
-            console.log('Failed to create new object, with error code: ' + _error6.message);
-            console.log(_error6);
+            console.log('Failed to create new object, with error code: ' + _error9.message);
+            console.log(_error9);
         }
     });
 }
@@ -1456,6 +1573,8 @@ function sendCart(recipientId) {
     var customer = getData(recipientId, 'customer');
     var customer_image_url;
 
+    console.log('sendCart');
+
     if (typeof customer != 'undefined') {
         customer_image_url = customer.image.url;
     }
@@ -1509,8 +1628,8 @@ function sendCart(recipientId) {
                         renderShoppingCart(recipientId, cart.id, elements, total);
                     }
                 },
-                error: function error(_error7) {
-                    alert("Error: " + _error7.code + " " + _error7.message);
+                error: function error(_error10) {
+                    alert("Error: " + _error10.code + " " + _error10.message);
                 }
             });
         });
@@ -1518,9 +1637,66 @@ function sendCart(recipientId) {
 }
 
 function sendCartDetails(recipientId) {
+
+    bot.sendTypingOn(recipientId);
+    renderCartDetails(recipientId);
+}
+
+function renderCartDetails(recipientId) {
     var cart = getData(recipientId, 'cart');
-    cart.items.forEach(function (value, key) {
-        console.log(value);
+    var customer = getData(recipientId, 'customer');
+    var consumer = getData(recipientId, 'consumer');
+    var image_url = customer.image.url;
+    var items = cart.items;
+    var elements = [];
+
+    items.forEach(function (value, key) {
+        if (elements.length <= bot.limit) {
+            new Parse.Query(ParseModels.Product).get(key).then(function (product) {
+                var image = product.get('image');
+                if (image) {
+                    image_url = image.url();
+                }
+
+                elements.push({
+                    "title": product.get('name') + ": $" + value.price,
+                    "subtitle": "Cantidad solicitada: " + value.quantity,
+                    "image_url": image_url,
+                    "buttons": [{
+                        "type": "postback",
+                        "title": "Remover del carrito",
+                        "payload": "RemoveProduct-" + key
+                    }, {
+                        "type": "postback",
+                        "title": "Aumentar 1",
+                        "payload": "IncreaseOneProduct-" + key
+                    }, {
+                        "type": "postback",
+                        "title": "Disminuir 1",
+                        "payload": "DecreaseOneProduct-" + key
+                    }]
+                });
+
+                if (elements.length == bot.limit || elements.length == items.size) {
+                    var messageData = {
+                        recipient: {
+                            id: recipientId
+                        },
+                        message: {
+                            "attachment": {
+                                "type": "template",
+                                "payload": {
+                                    "template_type": "generic",
+                                    "elements": elements
+                                }
+                            }
+                        }
+                    };
+                    bot.sendTypingOff(recipientId);
+                    bot.callSendAPI(messageData);
+                }
+            });
+        }
     });
 }
 
@@ -1589,7 +1765,7 @@ function renderShoppingCart(recipientId, cartId, elements, total) {
                         "payload": "SendCategories-0"
                     }, {
                         "content_type": "text",
-                        "title": "Modificar pedido",
+                        "title": "Modificar carrito",
                         "payload": "SendCartDetails"
                     }, {
                         "content_type": "text",
@@ -1665,9 +1841,9 @@ function clearCart(recipientId) {
                     sendCart(recipientId);
                 }
             },
-            error: function error(orderItem, _error8) {
+            error: function error(orderItem, _error11) {
                 console.log('error');
-                console.log(_error8);
+                console.log(_error11);
             }
         });
     });
@@ -1884,13 +2060,13 @@ function renderRegisteredCreditCards(recipientId) {
         "payload": "RegisterCreditCard"
     });
 
-    var _iteratorNormalCompletion6 = true;
-    var _didIteratorError6 = false;
-    var _iteratorError6 = undefined;
+    var _iteratorNormalCompletion7 = true;
+    var _didIteratorError7 = false;
+    var _iteratorError7 = undefined;
 
     try {
-        for (var _iterator6 = creditCards[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-            var card = _step6.value;
+        for (var _iterator7 = creditCards[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var card = _step7.value;
 
             if (quick_replies.length < bot.limit) {
                 quick_replies.push({
@@ -1901,16 +2077,16 @@ function renderRegisteredCreditCards(recipientId) {
             }
         }
     } catch (err) {
-        _didIteratorError6 = true;
-        _iteratorError6 = err;
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                _iterator6.return();
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
             }
         } finally {
-            if (_didIteratorError6) {
-                throw _iteratorError6;
+            if (_didIteratorError7) {
+                throw _iteratorError7;
             }
         }
     }
@@ -2041,6 +2217,8 @@ function searchProducts(recipientId, query, index) {
     Parse.Cloud.run('search', { businessId: BUSINESS_ID, q: query }).then(function (result) {
         if (result.length == 0) {
             renderSearchEmpty(recipientId);
+        } else if (result.length == 1 && result[0].type == 'Category') {
+            sendProducts(recipientId, result[0].id, 0);
         } else {
             if (index == undefined) index = 0;else if (typeof index == 'string') index = parseInt(index);
 
@@ -2049,7 +2227,7 @@ function searchProducts(recipientId, query, index) {
                 bot.sendTypingOn(recipientId);
             }
 
-            var elements = splitSearchResult(result, index);
+            var elements = splitSearchResult(recipientId, result, index);
             var idx = Object.keys(result).length;
             var buttons = [];
             var catIni = (index + 1) * bot.limit;
@@ -2119,22 +2297,17 @@ function renderSearchEmpty(recipientId) {
     bot.callSendAPI(messageData);
 }
 
-function splitSearchResult(products, index) {
+function splitSearchResult(recipientId, products, index) {
+    var customer = getData(recipientId, 'customer');
+    var image_url = customer.image.url;
     var idx = 0;
     var elements = [];
-
-    /*
-    for(var key in products){
-        console.log(products[key])
-    }
-    */
 
     products.forEach(function (item) {
         if (item && item.name && item.type == 'Product') {
             //item.id get Product information
             if (idx >= index * bot.limit && idx < (index + 1) * bot.limit) {
                 var image = item.image;
-                var image_url = "http://pro.parse.inoutdelivery.com/parse/files/hSMaiK7EXqDqRVYyY2fjIp4lBweiZnjpEmhH4LpJ/2671158f9c1cb43cac1423101b6e451b_image.txt";
                 if (image) {
                     image_url = image.url();
                 }
@@ -2291,9 +2464,9 @@ bot.app.post('/registerCreditCard', function (req, res) {
                             }
                         });
                     },
-                    error: function error(user, _error9) {
+                    error: function error(user, _error12) {
                         console.log('error');
-                        console.log(_error9);
+                        console.log(_error12);
                     }
                 });
             });
