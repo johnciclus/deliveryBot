@@ -55,7 +55,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
     {
       "type":"postback",
       "title":"Mis ordenes",
-      "payload":"Orders"
+      "payload":"SendOrders"
     },
     {
       "type":"postback",
@@ -68,11 +68,45 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "payload":"Help"
     }	
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAEZCXUHN8RkBANI8nsN7bjX6ndZCESyvtqqLySc013nVTzdtmTzqig3W6q0txuoW77fBmaAZCfOGktB5fWWlnZCalGglkXF2fg6WHT5hqjPctduJhwMTfh4RyHl5vAmivx1ncnZCwvehPEyfs2SZCwIeYegEAcFoblKtxH7MuRAZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACsacYwrh4gRObJ8ZBFZApgGHzBmyZBtPZBPVnYbZCBZAst72aGNfPGR7XYxvmNvNsAf3lHpUB4lGa6zUaQhpVE2qXjReDAwhXYM86ka4LzGiFa9e2QtV8Mjw5ZAUQTq4Re2BOFzGVqlNYlMEVhRraAgMltYrhnmQZDZD"
 
 * Delete Persistent Menu *
 
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAOKWJcxcp0CVNtEtYlw65RNbHLdqtSeI6Bs2tWSeoyZC2FZBukhKYzbsMsrcPnDSOsYtIAcHHggC88DJzA8PCaRVWAIF1q1AO1BaUkZCqp7bK6noVlP21nfT7dciz0gUISWZC5rg0eU3OEUi20diYwKdZCT6a9QZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACsacYwrh4gRObJ8ZBFZApgGHzBmyZBtPZBPVnYbZCBZAst72aGNfPGR7XYxvmNvNsAf3lHpUB4lGa6zUaQhpVE2qXjReDAwhXYM86ka4LzGiFa9e2QtV8Mjw5ZAUQTq4Re2BOFzGVqlNYlMEVhRraAgMltYrhnmQZDZD"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+firebase.initializeApp({
+    serviceAccount: {
+        projectId: "firebase-inoutlive",
+        clientEmail: "jar@inoutdelivery.com",
+        privateKey: "AIzaSyD7oComy15d17Z3LyZk81N4A580FW4_nyI"
+    },
+    databaseURL: FIREBASE_URL
+});
+
+var db = firebase.database();
+/*firebase.database().ref('/states/dev').on("child_added", (event) => {
+    console.log(event.val());
+});*/
+
+firebase.database().ref('/states/dev').once('value').then(function(snapshot) {
+    console.log(snapshot.val());
+});
