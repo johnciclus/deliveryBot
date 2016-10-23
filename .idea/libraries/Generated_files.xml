@@ -10,6 +10,7 @@
         <item url="file://$PROJECT_DIR$/public/assets/js/scripts-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/models/Cart-compiled.js" />
         <item url="file://$PROJECT_DIR$/public/assets/js/bootstrap.min-compiled.js" />
+        <item url="file://$PROJECT_DIR$/lib/src/parse-express-cookie-session/index-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/models/Order-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/constants/actionTypes-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/bot-compiled.js" />
@@ -65,6 +66,7 @@
       <root url="file://$PROJECT_DIR$/public/assets/js/scripts-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/models/Cart-compiled.js" />
       <root url="file://$PROJECT_DIR$/public/assets/js/bootstrap.min-compiled.js" />
+      <root url="file://$PROJECT_DIR$/lib/src/parse-express-cookie-session/index-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/models/Order-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/constants/actionTypes-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/bot-compiled.js" />
