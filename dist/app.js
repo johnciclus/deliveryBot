@@ -2857,5 +2857,3 @@ console.log(FB.getLoginUrl({ scope: 'user_about_me' }));
  version    : 'v2.4' // point to the latest Facebook Graph API version
  });
  */
-
-//# sourceMappingURL=app-compiled.js.map
