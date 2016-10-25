@@ -92,8 +92,6 @@ var GOOGLE_MAPS_URL = process.env.GOOGLE_MAPS_URL ? process.env.GOOGLE_MAPS_URL 
 
 var GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_KEY ? process.env.GOOGLE_MAPS_KEY : _config2.default.get('GOOGLE_MAPS_KEY');
 
-var FIREBASE_URL = process.env.FIREBASE_URL ? process.env.FIREBASE_URL : _config2.default.get('FIREBASE_URL');
-
 _fb2.default.options({
     appId: FACEBOOK_APP_ID,
     appSecret: APP_SECRET,
@@ -1584,10 +1582,11 @@ function saveOrder(recipientId) {
             store.dispatch(Actions.setOrder(recipientId, order)).then(function () {
                 console.log('Save Order');
                 console.log(order);
+                clearCart(recipientId);
             });
 
-            console.log('Save Order');
-            console.log(order);
+            /*console.log('Save Order');
+            console.log(order);*/
         },
         error: function error(user, _error8) {
             // Execute any logic that should take place if the save fails.
@@ -1944,10 +1943,10 @@ function editCart(recipientId) {
     bot.callSendAPI(messageData);
 }
 
-function clearCart(recipientId) {
+function clearCart(recipientId, callback) {
     var cart = getData(recipientId, 'cart');
 
-    if (typeof cart == 'undefined') {} else {
+    if (typeof cart != 'undefined') {
         var items = cart.items;
         cart.itemsPointers = [];
 
@@ -1957,7 +1956,9 @@ function clearCart(recipientId) {
                     orderItem.destroy({});
                     items.delete(key);
                     if (items.size == 0) {
-                        sendCart(recipientId);
+                        if (callback) {
+                            callback(user);
+                        }
                     }
                 },
                 error: function error(orderItem, _error10) {
@@ -2618,7 +2619,7 @@ function renderOrders(recipientId) {
 }
 
 function newOrder(recipientId) {
-    clearCart(recipientId);
+    clearCart(recipientId, sendCart);
     sendAddresses(recipientId);
 }
 

@@ -1,36 +1,8 @@
 'use strict';
 
-var _slicedToArray = function () {
-    function sliceIterator(arr, i) {
-        var _arr = [];var _n = true;var _d = false;var _e = undefined;try {
-            for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
-                _arr.push(_s.value);if (i && _arr.length === i) break;
-            }
-        } catch (err) {
-            _d = true;_e = err;
-        } finally {
-            try {
-                if (!_n && _i["return"]) _i["return"]();
-            } finally {
-                if (_d) throw _e;
-            }
-        }return _arr;
-    }return function (arr, i) {
-        if (Array.isArray(arr)) {
-            return arr;
-        } else if (Symbol.iterator in Object(arr)) {
-            return sliceIterator(arr, i);
-        } else {
-            throw new TypeError("Invalid attempt to destructure non-iterable instance");
-        }
-    };
-}();
-
 var _server = require('./server');
 
-var _bodyParser = require('body-parser');
-
-var _bodyParser2 = _interopRequireDefault(_bodyParser);
+var _server2 = _interopRequireDefault(_server);
 
 var _config = require('config');
 
@@ -44,32 +16,9 @@ var _request = require('request');
 
 var _request2 = _interopRequireDefault(_request);
 
-var _underscore = require('underscore');
-
-var _ = _interopRequireWildcard(_underscore);
-
-var _requestPromise = require('request-promise');
-
-var _requestPromise2 = _interopRequireDefault(_requestPromise);
-
-function _interopRequireWildcard(obj) {
-    if (obj && obj.__esModule) {
-        return obj;
-    } else {
-        var newObj = {};if (obj != null) {
-            for (var key in obj) {
-                if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
-            }
-        }newObj.default = obj;return newObj;
-    }
-}
-
 function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
 }
-
-//import parseExpressHttpsRedirect from 'parse-express-https-redirect'
-//import parseExpressCookieSession from './src/parse-express-cookie-session/index'
 
 // App Secret can be retrieved from the App Dashboard
 var APP_SECRET = process.env.MESSENGER_APP_SECRET ? process.env.MESSENGER_APP_SECRET : _config2.default.get('APP_SECRET');
@@ -84,25 +33,20 @@ var PAGE_ACCESS_TOKEN = process.env.MESSENGER_PAGE_ACCESS_TOKEN ? process.env.ME
 // assets located at this address.
 var SERVER_URL = process.env.SERVER_URL ? process.env.SERVER_URL : _config2.default.get('SERVER_URL');
 
+var PARSE_APP_ID = process.env.PARSE_APP_ID ? process.env.PARSE_APP_ID : _config2.default.get('PARSE_APP_ID');
+
+var PARSE_SERVER_URL = process.env.PARSE_SERVER_URL ? process.env.PARSE_SERVER_URL : _config2.default.get('PARSE_SERVER_URL');
+
 var FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID ? process.env.FACEBOOK_APP_ID : _config2.default.get('FACEBOOK_APP_ID');
 
 var REDIRECT_URI = process.env.REDIRECT_URI ? process.env.REDIRECT_URI : _config2.default.get('REDIRECT_URI');
-
-var limit = 9;
 
 if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
     console.error("Missing config values");
     process.exit(1);
 }
 
-_server.app.use(_bodyParser2.default.json({ verify: verifyRequestSignature }));
-//app.use(parseExpressHttpsRedirect());
-//app.use(parseExpressCookieSession({ fetchUser: true }));
-
-var listener = {};
-var buffer = {};
 var rules = new Map();
-var payloadRules = new Map();
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from
@@ -150,8 +94,6 @@ function receivedAuthentication(event) {
     // authentication callback with the 'Send to Messenger' click event. This is
     // a way to do account linking when the user clicks the 'Send to Messenger'
     // plugin.
-
-    senderID = parseInt(senderID);
     var passThroughParam = event.optin.ref;
 
     console.log("Received authentication for user %d and page %d with pass " + "through param '%s' at %d", senderID, recipientID, passThroughParam, timeOfAuth);
@@ -181,8 +123,8 @@ function receivedMessage(event) {
     var timeOfMessage = event.timestamp;
     var message = event.message;
 
-    //console.log("Received message for user %d and page %d at %d with message:", senderID, recipientID, timeOfMessage);
-    //console.log(JSON.stringify(message));
+    console.log("Received message for user %d and page %d at %d with message:", senderID, recipientID, timeOfMessage);
+    console.log(JSON.stringify(message));
 
     var isEcho = message.is_echo;
     var messageId = message.mid;
@@ -194,131 +136,86 @@ function receivedMessage(event) {
     var messageAttachments = message.attachments;
     var quickReply = message.quick_reply;
 
-    senderID = parseInt(senderID);
-
     if (isEcho) {
         // Just logging message echoes to console
         console.log("Received echo for message %s and app %d with metadata %s", messageId, appId, metadata);
         return;
     } else if (quickReply) {
         var quickReplyPayload = quickReply.payload;
-        //console.log("Quick reply for message %s with payload %s", messageId, quickReplyPayload);
-        var payloadFunction;
+        console.log("Quick reply for message %s with payload %s", messageId, quickReplyPayload);
 
-        if (quickReplyPayload.includes('-')) {
-            var params = quickReplyPayload.split('-');
-            payloadFunction = payloadRules.get(params[0]);
-            //console.log(senderID);
-            //console.log(typeof senderID);
-            if (payloadFunction) {
-                payloadFunction(senderID, params[1]);
-            }
-        } else {
-            payloadFunction = payloadRules.get(quickReplyPayload);
-
-            if (payloadFunction) {
-                payloadFunction(senderID);
-            }
-            /*
-             payloadFunction = findKeyStartsWith(payloadRules, quickReplyPayload);
-             if(payloadFunction){
-             payloadFunction(senderID);
-             }*/
-        }
-        //sendTextMessage(senderID, "Quick reply tapped");
-
+        sendTextMessage(senderID, "Quick reply tapped");
         return;
-    } else if (messageText) {
+    }
+
+    if (messageText) {
+
         // If we receive a text message, check to see if it matches any special
         // keywords and send back the corresponding example. Otherwise, just echo
         // the text we received.
+        switch (messageText) {
+            case 'image':
+                sendImageMessage(senderID);
+                break;
 
-        //Object.keys(listener);
-        var userListeners = listener[senderID];
-        var existRule = false;
-        //console.log(senderID);
-        //console.log(typeof senderID);
+            case 'gif':
+                sendGifMessage(senderID);
+                break;
 
-        if (!_.isEmpty(userListeners)) {
-            if (!buffer[senderID]) {
-                buffer[senderID] = {};
-            }
-            var keys = Object.keys(userListeners);
-            var key = keys.shift();
+            case 'audio':
+                sendAudioMessage(senderID);
+                break;
 
-            //console.log('User Listeners');
+            case 'video':
+                sendVideoMessage(senderID);
+                break;
 
-            while (key) {
-                //console.log(key);
-                if (userListeners[key].type == 'text') {
-                    buffer[senderID][key] = messageText;
-                    userListeners[key].callback(senderID);
-                    existRule = true;
-                }
-                delete userListeners[key];
-                key = keys.shift();
-            }
-        } else {
-            messageText = messageText.toLowerCase();
+            case 'file':
+                sendFileMessage(senderID);
+                break;
 
-            rules.forEach(function (value, key) {
-                if (messageText.includes(key)) {
-                    value(senderID);
-                    existRule = true;
-                }
-            });
+            case 'button':
+                sendButtonMessage(senderID);
+                break;
+
+            case 'generic':
+                sendGenericMessage(senderID);
+                break;
+
+            case 'receipt':
+                sendReceiptMessage(senderID);
+                break;
+
+            case 'quick reply':
+                sendQuickReply(senderID);
+                break;
+
+            case 'read receipt':
+                sendReadReceipt(senderID);
+                break;
+
+            case 'typing on':
+                sendTypingOn(senderID);
+                break;
+
+            case 'typing off':
+                sendTypingOff(senderID);
+                break;
+
+            case 'account linking':
+                sendAccountLinking(senderID);
+                break;
+
+            //default:
+            //sendTextMessage(senderID, messageText);
         }
 
-        if (!existRule) {
-            //console.log(messageText);
-            //console.log(defaultSearch);
-            defaultSearch(senderID, messageText);
+        messageText = messageText.toLowerCase();
+
+        if (rules.get(messageText)) {
+            rules.get(messageText)(senderID);
         }
         /*
-           switch (messageText) {
-         case 'image':
-         sendImageMessage(senderID);
-         break;
-          case 'gif':
-         sendGifMessage(senderID);
-         break;
-          case 'audio':
-         sendAudioMessage(senderID);
-         break;
-          case 'video':
-         sendVideoMessage(senderID);
-         break;
-          case 'file':
-         sendFileMessage(senderID);
-         break;
-          case 'button':
-         sendButtonMessage(senderID);
-         break;
-          case 'generic':
-         sendGenericMessage(senderID);
-         break;
-          case 'receipt':
-         sendReceiptMessage(senderID);
-         break;
-          case 'quick reply':
-         sendQuickReply(senderID);
-         break;
-          case 'read receipt':
-         sendReadReceipt(senderID);
-         break;
-          case 'typing on':
-         sendTypingOn(senderID);
-         break;
-          case 'typing off':
-         sendTypingOff(senderID);
-         break;
-          case 'account linking':
-         sendAccountLinking(senderID);
-         break;
-          default:
-         sendTextMessage(senderID, messageText);
-         }
-         /*
          if (messageText.indexOf("hola") > -1){
          sendMenuMessage(senderID);
          }
@@ -333,30 +230,7 @@ function receivedMessage(event) {
          }
          */
     } else if (messageAttachments) {
-        if (messageAttachments[0].type == 'location') {
-            var location = messageAttachments[0].payload.coordinates;
-            var userListeners = listener[senderID];
-            //console.log(senderID);
-            //console.log(typeof senderID);
-            if (!_.isEmpty(userListeners)) {
-                if (!buffer[senderID]) {
-                    buffer[senderID] = {};
-                }
-                var keys = Object.keys(userListeners);
-                var key = keys.shift();
-
-                while (key) {
-                    console.log(key);
-                    if (userListeners[key].type == 'attachment') {
-                        buffer[senderID][key] = { lat: location.lat, lng: location.long };
-                        userListeners[key].callback(senderID);
-                    }
-                    delete userListeners[key];
-                    key = keys.shift();
-                }
-            }
-        }
-        //sendTextMessage(senderID, "Message with attachment received");
+        sendTextMessage(senderID, "Message with attachment received");
     }
 }
 
@@ -375,15 +249,13 @@ function receivedDeliveryConfirmation(event) {
     var watermark = delivery.watermark;
     var sequenceNumber = delivery.seq;
 
-    senderID = parseInt(senderID);
-
     if (messageIDs) {
         messageIDs.forEach(function (messageID) {
-            //console.log("Received delivery confirmation for message ID: %s", messageID);
+            console.log("Received delivery confirmation for message ID: %s", messageID);
         });
     }
 
-    //console.log("All message before %d were delivered.", watermark);
+    console.log("All message before %d were delivered.", watermark);
 }
 
 /*
@@ -402,65 +274,28 @@ function receivedPostback(event) {
     // button for Structured Messages.
     var payload = event.postback.payload;
 
-    //console.log("Received postback for user %d and page %d with payload '%s' " + "at %d", senderID, recipientID, payload, timeOfPostback);
+    console.log("Received postback for user %d and page %d with payload '%s' " + "at %d", senderID, recipientID, payload, timeOfPostback);
 
     // When a postback is called, we'll send a message back to the sender to
     // let them know it was successful
-
-    var payloadFunction;
-
-    var params = payload.split('-');
-
-    payloadFunction = payloadRules.get(params[0]);
-    senderID = parseInt(senderID);
-
-    //console.log(senderID);
-    //console.log(typeof senderID);
-
-    if (payloadFunction) {
-        switch (params.length) {
-            case 1:
-                payloadFunction(senderID);
-                break;
-            case 2:
-                payloadFunction(senderID, params[1]);
-                break;
-            case 3:
-                payloadFunction(senderID, params[1], params[2]);
-                break;
-            default:
-                console.log('Payload not found: ' + params);
-        }
-    }
-
-    /*
-    if(payload == 'Greeting'){
+    if (payload == 'Greeting') {
         sendMenuMessage(senderID);
-    }
-    else if(payload == 'Delivery'){
-        sendMenuMessage(senderID);
-    }
-    else if(payload.startsWith("ListCategories")){
+    } else if (payload.startsWith("ListCategories")) {
         var params = payload.split("-");
         console.log("List Categories");
         console.log(params);
         listCategories(senderID, parseInt(params[1]));
-    }
-    else if(payload.startsWith("ListProducts")){
+    } else if (payload.startsWith("ListProducts")) {
         var params = payload.split("-");
         listProducts(senderID, params[1], parseInt(params[2]));
-    }
-    else if(payload.startsWith("Add")){
+    } else if (payload.startsWith("Add")) {
         var params = payload.split("-");
         addProduct(params[1]);
-    }
-    else if(payload.startsWith("ShoppingCart")){
+    } else if (payload.startsWith("ShoppingCart")) {
         sendBillMessage(senderID);
+    } else {
+        sendTextMessage(senderID, "Postback called " + payload);
     }
-    else{
-        sendTextMessage(senderID, "Postback called "+payload);
-    }
-    */
 }
 
 /*
@@ -477,8 +312,6 @@ function receivedMessageRead(event) {
     // All messages before watermark (a timestamp) or sequence have been seen.
     var watermark = event.read.watermark;
     var sequenceNumber = event.read.seq;
-
-    senderID = parseInt(senderID);
 
     console.log("Received message read event for watermark %d and sequence " + "number %d", watermark, sequenceNumber);
 }
@@ -498,8 +331,6 @@ function receivedAccountLink(event) {
     var status = event.account_linking.status;
     var authCode = event.account_linking.authorization_code;
 
-    senderID = parseInt(senderID);
-
     console.log("Received account link event with for user %d with status %s " + "and auth code %s ", senderID, status, authCode);
 }
 
@@ -508,9 +339,9 @@ function receivedAccountLink(event) {
  * get the message id in a response
  *
  */
-function callSendAPI(messageData, callback) {
+function callSendAPI(messageData) {
     (0, _request2.default)({
-        uri: 'https://graph.facebook.com/v2.7/me/messages',
+        uri: 'https://graph.facebook.com/v2.6/me/messages',
         qs: { access_token: PAGE_ACCESS_TOKEN },
         method: 'POST',
         json: messageData
@@ -521,69 +352,14 @@ function callSendAPI(messageData, callback) {
             var messageId = body.message_id;
 
             if (messageId) {
-                if (callback) callback(recipientId);
-                //console.log("Successfully sent message with id %s to recipient %s", messageId, recipientId);
+                console.log("Successfully sent message with id %s to recipient %s", messageId, recipientId);
             } else {
-                    //console.log("Successfully called Send API for recipient %s", recipientId);
-                }
+                console.log("Successfully called Send API for recipient %s", recipientId);
+            }
         } else {
-            console.error(response);
-            console.error(body);
-            console.error(error);
+            console.error(response.error);
         }
     });
-}
-
-/*
- * Turn typing indicator on
- *
- */
-function sendTypingOn(recipientId) {
-    //console.log("Turning typing indicator on");
-
-    var messageData = {
-        recipient: {
-            id: recipientId
-        },
-        sender_action: "typing_on"
-    };
-
-    callSendAPI(messageData);
-}
-
-/*
- * Turn typing indicator off
- *
- */
-function sendTypingOff(recipientId) {
-    //console.log("Turning typing indicator off");
-
-    var messageData = {
-        recipient: {
-            id: recipientId
-        },
-        sender_action: "typing_off"
-    };
-
-    callSendAPI(messageData);
-}
-
-/*
- * Send a text message using the Send API.
- *
- */
-function sendTextMessage(recipientId, messageText) {
-    var messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            text: messageText,
-            metadata: "DEVELOPER_DEFINED_METADATA"
-        }
-    };
-
-    callSendAPI(messageData);
 }
 
 /*
@@ -690,6 +466,24 @@ function sendFileMessage(recipientId) {
                     url: SERVER_URL + "/assets/test.txt"
                 }
             }
+        }
+    };
+
+    callSendAPI(messageData);
+}
+
+/*
+ * Send a text message using the Send API.
+ *
+ */
+function sendTextMessage(recipientId, messageText) {
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            text: messageText,
+            metadata: "DEVELOPER_DEFINED_METADATA"
         }
     };
 
@@ -898,6 +692,40 @@ function sendReadReceipt(recipientId) {
 }
 
 /*
+ * Turn typing indicator on
+ *
+ */
+function sendTypingOn(recipientId) {
+    console.log("Turning typing indicator on");
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        sender_action: "typing_on"
+    };
+
+    callSendAPI(messageData);
+}
+
+/*
+ * Turn typing indicator off
+ *
+ */
+function sendTypingOff(recipientId) {
+    console.log("Turning typing indicator off");
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        sender_action: "typing_off"
+    };
+
+    callSendAPI(messageData);
+}
+
+/*
  * Send a message with the account linking call-to-action
  *
  */
@@ -924,185 +752,12 @@ function sendAccountLinking(recipientId) {
     callSendAPI(messageData);
 }
 
-function findKeyStartsWith(map, str) {
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-        for (var _iterator = map[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var _step$value = _slicedToArray(_step.value, 2);
-
-            var key = _step$value[0];
-            var value = _step$value[1];
-
-            if (key.startsWith(str)) return value;
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-            }
-        } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
-            }
-        }
-    }
-
-    return undefined;
-}
-
-function getFacebookUser(recipientId, callback) {
-    return (0, _requestPromise2.default)({
-        uri: 'https://graph.facebook.com/v2.7/' + recipientId,
-        qs: { access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender' },
-        method: 'GET'
-    }).then(function (body) {
-        return JSON.parse(body);
-    }).catch(function (error) {
-        console.log('error');
-        console.log(error);
-    });
-
-    /*
-    if (!error && response.statusCode == 200) {
-        var pathname = response.request.uri.pathname;
-        var recipientId = pathname.split('/').pop();
-        var userData = JSON.parse(body);
-        var commerce = new Parse.Query(ParseModels.Customer);
-         //user.equalTo('authData', {"facebook":        {"access_token":"EAAPK2ME0gLkBAE6HMBKLP2RfquPvCIyaXNuItGYRdBpJNArGCZC9UzITl9ZBB7EKnmuukylXS93yhHOZAUiHjPwGyNBmnb11VPB7kf0Km9o2Gm2hFSJhDmjpZA1bfZCITRQ45OCMVAIWSR3jHIjkg3cze6tSvZBQjKdGkalGA1V7E0npkZAcMPn51z2yLAPJVRzRpbTqNCTtNPIhxpBr7H2","expiration_date":"2016-10-02T15:16:42.000Z","id":"10210218101474882"}})
-         commerce.contains('businessId', BUSINESS_ID);
-         commerce.find().then(function(results){
-                var currentUser = Parse.User.current();
-                var image_url = results[0].get('image').url();
-                 console.log('data');
-                console.log(userData);
-                console.log(recipientId);
-                console.log(results);
-                console.log(image_url);
-                  var messageData = {
-                    recipient: {
-                        id: recipientId
-                    },
-                    message: {
-                        attachment: {
-                            type: "template",
-                            payload: {
-                                template_type: "generic",
-                                //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
-                                elements: [{
-                                    "title":     "Hola "+userData.first_name+", Bienvenido a OXXO. ",
-                                    "subtitle":  "Aquí puedes pedir un domicilio, escribe o selecciona alguna de las opciones:",
-                                    "image_url": image_url,
-                                    "buttons":[
-                                        {
-                                            "type":"postback",
-                                            "title":"Pedir domicilio",
-                                            "payload":"ListCategories-0"
-                                        },
-                                        {
-                                            "type":"postback",
-                                            "title":"Pedir para recoger",
-                                            "payload":"ListCategories-0"
-                                        },
-                                        {
-                                            "type":"postback",
-                                            "title":"Servicio al cliente",
-                                            "payload":"ListCategories-0"
-                                        }
-                                    ]
-                                }]
-                            }
-                        }
-                    }
-                };
-                 bot.sendTypingOff(recipientId);
-                bot.callSendAPI(messageData);
-            },
-            function(error) {
-                console.log("Lookup failed");
-            });
-    } else {
-        console.error(response.error);
-    }*/
-}
-
-function setListener(recipientId, dataId, type, callback) {
-    if (typeof listener[recipientId] == 'undefined') {
-        listener[recipientId] = {};
-    }
-
-    listener[recipientId][dataId] = { callback: callback, type: type };
-
-    /*
-     // input dataId =  consumerAddress[address]
-     var id;
-    var ref = listener[recipientId]
-    var elements = dataId.split(/[\[|\]]+/g).filter(function(el) {return el.length != 0});
-     while(elements.length != 0){
-        id = elements.shift();
-        if(elements.length == 0){
-            ref[id] = callback
-        }
-        else if(!ref[id]){
-            ref[id] = {}
-        }
-        ref = ref[id];
-    };*/
-}
-
-function getListener(recipientId, dataId) {
-    if (typeof listener[recipientId] == 'undefined') {
-        return undefined;
-    }
-
-    return listener[recipientId][dataId];
-    /*
-      // input dataId =  consumerAddress[address]
-      var id;
-     var ref = listener[recipientId]
-     var elements = dataId.split(/[\[|\]]+/g).filter(function(el) {return el.length != 0});
-      while(elements.length != 0){
-     id = elements.shift();
-     if(elements.length == 0){
-     ref[id] = callback
-     }
-     else if(!ref[id]){
-     ref[id] = {}
-     }
-     ref = ref[id];
-     };*/
-}
-
-function deleteListener(recipientId, dataId) {
-    if (!listener[recipientId]) {
-        return false;
-    }
-
-    delete listener[recipientId][dataId];
-    return true;
-}
-
-function defaultSearch(recipientId, query) {
-    //console.log('defaultSearch');
-    //console.log(search);
-    var search = payloadRules.get('Search');
-
-    if (search) {
-        search(recipientId, query);
-    }
-};
-
 /*
  * Use your own validation token. Check that the token used in the Webhook
  * setup is the same token used here.
  *
  */
-_server.app.get('/webhook', function (req, res) {
+_server2.default.get('/webhook', function (req, res) {
     if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VALIDATION_TOKEN) {
         console.log("Validating webhook");
         res.status(200).send(req.query['hub.challenge']);
@@ -1119,7 +774,7 @@ _server.app.get('/webhook', function (req, res) {
  * https://developers.facebook.com/docs/messenger-platform/product-overview/setup#subscribe_app
  *
  */
-_server.app.post('/webhook', function (req, res) {
+_server2.default.post('/webhook', function (req, res) {
     var data = req.body;
 
     // Make sure this is a page subscription
@@ -1132,7 +787,7 @@ _server.app.post('/webhook', function (req, res) {
 
             // Iterate over each messaging event
             pageEntry.messaging.forEach(function (messagingEvent) {
-                //console.log(messagingEvent);
+                console.log(messagingEvent);
                 if (messagingEvent.optin) {
                     receivedAuthentication(messagingEvent);
                 } else if (messagingEvent.message) {
@@ -1164,7 +819,7 @@ _server.app.post('/webhook', function (req, res) {
  * (sendAccountLinking) is pointed to this URL.
  *
  */
-_server.app.get('/authorize', function (req, res) {
+_server2.default.get('/authorize', function (req, res) {
     var accountLinkingToken = req.query['account_linking_token'];
     var redirectURI = req.query['redirect_uri'];
 
@@ -1185,10 +840,10 @@ _server.app.get('/authorize', function (req, res) {
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid
 // certificate authority.
-_server.app.listen(_server.app.get('port'), function () {
-    //console.log('Node app is running on port', app.get('port'));
+_server2.default.listen(_server2.default.get('port'), function () {
+    console.log('Node app is running on port', _server2.default.get('port'));
 });
 
-module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, buffer: buffer, listener: listener, limit: limit, defaultSearch: defaultSearch, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser, setListener: setListener, getListener: getListener, deleteListener: deleteListener };
+module.exports = { app: _server2.default, rules: rules, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff };
 
 //# sourceMappingURL=bot-compiled.js.map
