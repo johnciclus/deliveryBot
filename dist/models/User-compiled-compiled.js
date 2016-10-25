@@ -37,3 +37,5 @@ var User = Parse.Object.extend('User', {
 exports.default = User;
 
 //# sourceMappingURL=User-compiled.js.map
+
+//# sourceMappingURL=User-compiled-compiled.js.map

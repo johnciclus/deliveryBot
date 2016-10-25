@@ -1192,3 +1192,5 @@ _server.app.listen(_server.app.get('port'), function () {
 module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, buffer: buffer, listener: listener, limit: limit, defaultSearch: defaultSearch, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser, setListener: setListener, getListener: getListener, deleteListener: deleteListener };
 
 //# sourceMappingURL=bot-compiled.js.map
+
+//# sourceMappingURL=bot-compiled-compiled.js.map

@@ -10,3 +10,5 @@ var Order = Parse.Object.extend('Order', {
 exports.default = Order;
 
 //# sourceMappingURL=Order-compiled.js.map
+
+//# sourceMappingURL=Order-compiled-compiled.js.map

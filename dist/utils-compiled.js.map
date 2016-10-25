@@ -1,0 +1,1 @@
+{"version":3,"sources":["utils.js"],"names":[],"mappings":"AAAA;;AAEA,OAAO,SAAP,CAAiB,qBAAjB,GAAyC,YAAY;AACjD,WAAO,KAAK,MAAL,CAAY,CAAZ,EAAe,WAAf,KAA+B,KAAK,KAAL,CAAW,CAAX,CAAtC;AACH,CAFD","file":"utils-compiled.js","sourcesContent":["\"use strict\";\n\nString.prototype.capitalizeFirstLetter = function () {\n    return this.charAt(0).toUpperCase() + this.slice(1);\n};"]}
