@@ -129,7 +129,7 @@ function receivedAuthentication(event) {
  * Message Event
  *
  * This event is called when a message is sent to your page. The 'message'
- * object format can vary depending on the kind of message that was received.
+ * object format can lety depending on the kind of message that was received.
  * Read more at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-received
  *
  * For this example, we're going to echo any text that we get. If we get some
@@ -167,7 +167,7 @@ function receivedMessage(event) {
     } else if (quickReply) {
         var quickReplyPayload = quickReply.payload;
         //console.log("Quick reply for message %s with payload %s", messageId, quickReplyPayload);
-        var payloadFunction;
+        var payloadFunction = void 0;
 
         if (quickReplyPayload.includes('-')) {
             var params = quickReplyPayload.split('-');
@@ -299,24 +299,24 @@ function receivedMessage(event) {
     } else if (messageAttachments) {
         if (messageAttachments[0].type == 'location') {
             var location = messageAttachments[0].payload.coordinates;
-            var userListeners = listener[senderID];
+            var _userListeners = listener[senderID];
             //console.log(senderID);
             //console.log(typeof senderID);
-            if (!_.isEmpty(userListeners)) {
+            if (!_.isEmpty(_userListeners)) {
                 if (!buffer[senderID]) {
                     buffer[senderID] = {};
                 }
-                var keys = Object.keys(userListeners);
-                var key = keys.shift();
+                var _keys = Object.keys(_userListeners);
+                var _key = _keys.shift();
 
-                while (key) {
-                    console.log(key);
-                    if (userListeners[key].type == 'attachment') {
-                        buffer[senderID][key] = { lat: location.lat, lng: location.long };
-                        userListeners[key].callback(senderID);
+                while (_key) {
+                    console.log(_key);
+                    if (_userListeners[_key].type == 'attachment') {
+                        buffer[senderID][_key] = { lat: location.lat, lng: location.long };
+                        _userListeners[_key].callback(senderID);
                     }
-                    delete userListeners[key];
-                    key = keys.shift();
+                    delete _userListeners[_key];
+                    _key = _keys.shift();
                 }
             }
         }
@@ -371,7 +371,7 @@ function receivedPostback(event) {
     // When a postback is called, we'll send a message back to the sender to
     // let them know it was successful
 
-    var payloadFunction;
+    var payloadFunction = void 0;
 
     var params = payload.split('-');
 
@@ -405,17 +405,17 @@ function receivedPostback(event) {
         sendMenuMessage(senderID);
     }
     else if(payload.startsWith("ListCategories")){
-        var params = payload.split("-");
+        let params = payload.split("-");
         console.log("List Categories");
         console.log(params);
         listCategories(senderID, parseInt(params[1]));
     }
     else if(payload.startsWith("ListProducts")){
-        var params = payload.split("-");
+        let params = payload.split("-");
         listProducts(senderID, params[1], parseInt(params[2]));
     }
     else if(payload.startsWith("Add")){
-        var params = payload.split("-");
+        let params = payload.split("-");
         addProduct(params[1]);
     }
     else if(payload.startsWith("ShoppingCart")){
@@ -934,21 +934,21 @@ function getFacebookUser(recipientId, callback) {
 
     /*
     if (!error && response.statusCode == 200) {
-        var pathname = response.request.uri.pathname;
-        var recipientId = pathname.split('/').pop();
-        var userData = JSON.parse(body);
-        var commerce = new Parse.Query(ParseModels.Customer);
+        let pathname = response.request.uri.pathname;
+        let recipientId = pathname.split('/').pop();
+        let userData = JSON.parse(body);
+        let commerce = new Parse.Query(ParseModels.Customer);
          //user.equalTo('authData', {"facebook":        {"access_token":"EAAPK2ME0gLkBAE6HMBKLP2RfquPvCIyaXNuItGYRdBpJNArGCZC9UzITl9ZBB7EKnmuukylXS93yhHOZAUiHjPwGyNBmnb11VPB7kf0Km9o2Gm2hFSJhDmjpZA1bfZCITRQ45OCMVAIWSR3jHIjkg3cze6tSvZBQjKdGkalGA1V7E0npkZAcMPn51z2yLAPJVRzRpbTqNCTtNPIhxpBr7H2","expiration_date":"2016-10-02T15:16:42.000Z","id":"10210218101474882"}})
          commerce.contains('businessId', BUSINESS_ID);
          commerce.find().then(function(results){
-                var currentUser = Parse.User.current();
-                var image_url = results[0].get('image').url();
+                let currentUser = Parse.User.current();
+                let image_url = results[0].get('image').url();
                  console.log('data');
                 console.log(userData);
                 console.log(recipientId);
                 console.log(results);
                 console.log(image_url);
-                  var messageData = {
+                  let messageData = {
                     recipient: {
                         id: recipientId
                     },
@@ -1004,9 +1004,9 @@ function setListener(recipientId, dataId, type, callback) {
 
     /*
      // input dataId =  consumerAddress[address]
-     var id;
-    var ref = listener[recipientId]
-    var elements = dataId.split(/[\[|\]]+/g).filter(function(el) {return el.length != 0});
+     let id;
+    let ref = listener[recipientId]
+    let elements = dataId.split(/[\[|\]]+/g).filter(function(el) {return el.length != 0});
      while(elements.length != 0){
         id = elements.shift();
         if(elements.length == 0){
@@ -1027,9 +1027,9 @@ function getListener(recipientId, dataId) {
     return listener[recipientId][dataId];
     /*
       // input dataId =  consumerAddress[address]
-      var id;
-     var ref = listener[recipientId]
-     var elements = dataId.split(/[\[|\]]+/g).filter(function(el) {return el.length != 0});
+      let id;
+     let ref = listener[recipientId]
+     let elements = dataId.split(/[\[|\]]+/g).filter(function(el) {return el.length != 0});
       while(elements.length != 0){
      id = elements.shift();
      if(elements.length == 0){

@@ -7,6 +7,7 @@ exports.loadCustomer = loadCustomer;
 exports.loadUser = loadUser;
 exports.loadConsumer = loadConsumer;
 exports.loadConsumerAddresses = loadConsumerAddresses;
+exports.loadOrders = loadOrders;
 exports.setAddress = setAddress;
 exports.loadPaymentMethods = loadPaymentMethods;
 exports.setPaymentMethod = setPaymentMethod;
@@ -20,6 +21,7 @@ exports.setOrder = setOrder;
 exports.setUser = setUser;
 exports.setConsumer = setConsumer;
 exports.setOrderState = setOrderState;
+exports.setOrders = setOrders;
 exports.loadConsumerOrders = loadConsumerOrders;
 exports.loadProducts = loadProducts;
 exports.filterProductsByCategory = filterProductsByCategory;
@@ -176,6 +178,11 @@ function loadConsumerAddresses(recipientId, consumer) {
   };
 }
 
+function loadOrders(recipientId, orders) {
+  if (orders == undefined) return;
+  return function (dispatch) {};
+}
+
 /**
  * SET_CURRENT_ADDRESS action
  */
@@ -327,6 +334,14 @@ function setOrderState(recipientId, orderState) {
   return function (dispatch) {
     return Parse.Promise.as().then(function () {
       dispatch({ type: types.SET_ORDER_STATE, data: { recipientId: recipientId, orderState: orderState } });
+    });
+  };
+}
+
+function setOrders(recipientId, orders) {
+  return function (dispatch) {
+    return Parse.Promise.as().then(function () {
+      dispatch({ type: types.SET_ORDERS, data: { recipientId: recipientId, orders: orders } });
     });
   };
 }

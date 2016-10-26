@@ -66,6 +66,14 @@ var _path = require('path');
 
 var _path2 = _interopRequireDefault(_path);
 
+var _datetimeConverterNodejs = require('datetime-converter-nodejs');
+
+var _datetimeConverterNodejs2 = _interopRequireDefault(_datetimeConverterNodejs);
+
+var _dateformat = require('dateformat');
+
+var _dateformat2 = _interopRequireDefault(_dateformat);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
@@ -107,6 +115,10 @@ bot.rules.set('buenas tardes', sendMenu);
 bot.rules.set('pedir domicilio', sendAddresses);
 bot.rules.set('carrito', sendCart);
 bot.rules.set('cuenta', sendCart);
+bot.rules.set('mi orden', sendOrders);
+bot.rules.set('mis ordenes', sendOrders);
+bot.rules.set('ayuda', sendHelp);
+bot.rules.set('help', sendHelp);
 
 bot.payloadRules.set('Greeting', sendMenu);
 
@@ -139,9 +151,12 @@ bot.payloadRules.set('SendRegisteredCreditCards', sendRegisteredCreditCards);
 bot.payloadRules.set('CancelRegisterCreditCard', cancelRegisterCreditCard);
 bot.payloadRules.set('PayWithCreditCard', payWithCreditCard);
 bot.payloadRules.set('SendOrders', sendOrders);
+bot.payloadRules.set('SendOrder', sendOrder);
 bot.payloadRules.set('NewOrder', newOrder);
+bot.payloadRules.set('CancelOrder', cancelOrder);
 bot.payloadRules.set('SetScore', setScore);
 bot.payloadRules.set('Help', sendHelp);
+bot.payloadRules.set('CustomerService', sendHelp);
 
 bot.defaultSearch = searchProducts;
 
@@ -197,130 +212,160 @@ var reducer = function reducer() {
 
     switch (action.type) {
         case types.APP_LOADED:
-            console.log('Application is running on port', bot.app.get('port'));
-            return _extends({}, state);
-
-        case types.CUSTOMER_LOADED:
-            var customer = (0, _ParseUtils.extractParseAttributes)(data.customer);
-
-            if (_typeof(state.userData[data.recipientId]) != 'object') {
-                state.userData[data.recipientId] = {};
+            {
+                console.log('Application is running on port', bot.app.get('port'));
+                return _extends({}, state);
             }
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { customer: customer });
-            return _extends({}, state);
+        case types.CUSTOMER_LOADED:
+            {
+                var customer = (0, _ParseUtils.extractParseAttributes)(data.customer);
 
+                if (_typeof(state.userData[data.recipientId]) != 'object') {
+                    state.userData[data.recipientId] = {};
+                }
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { customer: customer });
+                return _extends({}, state);
+            }
         case types.CONSUMER_LOADED:
-            //if (state.consumerNotFound) delete state.consumerNotFound;
-            var _consumer2 = (0, _ParseUtils.extractParseAttributes)(data.consumer);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { consumer: _consumer2 });
-            return _extends({}, state);
-
+            {
+                //if (state.consumerNotFound) delete state.consumerNotFound;
+                var consumer = (0, _ParseUtils.extractParseAttributes)(data.consumer);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { consumer: consumer });
+                return _extends({}, state);
+            }
         case types.USER_LOADED:
-            var _user2 = (0, _ParseUtils.extractParseAttributes)(data.user);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { user: _user2 });
-            return _extends({}, state);
-
+            {
+                var _user2 = (0, _ParseUtils.extractParseAttributes)(data.user);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { user: _user2 });
+                return _extends({}, state);
+            }
         case types.CONSUMER_ADDRESSES_LOADED:
-            var addresses = data.addresses.map(function (a) {
-                return (0, _ParseUtils.extractParseAttributes)(a);
-            });
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { addresses: addresses });
-            return _extends({}, state);
-
+            {
+                var addresses = data.addresses.map(function (a) {
+                    return (0, _ParseUtils.extractParseAttributes)(a);
+                });
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { addresses: addresses });
+                return _extends({}, state);
+            }
         case types.SET_CURRENT_ADDRESS:
-            var address = (0, _ParseUtils.extractParseAttributes)(data.address);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { address: address });
-            return _extends({}, state);
-
+            {
+                var address = (0, _ParseUtils.extractParseAttributes)(data.address);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { address: address });
+                return _extends({}, state);
+            }
         case types.PAYMENT_METHODS_LOADED:
-            console.log('PAYMENT_METHODS_LOADED');
-            console.log(data.paymentMethods);
-            var paymentMethods = data.paymentMethods.map(function (p) {
-                return (0, _ParseUtils.extractParseAttributes)(p);
-            });
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { paymentMethods: paymentMethods });
-            return _extends({}, state);
-
+            {
+                console.log('PAYMENT_METHODS_LOADED');
+                console.log(data.paymentMethods);
+                var paymentMethods = data.paymentMethods.map(function (p) {
+                    return (0, _ParseUtils.extractParseAttributes)(p);
+                });
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { paymentMethods: paymentMethods });
+                return _extends({}, state);
+            }
         case types.SET_PAYMENT_METHOD:
-            var paymentMethod = (0, _ParseUtils.extractParseAttributes)(data.paymentMethod);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { paymentMethod: paymentMethod });
-            return _extends({}, state);
-
+            {
+                var paymentMethod = (0, _ParseUtils.extractParseAttributes)(data.paymentMethod);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { paymentMethod: paymentMethod });
+                return _extends({}, state);
+            }
+        case types.SET_ORDERS:
+            {
+                var ongoing = data.orders.ongoing.map(function (a) {
+                    return (0, _ParseUtils.extractParseAttributes)(a);
+                });
+                var delivered = data.orders.delivered.map(function (a) {
+                    return (0, _ParseUtils.extractParseAttributes)(a);
+                });
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { orders: { ongoing: ongoing, delivered: delivered } });
+                return _extends({}, state);
+            }
         case types.CONSUMER_UPDATED:
-            return _extends({}, state);
-
+            {
+                return _extends({}, state);
+            }
         case types.CONSUMER_NOT_FOUND:
-            (0, _objectAssign2.default)(state, {
-                consumerNotFound: true,
-                currentUser: action.data.user
-            });
-            return _extends({}, state);
-
+            {
+                (0, _objectAssign2.default)(state, {
+                    consumerNotFound: true,
+                    currentUser: action.data.user
+                });
+                return _extends({}, state);
+            }
         case types.CONSUMER_ORDERS_LOADED:
-            var orders = data.orders.map(function (a) {
-                return (0, _ParseUtils.extractParseAttributes)(a);
-            });
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { orders: orders });
-            return _extends({}, state);
-            /*let ongoing = orders['ongoing'].map(o => extractParseAttributes(o))
-            let delivered = orders['delivered'].map(o => extractParseAttributes(o))
-            let orderToRate = delivered[0]
-            objectAssign(state, {
-                orders: {ongoing, delivered},
-                orderToRate
-            })*/
-            return _extends({}, state);
-
+            {
+                var orders = data.orders.map(function (a) {
+                    return (0, _ParseUtils.extractParseAttributes)(a);
+                });
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { orders: orders });
+                return _extends({}, state);
+                /*let ongoing = orders['ongoing'].map(o => extractParseAttributes(o))
+                let delivered = orders['delivered'].map(o => extractParseAttributes(o))
+                let orderToRate = delivered[0]
+                objectAssign(state, {
+                    orders: {ongoing, delivered},
+                    orderToRate
+                })*/
+                return _extends({}, state);
+            }
         case types.USER_CREDITCARDS_LOADED:
-            var creditCards = data.creditCards.map(function (a) {
-                return (0, _ParseUtils.extractParseAttributes)(a);
-            });
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { creditCards: creditCards });
-            return _extends({}, state);
-
+            {
+                var creditCards = data.creditCards.map(function (a) {
+                    return (0, _ParseUtils.extractParseAttributes)(a);
+                });
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { creditCards: creditCards });
+                return _extends({}, state);
+            }
         case types.SET_CUSTOMER_POINT_SALE:
-            var pointSale = (0, _ParseUtils.extractParseAttributes)(data.pointSale);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { pointSale: pointSale });
-            return _extends({}, state);
-
+            {
+                var pointSale = (0, _ParseUtils.extractParseAttributes)(data.pointSale);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { pointSale: pointSale });
+                return _extends({}, state);
+            }
         case types.SET_ORDER:
-            var order = (0, _ParseUtils.extractParseAttributes)(data.order);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { order: order });
-            return _extends({}, state);
-
+            {
+                var order = (0, _ParseUtils.extractParseAttributes)(data.order);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { order: order });
+                return _extends({}, state);
+            }
         case types.SET_USER:
-            var _user2 = (0, _ParseUtils.extractParseAttributes)(data.user);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { user: _user2 });
-            return _extends({}, state);
-
+            {
+                var _user3 = (0, _ParseUtils.extractParseAttributes)(data.user);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { user: _user3 });
+                return _extends({}, state);
+            }
         case types.SET_CONSUMER:
-            var _consumer2 = (0, _ParseUtils.extractParseAttributes)(data.consumer);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { consumer: _consumer2 });
-            return _extends({}, state);
-
+            {
+                var _consumer2 = (0, _ParseUtils.extractParseAttributes)(data.consumer);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { consumer: _consumer2 });
+                return _extends({}, state);
+            }
         case types.SET_ORDER_STATE:
-            var _orderState = (0, _ParseUtils.extractParseAttributes)(data.orderState);
-            (0, _objectAssign2.default)(state.userData[data.recipientId], { orderState: _orderState });
-            return _extends({}, state);
-
+            {
+                var _orderState = (0, _ParseUtils.extractParseAttributes)(data.orderState);
+                (0, _objectAssign2.default)(state.userData[data.recipientId], { orderState: _orderState });
+                return _extends({}, state);
+            }
         case types.RENDER_MENU:
-            /*
-            console.log('Store');
-            console.log('Consumer');
-            console.log(consumer);*/
-            renderMenu();
+            {
+                /*
+                console.log('Store');
+                console.log('Consumer');
+                console.log(consumer);*/
+                renderMenu();
 
-            /*request({
-             uri: 'https://graph.facebook.com/v2.6/' + '1100195690052041',
-             qs: {access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender'},
-             method: 'GET'
-             }, renderMenuMessage);*/
-            return state;
-
+                /*request({
+                 uri: 'https://graph.facebook.com/v2.6/' + '1100195690052041',
+                 qs: {access_token: PAGE_ACCESS_TOKEN, fields: 'first_name,last_name,locale,timezone,gender'},
+                 method: 'GET'
+                 }, renderMenuMessage);*/
+                return state;
+            }
         case types.RENDER_ADDRESS_MENU:
-            renderAddress();
-            return state;
-
+            {
+                renderAddress();
+                return state;
+            }
         default:
             return state;
     }
@@ -494,11 +539,13 @@ function renderMenu(recipientId) {
                             "type": "postback",
                             "title": "Pedir domicilio",
                             "payload": "SendAddresses"
-                        }, {
-                            "type": "postback",
-                            "title": "Pedir para recoger",
+                        },
+                        /*{
+                            "type":"postback",
+                            "title":"Pedir para recoger",
                             "payload": "TakeOut"
-                        }, {
+                        },*/
+                        {
                             "type": "postback",
                             "title": "Servicio al cliente",
                             "payload": "CustomerService"
@@ -667,6 +714,21 @@ function renderMapMessage(recipientId, callback) {
     bot.callSendAPI(messageData, callback);
 }
 
+function renderNullMapMessage(recipientId, callback) {
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        "message": {
+            "text": "La dirección no ha sido encontrada en Google Maps, por favor intenta de nuevo"
+        }
+    };
+
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData, callback);
+}
+
 function renderMap(recipientId, callback) {
     bot.sendTypingOff(recipientId);
     var userBuffer = bot.buffer[recipientId];
@@ -763,6 +825,9 @@ function addressCheck(recipientId) {
         } else {
             console.log('Geocode not found');
             console.log(error);
+            renderNullMapMessage(recipientId, function () {
+                newAddress(recipientId);
+            });
         }
     });
 }
@@ -849,7 +914,11 @@ function setEmail(recipientId) {
     bot.callSendAPI(messageData);
 }
 
-function setEmailCheck(recipientId) {}
+function setEmailCheck(recipientId, value) {
+    var consumer = getData(recipientId, 'consumer').rawParseObject;
+    consumer.setEmail(value);
+    return consumer.saveInStore(store);
+}
 
 function setTelephone(recipientId) {
     var messageData = {
@@ -865,7 +934,11 @@ function setTelephone(recipientId) {
     bot.callSendAPI(messageData);
 }
 
-function setTelephoneCheck(recipientId) {}
+function setTelephoneCheck(recipientId, value) {
+    var consumer = getData(recipientId, 'consumer').rawParseObject;
+    consumer.setPhone(value);
+    return consumer.saveInStore(store);
+}
 
 function setLocationCheck(recipientId) {
     var userBuffer = bot.buffer[recipientId];
@@ -965,7 +1038,7 @@ function setAddress(recipientId, id) {
         /*
         Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(
             function(result){
-                var pointSale = result.pointSale
+                let pointSale = result.pointSale
                 console.log('\nPoint Sale');
                 console.log(pointSale);
                  Parse.Cloud.run('isInsideCoverage', {lat: address.location.lat, lng: address.location.lng, pointSale: pointSale.id } ).then(
@@ -1389,7 +1462,7 @@ function saveCart(recipientId) {
     var cart = getData(recipientId, 'cart');
     var paymentMethod = getData(recipientId, 'paymentMethod');
     var items = [];
-    var item;
+    var item = void 0;
 
     var _iteratorNormalCompletion5 = true;
     var _didIteratorError5 = false;
@@ -1427,7 +1500,7 @@ function saveCart(recipientId) {
                     //console.log('\nItem save');
                     //console.log(result);
                     //console.log(result.get('product'));
-                    var itemId = result.get('product').objectId;
+                    let itemId = result.get('product').objectId;
                     //console.log(cart.items.get(itemId));
                     cart.items.get(itemId).id = result.id;
                     //console.log(cart.items.get(itemId));
@@ -1464,12 +1537,12 @@ function saveCart(recipientId) {
 
             try {
                 for (var _iterator6 = result[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                    var item = _step6.value;
+                    var _item = _step6.value;
 
-                    var itemId = item.get('product').objectId;
-                    cart.items.get(itemId).id = item.id;
+                    var itemId = _item.get('product').objectId;
+                    cart.items.get(itemId).id = _item.id;
 
-                    itemsPointers.push({ "__type": "Pointer", "className": "OrderItem", "objectId": item.id });
+                    itemsPointers.push({ "__type": "Pointer", "className": "OrderItem", "objectId": _item.id });
                 }
 
                 //console.log(cart.items);
@@ -1572,6 +1645,8 @@ function saveOrder(recipientId) {
     order.set('total', total);
     order.set('paymentMethod', paymentMethod.method);
     order.set('name', consumer.name);
+    order.set('email', consumer.email);
+    order.set('phone', consumer.phone);
     //order.set('comment', "Orden");
 
     console.log('Setting Order');
@@ -1656,7 +1731,7 @@ function sendCart(recipientId) {
         var consumer = getData(recipientId, 'consumer');
         var cart = getData(recipientId, 'cart');
         var address = getData(recipientId, 'address');
-        var customer_image_url;
+        var customer_image_url = void 0;
         /*
         console.log('sendCart');
         console.log(user);
@@ -1687,8 +1762,8 @@ function sendCart(recipientId) {
         var total = 0;
         var orderLimit = items.size;
         var ind = 0;
-        var image;
-        var image_url;
+        var image = void 0;
+        var image_url = void 0;
 
         //console.log('Shopping Cart');
         //console.log(orderLimit);
@@ -1768,7 +1843,7 @@ function renderCart(recipientId, cartId, elements, total) {
                     order_number: cartId,
                     currency: "COP",
                     payment_method: payment_method.name,
-                    order_url: "http://petersapparel.parseapp.com/order?order_id=123456",
+                    //order_url: "http://petersapparel.parseapp.com/order?order_id=123456",
                     timestamp: Math.trunc(Date.now() / 1000).toString(),
                     elements: elements,
                     address: addressData,
@@ -1947,26 +2022,28 @@ function clearCart(recipientId, callback) {
     var cart = getData(recipientId, 'cart');
 
     if (typeof cart != 'undefined') {
-        var items = cart.items;
-        cart.itemsPointers = [];
+        (function () {
+            var items = cart.items;
+            cart.itemsPointers = [];
 
-        items.forEach(function (value, key) {
-            new Parse.Query(ParseModels.OrderItem).get(value.id, {
-                success: function success(orderItem) {
-                    orderItem.destroy({});
-                    items.delete(key);
-                    if (items.size == 0) {
-                        if (callback) {
-                            callback(user);
+            items.forEach(function (value, key) {
+                new Parse.Query(ParseModels.OrderItem).get(value.id, {
+                    success: function success(orderItem) {
+                        orderItem.destroy({});
+                        items.delete(key);
+                        if (items.size == 0) {
+                            if (callback) {
+                                callback(user);
+                            }
                         }
+                    },
+                    error: function error(orderItem, _error10) {
+                        console.log('error');
+                        console.log(_error10);
                     }
-                },
-                error: function error(orderItem, _error10) {
-                    console.log('error');
-                    console.log(_error10);
-                }
+                });
             });
-        });
+        })();
     }
 }
 
@@ -2026,7 +2103,7 @@ function checkout(recipientId, id) {
 
         paymentFunction(recipientId);
         /*
-        var cart = new ParseModels.Order();
+        let cart = new ParseModels.Order();
         cart.set('name', userBuffer['address-name']);
         cart.set('address', userBuffer.address);
         cart.set('consumer', {
@@ -2245,8 +2322,7 @@ function orderConfirmation(recipientId) {
 
     saveOrder(recipientId);
 
-    bot.sendTypingOff(recipientId);
-    bot.callSendAPI(messageData);
+    bot.callSendAPI(messageData, bot.sendTypingOff);
 }
 
 function orderState(recipientId) {
@@ -2522,71 +2598,27 @@ function sendRegisterFacebookUser(recipientId) {
 
 function sendOrders(recipientId) {
     bot.sendTypingOn(recipientId);
-    var user = getData(recipientId, 'user');
-    var consumer = getData(recipientId, 'consumer');
 
-    if (typeof consumer == 'undefined') {
-        store.dispatch(Actions.loadCustomer(recipientId, BUSINESS_ID)).then(function () {
-            /*authentication(recipientId, user => {
-                if(user){
-                    store.dispatch(Actions.loadConsumer(recipientId, user)).then(
-                        () => {
-                            consumer = getData(recipientId, 'consumer');
-                            store.dispatch(Actions.loadConsumerAddresses(recipientId, consumer.rawParseObject)).then(
-                                () => {
-                                    renderAddressMenu(recipientId);
-                                }
-                            );
-                        }
-                    );
-                }
-            });*/
-        });
-    } else {
-        console.log('user');
-        console.log(user.rawParseObject);
-        console.log('consumer');
-        console.log(consumer.rawParseObject);
-        console.log(user.rawParseObject.getSessionToken());
+    authentication(recipientId, function (user) {
+        loadCustomer(recipientId).then(function () {
+            var consumer = getData(recipientId, 'consumer');
 
-        Parse.Cloud.run('orders', { businessId: BUSINESS_ID }).then(function (result) {
-            console.log(result);
-        }, function (error) {
-            console.log('error');
-            console.log(error);
-        });
-
-        /*
-        request.post({
-            url: PARSE_SERVER_URL+'/functions/orders',
-            headers: {
-                'Content-Type': 'text/plain;charset=UTF-8',
-                'X-Parse-Application-Id': PARSE_APP_ID,
-                'X-Parse-Session-Token': user.rawParseObject.getSessionToken()
-            }
-        }, function callback(error, response, body) {
-            if (!error && response.statusCode == 200) {
-                console.log(body);
-            }
-            else{
-                console.log(response.statusCode);
+            Parse.Cloud.run('ordersBot', { businessId: BUSINESS_ID, consumerId: consumer.objectId }).then(function (orders) {
+                store.dispatch(Actions.setOrders(recipientId, orders)).then(function () {
+                    renderOrders(recipientId);
+                });
+            }).fail(function (error) {
                 console.log('error');
                 console.log(error);
-            }
+            });
         });
-         */
-
-        store.dispatch(Actions.loadConsumerOrders(recipientId, consumer.rawParseObject)).then(function () {
-            renderOrders(recipientId);
-        });
-    }
+    });
 }
 
 function renderOrders(recipientId) {
+    var customer = getData(recipientId, 'customer');
     var orders = getData(recipientId, 'orders');
     var elements = [];
-
-    console.log(orders);
 
     elements.push({
         "title": "Nueva orden",
@@ -2598,6 +2630,53 @@ function renderOrders(recipientId) {
             "payload": "NewOrder"
         }]
     });
+
+    var _iteratorNormalCompletion8 = true;
+    var _didIteratorError8 = false;
+    var _iteratorError8 = undefined;
+
+    try {
+        for (var _iterator8 = orders.ongoing[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            var order = _step8.value;
+
+            if (elements.length < bot.limit) {
+                var datetime = _datetimeConverterNodejs2.default.dateString(order.createdAt);
+                var image_url = customer.image.url;
+                /*let image = order.image;
+                 if(image){
+                    image_url = image.url();
+                }*/
+
+                elements.push({
+                    "title": 'Orden: ' + (0, _dateformat2.default)(datetime, "h:MM:ss TT dd/mm/yyyy"),
+                    "subtitle": 'Estado: ' + order.state.name + ', Valor: $' + order.total,
+                    "image_url": image_url,
+                    "buttons": [{
+                        "type": "postback",
+                        "title": "Ver orden",
+                        "payload": "SendOrder-" + order.objectId
+                    }, {
+                        "type": "postback",
+                        "title": "Cancelar orden",
+                        "payload": "CancelOrder-" + order.objectId
+                    }]
+                });
+            }
+        }
+    } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                _iterator8.return();
+            }
+        } finally {
+            if (_didIteratorError8) {
+                throw _iteratorError8;
+            }
+        }
+    }
 
     var messageData = {
         recipient: {
@@ -2618,9 +2697,144 @@ function renderOrders(recipientId) {
     bot.callSendAPI(messageData);
 }
 
+function sendOrder(recipientId, id) {
+    bot.sendTypingOn(recipientId);
+    authentication(recipientId, function () {
+        var orders = getData(recipientId, 'orders');
+        var currentOrder = void 0;
+        var elements = [];
+
+        var _iteratorNormalCompletion9 = true;
+        var _didIteratorError9 = false;
+        var _iteratorError9 = undefined;
+
+        try {
+            for (var _iterator9 = orders.ongoing[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                var order = _step9.value;
+
+                if (order.objectId == id) {
+                    currentOrder = order;
+                }
+            }
+        } catch (err) {
+            _didIteratorError9 = true;
+            _iteratorError9 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                    _iterator9.return();
+                }
+            } finally {
+                if (_didIteratorError9) {
+                    throw _iteratorError9;
+                }
+            }
+        }
+
+        var element = {};
+        element['title'] = 'title';
+        element['subtitle'] = 'subtitle';
+        element['quantity'] = 1;
+        element['price'] = 1000;
+        element['currency'] = "COP";
+        //element['image_url'] = ;
+
+        elements.push(element);
+
+        renderOrder(recipientId, currentOrder, elements);
+    });
+}
+
+function renderOrder(recipientId, order, elements) {
+    console.log(order);
+    var user = getData(recipientId, 'user');
+    var consumer = getData(recipientId, 'consumer');
+    var address = order.consumerAddress;
+    var pointSale = order.pointSale;
+    var payment_method = order.paymentMethod;
+    var addressData = undefined;
+
+    if (typeof payment_method == 'undefined') {
+        payment_method = { name: 'Sin definir' };
+    }
+
+    if (typeof address != 'undefined') {
+        addressData = {
+            street_1: address.address,
+            street_2: "",
+            city: address.city,
+            postal_code: address.postalCode,
+            state: address.state,
+            country: address.countryCode
+        };
+    }
+
+    console.log(user);
+
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            attachment: {
+                type: "template",
+                payload: {
+                    template_type: "receipt",
+                    recipient_name: user.first_name + " " + user.last_name,
+                    order_number: order.objectId,
+                    currency: "COP",
+                    payment_method: payment_method.name,
+                    //order_url: "http://petersapparel.parseapp.com/order?order_id=123456",
+                    timestamp: Math.trunc(Date.now() / 1000).toString(),
+                    elements: elements,
+                    address: addressData,
+                    summary: {
+                        subtotal: order.total,
+                        shipping_cost: pointSale.deliveryCost,
+                        //total_tax: 0,
+                        total_cost: order.total + pointSale.deliveryCost
+                    }
+                    //adjustments: [{
+                    //  name: "New Customer Discount",
+                    //  amount: -1000
+                    //}, {
+                    //    name: "$1000 Off Coupon",
+                    //    amount: -1000
+                    //}]
+                }
+            },
+            "quick_replies": [{
+                "content_type": "text",
+                "title": "Nueva orden",
+                "payload": "NewOrder"
+            }, {
+                "content_type": "text",
+                "title": "Ver ordenes",
+                "payload": "SendOrders"
+            }, {
+                "content_type": "text",
+                "title": "Cancelar orden",
+                "payload": "CancelOrder-" + order.objectId
+            }]
+        }
+    };
+
+    bot.sendTypingOff(recipientId);
+    bot.callSendAPI(messageData);
+}
+
 function newOrder(recipientId) {
     clearCart(recipientId, sendCart);
     sendAddresses(recipientId);
+}
+
+function cancelOrder(recipientId, id) {
+    Parse.Cloud.run('changeStatusOrder', { status: "canceledByUser", orderId: id }).then(function () {
+        sendOrders(recipientId);
+    }).fail(function (error) {
+        console.log('error');
+        console.log(error);
+    });
 }
 
 function renderShoppingCartOptions(recipientId) {
@@ -2672,16 +2886,14 @@ bot.app.get('/creditcard', function (req, res) {
 });
 
 bot.app.post('/registerCreditCard', function (req, res) {
-    var User = Parse.Object.extend('User');
-    var Consumer = Parse.Object.extend('Consumer');
     var data = req.body;
     var consumerID = data['consumerID'];
 
     console.log('registerCreditCard');
 
-    new Parse.Query(Consumer).get(consumerID).then(function (consumer) {
+    new Parse.Query(ParseModels.Consumer).get(consumerID).then(function (consumer) {
         if (consumer) {
-            new Parse.Query(User).get(consumer.get('user').id).then(function (user) {
+            new Parse.Query(ParseModels.User).get(consumer.get('user').id).then(function (user) {
                 var username = user.get('username');
                 var recipientId = user.get('facebookId');
                 Parse.User.logIn(username, username, {
@@ -2703,10 +2915,13 @@ bot.app.post('/registerCreditCard', function (req, res) {
                             }
                         }, function callback(error, response, body) {
                             if (!error && response.statusCode == 200) {
-
-                                _request2.default.post({
-                                    url: SERVER_URL + 'CreditCardRegistered',
-                                    json: { "recipientId": recipientId }
+                                setEmailCheck(recipientId, data['email']).then(function () {
+                                    setTelephoneCheck(recipientId, data['telephone']).then(function () {
+                                        _request2.default.post({
+                                            url: SERVER_URL + 'CreditCardRegistered',
+                                            json: { "recipientId": recipientId }
+                                        });
+                                    });
                                 });
                             } else {
                                 console.log(response.statusCode);
@@ -2778,13 +2993,13 @@ bot.app.post('/changeOrderState', function (req, res) {
 var paymentTypes = new Map();
 
 new Parse.Query(ParseModels.PaymentMethod).find().then(function (methods) {
-    var _iteratorNormalCompletion8 = true;
-    var _didIteratorError8 = false;
-    var _iteratorError8 = undefined;
+    var _iteratorNormalCompletion10 = true;
+    var _didIteratorError10 = false;
+    var _iteratorError10 = undefined;
 
     try {
-        for (var _iterator8 = methods[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var method = _step8.value;
+        for (var _iterator10 = methods[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var method = _step10.value;
 
             var tmpMethod = (0, _ParseUtils.extractParseAttributes)(method);
             if (tmpMethod.objectId == 'Nn0joKC5VK') {
@@ -2795,16 +3010,16 @@ new Parse.Query(ParseModels.PaymentMethod).find().then(function (methods) {
             //orderStates.set(state.get('order'), extractParseAttributes(state));
         }
     } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                _iterator8.return();
+            if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                _iterator10.return();
             }
         } finally {
-            if (_didIteratorError8) {
-                throw _iteratorError8;
+            if (_didIteratorError10) {
+                throw _iteratorError10;
             }
         }
     }
@@ -2815,27 +3030,27 @@ new Parse.Query(ParseModels.PaymentMethod).find().then(function (methods) {
 var orderStates = new Map();
 
 new Parse.Query(ParseModels.OrderState).find().then(function (states) {
-    var _iteratorNormalCompletion9 = true;
-    var _didIteratorError9 = false;
-    var _iteratorError9 = undefined;
+    var _iteratorNormalCompletion11 = true;
+    var _didIteratorError11 = false;
+    var _iteratorError11 = undefined;
 
     try {
-        for (var _iterator9 = states[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var state = _step9.value;
+        for (var _iterator11 = states[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var state = _step11.value;
 
             orderStates.set(state.get('order'), (0, _ParseUtils.extractParseAttributes)(state));
         }
     } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                _iterator9.return();
+            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                _iterator11.return();
             }
         } finally {
-            if (_didIteratorError9) {
-                throw _iteratorError9;
+            if (_didIteratorError11) {
+                throw _iteratorError11;
             }
         }
     }
