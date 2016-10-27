@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.loadCustomer = loadCustomer;
+exports.setCustomer = setCustomer;
 exports.loadUser = loadUser;
 exports.loadConsumer = loadConsumer;
 exports.loadConsumerAddresses = loadConsumerAddresses;
@@ -118,6 +119,14 @@ function loadCustomer(recipientId, businessId) {
   };
 }
 
+function setCustomer(recipientId, customer) {
+  return function (dispatch) {
+    return Parse.Promise.as().then(function () {
+      dispatch({ type: types.SET_CUSTOMER, data: { recipientId: recipientId, customer: customer } });
+    });
+  };
+}
+
 /**
  * Load Consumer of given user
  */
@@ -141,21 +150,10 @@ function loadConsumer(recipientId, user) {
   return function (dispatch) {
     return new Parse.Query(_ParseModels.Consumer).equalTo('user', user).first().then(function (consumer) {
       if (consumer) {
-
         dispatch({ type: types.CONSUMER_LOADED, data: { recipientId: recipientId, consumer: consumer } });
-
-        //dispatch(loadConsumerAddresses(consumer))
-
-        //dispatch(loadConsumerOrders());
-
-        //mainDispatch(push('/'))
       } else {
-        var authData = user.get('authData');
-        if (authData && authData.hasOwnProperty('facebook')) {
-          if (FB) {
-            loadFacebookUserData(authData.facebook.access_token, dispatch);
-          }
-        }
+        console.log('Consumer not exits');
+        console.log(consumer);
         dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
       }
     }).fail(function (e) {

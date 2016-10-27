@@ -80,7 +80,7 @@ var _slicedToArray = function () {
                 var address = (0, _ParseUtils.extractParseAttributes)(data.address);(0, _objectAssign2.default)(state.userData[data.recipientId], { address: address });return _extends({}, state);
             }case types.PAYMENT_METHODS_LOADED:
             {
-                console.log('PAYMENT_METHODS_LOADED');console.log(data.paymentMethods);var paymentMethods = data.paymentMethods.map(function (p) {
+                var paymentMethods = data.paymentMethods.map(function (p) {
                     return (0, _ParseUtils.extractParseAttributes)(p);
                 });(0, _objectAssign2.default)(state.userData[data.recipientId], { paymentMethods: paymentMethods });return _extends({}, state);
             }case types.SET_PAYMENT_METHOD:
@@ -98,7 +98,10 @@ var _slicedToArray = function () {
                 return _extends({}, state);
             }case types.CONSUMER_NOT_FOUND:
             {
-                (0, _objectAssign2.default)(state, { consumerNotFound: true, currentUser: action.data.user });return _extends({}, state);
+                /*objectAssign(state, {
+                consumerNotFound: true,
+                currentUser: action.data.user
+                })*/return _extends({}, state);
             }case types.CONSUMER_ORDERS_LOADED:
             {
                 var orders = data.orders.map(function (a) {
@@ -127,6 +130,9 @@ var _slicedToArray = function () {
             }case types.SET_CONSUMER:
             {
                 var _consumer2 = (0, _ParseUtils.extractParseAttributes)(data.consumer);(0, _objectAssign2.default)(state.userData[data.recipientId], { consumer: _consumer2 });return _extends({}, state);
+            }case types.SET_CUSTOMER:
+            {
+                var _customer = (0, _ParseUtils.extractParseAttributes)(data.customer);(0, _objectAssign2.default)(state.userData[data.recipientId], { customer: _customer });return _extends({}, state);
             }case types.SET_ORDER_STATE:
             {
                 var _orderState = (0, _ParseUtils.extractParseAttributes)(data.orderState);(0, _objectAssign2.default)(state.userData[data.recipientId], { orderState: _orderState });return _extends({}, state);
@@ -179,26 +185,30 @@ function getData(recipientId, property) {
         user = new ParseModels.User({ recipientId: recipientId });
     } else {
         user = user.rawParseObject;
-    }loadCustomer(recipientId).then(function () {
+    }getCustomer(recipientId).then(function (customer) {
         user.registered().then(function (_user) {
             if (typeof _user == 'undefined') {
                 bot.getFacebookUser(recipientId).then(function (data) {
                     user.signUpWithFacebook(data).then(function () {
                         username = user.get('username');login(username, username).then(function () {
                             user.saveInStore(store, recipientId).then(function () {
-                                if (typeof consumer == 'undefined') {
-                                    createConsumer(user).then(function (_consumer) {
-                                        _consumer.saveInStore(store, recipientId).then(function () {
+                                getConsumer(recipientId, user).then(function (_consumer) {
+                                    if (typeof _consumer == 'undefined') {
+                                        createConsumer(user).then(function (_consumer) {
+                                            _consumer.saveInStore(store, recipientId).then(function () {
+                                                if (callback) {
+                                                    callback(_user);
+                                                }
+                                            });
+                                        });
+                                    } else {
+                                        _consumer.rawParseObject.saveInStore(store, recipientId).then(function () {
                                             if (callback) {
-                                                callback(user);
+                                                callback(_user);
                                             }
                                         });
-                                    });
-                                } else {
-                                    if (callback) {
-                                        callback(user);
                                     }
-                                }
+                                });
                             });
                         });
                     });
@@ -206,30 +216,56 @@ function getData(recipientId, property) {
             } else {
                 username = _user.get('username');login(username, username).then(function () {
                     _user.saveInStore(store, recipientId).then(function () {
-                        if (typeof consumer == 'undefined') {
-                            createConsumer(_user).then(function (_consumer) {
-                                _consumer.saveInStore(store, recipientId).then(function () {
+                        getConsumer(recipientId, _user).then(function (_consumer) {
+                            if (typeof _consumer == 'undefined') {
+                                createConsumer(user).then(function (_consumer) {
+                                    _consumer.saveInStore(store, recipientId).then(function () {
+                                        if (callback) {
+                                            callback(_user);
+                                        }
+                                    });
+                                });
+                            } else {
+                                _consumer.rawParseObject.saveInStore(store, recipientId).then(function () {
                                     if (callback) {
                                         callback(_user);
                                     }
                                 });
-                            });
-                        } else {
-                            if (callback) {
-                                callback(_user);
                             }
-                        }
+                        });
                     });
                 });
             }
         });
     });
 }function createConsumer(user) {
-    var consumer = new ParseModels.Consumer();consumer.setUser(user);return consumer.save().fail(function (error) {
+    console.log(user);console.log(user.get('first_name'));var consumer = new ParseModels.Consumer();consumer.setUser(user);return consumer.save().fail(function (error) {
         console.log('Error code: ' + error.message);
     });
+}function getCustomer(recipientId) {
+    var customer = getData(recipientId, 'customer');if (typeof customer == 'undefined') {
+        return loadCustomer(recipientId).then(function () {
+            return getData(recipientId, 'customer');
+        });
+    } else {
+        return Parse.Promise.as().then(function () {
+            return customer;
+        });
+    }
+}function getConsumer(recipientId, user) {
+    var consumer = getData(recipientId, 'consumer');if (typeof consumer == 'undefined') {
+        return loadConsumer(recipientId, user).then(function () {
+            console.log('get Data');return getData(recipientId, 'consumer');
+        });
+    } else {
+        return Parse.Promise.as().then(function () {
+            return consumer;
+        });
+    }
 }function loadCustomer(recipientId) {
     return store.dispatch(Actions.loadCustomer(recipientId, BUSINESS_ID));
+}function loadConsumer(recipientId, user) {
+    return store.dispatch(Actions.loadConsumer(recipientId, user));
 }function loadConsumerAddresses(recipientId, consumer) {
     return store.dispatch(Actions.loadConsumerAddresses(recipientId, consumer.rawParseObject));
 }function loadUserCreditCards(recipientId, user) {
@@ -707,7 +743,7 @@ function getData(recipientId, property) {
                                                                                                                                                                                                                                                                                                                                                                                          console.log(address);
                                                                                                                                                                                                                                                                                                                                                                                          console.log(state0);
                                                                                                                                                                                                                                                                                                                                                                                          console.log(cart);
-                                                                                                                                                                                                                                                                                                                                                                                         console.log(pointSale);*/cart.items.forEach(function (value, key) {
+                                                                                                                                                                                                                                                                                                                                                                                         console.log(pointSale);*/console.log(cart.items);console.log(cart.itemsPointers);cart.items.forEach(function (value, key) {
         //console.log(value);
         total += value.quantity * value.price;
     });order.set('consumer', { __type: 'Pointer', className: 'Consumer', objectId: consumer.objectId });order.set('consumerAddress', { __type: 'Pointer', className: 'ConsumerAddress', objectId: address.objectId });order.set('pointSale', { __type: 'Pointer', className: 'CustomerPointSale', objectId: pointSale.objectId });order.set('state', { __type: 'Pointer', className: 'OrderState', objectId: state0.objectId }); //order.set('dateSchedule')
@@ -807,15 +843,25 @@ function getData(recipientId, property) {
     var cart = getData(recipientId, 'cart');if (typeof cart != 'undefined') {
         (function () {
             var items = cart.items;cart.itemsPointers = [];items.forEach(function (value, key) {
-                new Parse.Query(ParseModels.OrderItem).get(value.id, { success: function success(orderItem) {
-                        orderItem.destroy({});items.delete(key);if (items.size == 0) {
-                            if (callback) {
-                                callback(user);
-                            }
-                        }
-                    }, error: function error(orderItem, _error11) {
-                        console.log('error');console.log(_error11);
-                    } });
+                items.delete(key);if (items.size == 0) {
+                    if (callback) {
+                        callback(user);
+                    }
+                } /*new Parse.Query(ParseModels.OrderItem).get(value.id, {
+                  success: (orderItem) => {
+                  //orderItem.destroy({});
+                  items.delete(key);
+                  if(items.size == 0){
+                  if(callback){
+                  callback(user)
+                  }
+                  }
+                  },
+                  error: (orderItem, error) => {
+                  console.log('error');
+                  console.log(error);
+                  }
+                  });*/
             });
         })();
     }
@@ -826,12 +872,12 @@ function getData(recipientId, property) {
         renderCheckPayment(recipientId);
     });
 }function checkAddress(recipientId) {}function renderCheckPayment(recipientId) {
-    var paymentMethods = getData(recipientId, 'paymentMethods');var quick_replies = [];console.log(paymentMethods);for (var i in paymentMethods) {
+    var paymentMethods = getData(recipientId, 'paymentMethods');var quick_replies = [];for (var i in paymentMethods) {
         quick_replies.push({ "content_type": "text", "title": paymentMethods[i].name.substring(0, 20), "payload": "Checkout-" + paymentMethods[i].objectId });
     } //console.log(quick_replies);
     var messageData = { recipient: { id: recipientId }, message: { "text": "Como vas a pagar tu pedido? (Tu pedido se cobra cuando lo recibes)", "quick_replies": quick_replies } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function checkout(recipientId, id) {
-    bot.sendTypingOn(recipientId);console.log('checkout');console.log(id);store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(function () {
+    bot.sendTypingOn(recipientId);store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(function () {
         var paymentMethod = getData(recipientId, 'paymentMethod');console.log(paymentMethod);var paymentFunction = paymentTypes.get(paymentMethod.method.objectId);console.log(paymentFunction);paymentFunction(recipientId); /*
                                                                                                                                                                                                                               let cart = new ParseModels.Order();
                                                                                                                                                                                                                               cart.set('name', userBuffer['address_name']);
@@ -901,7 +947,7 @@ function getData(recipientId, property) {
         }
     }var messageData = { recipient: { id: recipientId }, message: { "text": "Con cual tarjeta quieres pagar?", "quick_replies": quick_replies } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function payWithCreditCard(recipientId, creditCardId) {
-    bot.sendTypingOn(recipientId);console.log(creditCardId);orderConfirmation(recipientId);
+    bot.sendTypingOn(recipientId);orderConfirmation(recipientId);
 }function orderConfirmation(recipientId) {
     bot.sendTypingOn(recipientId);var state0 = orderStates.get(0);var messageData = { recipient: { id: recipientId }, message: { "text": state0.messagePush + "\n\nEn un momento te estaremos dando información en tiempo real sobre tu pedido" } };saveOrder(recipientId);bot.callSendAPI(messageData, bot.sendTypingOff);
 }function orderState(recipientId) {
@@ -1077,8 +1123,8 @@ function getData(recipientId, property) {
                                 console.log(response.statusCode);console.log('error');console.log(error);
                             }
                         });
-                    }, error: function error(user, _error12) {
-                        console.log('error');console.log(_error12);
+                    }, error: function error(user, _error11) {
+                        console.log('error');console.log(_error11);
                     } });
             });res.sendFile(_path2.default.join(__dirname + '/views/cardRegistered.html'));
         }
