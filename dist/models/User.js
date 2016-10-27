@@ -27,8 +27,8 @@ var User = Parse.Object.extend('User', {
             console.log('Error code: ' + error.message);
         });
     },
-    saveInStore: function saveInStore(store) {
-        return store.dispatch((0, _index.setUser)(this.get('recipientId'), this)).fail(function (error) {
+    saveInStore: function saveInStore(store, recipientId) {
+        return store.dispatch((0, _index.setUser)(recipientId, this)).fail(function (error) {
             console.log('Error code: ' + error.message);
         });
     }

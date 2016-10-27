@@ -179,70 +179,64 @@ function getData(recipientId, property) {
         user = new ParseModels.User({ recipientId: recipientId });
     } else {
         user = user.rawParseObject;
-    }user.registered().then(function (_user) {
-        if (typeof _user == 'undefined') {
-            bot.getFacebookUser(recipientId).then(function (data) {
-                user.signUpWithFacebook(data).then(function () {
-                    username = user.get('username');login(username, username).then(function () {
-                        user.saveInStore(store).then(function () {
-                            if (typeof consumer == 'undefined') {
-                                createConsumer(user).then(function (_consumer) {
-                                    _consumer.saveInStore(store).then(function () {
-                                        if (callback) {
-                                            callback(user);
-                                        }
+    }loadCustomer(recipientId).then(function () {
+        user.registered().then(function (_user) {
+            if (typeof _user == 'undefined') {
+                bot.getFacebookUser(recipientId).then(function (data) {
+                    user.signUpWithFacebook(data).then(function () {
+                        username = user.get('username');login(username, username).then(function () {
+                            user.saveInStore(store, recipientId).then(function () {
+                                if (typeof consumer == 'undefined') {
+                                    createConsumer(user).then(function (_consumer) {
+                                        _consumer.saveInStore(store, recipientId).then(function () {
+                                            if (callback) {
+                                                callback(user);
+                                            }
+                                        });
                                     });
-                                });
-                            } else {
-                                if (callback) {
-                                    callback(user);
-                                }
-                            }
-                        });
-                    });
-                });
-            });
-        } else {
-            username = _user.get('username');login(username, username).then(function () {
-                _user.saveInStore(store).then(function () {
-                    if (typeof consumer == 'undefined') {
-                        createConsumer(user).then(function (_consumer) {
-                            _consumer.saveInStore(store).then(function () {
-                                if (callback) {
-                                    callback(user);
+                                } else {
+                                    if (callback) {
+                                        callback(user);
+                                    }
                                 }
                             });
                         });
-                    } else {
-                        if (callback) {
-                            callback(user);
-                        }
-                    }
+                    });
                 });
-            });
-        }
+            } else {
+                username = _user.get('username');login(username, username).then(function () {
+                    _user.saveInStore(store, recipientId).then(function () {
+                        if (typeof consumer == 'undefined') {
+                            createConsumer(_user).then(function (_consumer) {
+                                _consumer.saveInStore(store, recipientId).then(function () {
+                                    if (callback) {
+                                        callback(_user);
+                                    }
+                                });
+                            });
+                        } else {
+                            if (callback) {
+                                callback(_user);
+                            }
+                        }
+                    });
+                });
+            }
+        });
     });
 }function createConsumer(user) {
     var consumer = new ParseModels.Consumer();consumer.setUser(user);return consumer.save().fail(function (error) {
         console.log('Error code: ' + error.message);
     });
-}function loadUser(recipientId) {
-    return store.dispatch(Actions.loadUser(recipientId));
 }function loadCustomer(recipientId) {
     return store.dispatch(Actions.loadCustomer(recipientId, BUSINESS_ID));
-}function loadConsumer(recipientId, user) {
-    return store.dispatch(Actions.loadConsumer(recipientId, user.rawParseObject));
 }function loadConsumerAddresses(recipientId, consumer) {
     return store.dispatch(Actions.loadConsumerAddresses(recipientId, consumer.rawParseObject));
 }function loadUserCreditCards(recipientId, user) {
     return store.dispatch(Actions.loadUserCreditCards(recipientId, user.rawParseObject));
 }function sendMenu(recipientId) {
     bot.sendTypingOn(recipientId);authentication(recipientId, function () {
-        var user = getData(recipientId, 'user');loadCustomer(recipientId).then(function () {
-            loadConsumer(recipientId, user).then(function () {
-                renderMenu(recipientId);
-            });
-        });
+        var user = getData(recipientId, 'user');renderMenu(recipientId);
     });
 }function renderMenu(recipientId) {
     var customer = getData(recipientId, 'customer');var consumer = getData(recipientId, 'consumer');var image_url = customer.image.url;var messageData = { recipient: { id: recipientId }, message: { attachment: { type: "template", payload: { template_type: "generic", //text: "Buenos dias, para conocer nuestros menus del dia, por favor escoja una opción:",
@@ -257,12 +251,8 @@ function getData(recipientId, property) {
     });
 }function sendAddresses(recipientId) {
     bot.sendTypingOn(recipientId);authentication(recipientId, function () {
-        var user = getData(recipientId, 'user');var consumer = getData(recipientId, 'consumer');loadCustomer(recipientId).then(function () {
-            loadConsumer(recipientId, user).then(function () {
-                loadConsumerAddresses(recipientId, consumer).then(function () {
-                    renderAddress(recipientId);
-                });
-            });
+        var user = getData(recipientId, 'user');var consumer = getData(recipientId, 'consumer');loadConsumerAddresses(recipientId, consumer).then(function () {
+            renderAddress(recipientId);
         });
     });
 }function renderAddress(recipientId) {
@@ -289,12 +279,8 @@ function getData(recipientId, property) {
     }var messageData = { recipient: { id: recipientId }, message: { "attachment": { "type": "template", "payload": { "template_type": "generic", "elements": elements } } } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function sendCreditCards(recipientId) {
     bot.sendTypingOn(recipientId);authentication(recipientId, function () {
-        var user = getData(recipientId, 'user');var consumer = getData(recipientId, 'consumer');loadCustomer(recipientId).then(function () {
-            loadConsumer(recipientId, user).then(function () {
-                loadUserCreditCards(recipientId, user).then(function () {
-                    renderCreditCards(recipientId);
-                });
-            });
+        var user = getData(recipientId, 'user');loadUserCreditCards(recipientId, user).then(function () {
+            renderCreditCards(recipientId);
         });
     });
 }function renderCreditCards(recipientId) {
@@ -408,11 +394,11 @@ function getData(recipientId, property) {
 }function setEmail(recipientId) {
     var messageData = { recipient: { id: recipientId }, message: { "text": "Por favor escribe tu email:" } };bot.setListener(recipientId, 'email', 'text', setEmailCheck);bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function setEmailCheck(recipientId, value) {
-    var consumer = getData(recipientId, 'consumer').rawParseObject;consumer.setEmail(value);return consumer.saveInStore(store);
+    var consumer = getData(recipientId, 'consumer').rawParseObject;consumer.setEmail(value);return consumer.saveInStore(store, recipientId);
 }function setTelephone(recipientId) {
     var messageData = { recipient: { id: recipientId }, message: { "text": "Por favor escribe tu número telefónico:" } };bot.setListener(recipientId, 'telephone', 'text', setTelephoneCheck);bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function setTelephoneCheck(recipientId, value) {
-    var consumer = getData(recipientId, 'consumer').rawParseObject;consumer.setPhone(value);return consumer.saveInStore(store);
+    var consumer = getData(recipientId, 'consumer').rawParseObject;consumer.setPhone(value);return consumer.saveInStore(store, recipientId);
 }function setLocationCheck(recipientId) {
     var userBuffer = bot.buffer[recipientId];_geocoder2.default.reverseGeocode(userBuffer.location.lat, userBuffer.location.lng, function (error, data) {
         if (!error && data.status == 'OK') {
@@ -507,19 +493,21 @@ function getData(recipientId, property) {
 }function renderCategoriesInitialMessage(recipientId) {
     var messageData = { recipient: { id: recipientId }, message: { "text": "A continuación te presentamos las categorías de productos disponibles." } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function sendCategories(recipientId, index) {
-    bot.sendTypingOn(recipientId);if (index == undefined) index = 0;else if (typeof index == 'string') index = parseInt(index);if (index == 0) {
-        renderCategoriesInitialMessage(recipientId);bot.sendTypingOn(recipientId);
-    }Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(function (result) {
-        var elements = splitCategories(recipientId, result.categories, index);var idx = Object.keys(result.categories).length;var buttons = [];var catIni = (index + 1) * bot.limit;var catFin = idx > catIni + bot.limit ? catIni + bot.limit : idx; /*
-                                                                                                                                                                                                                                                      console.log('length: '+idx);
-                                                                                                                                                                                                                                                      console.log('catIni: '+catIni);
-                                                                                                                                                                                                                                                      console.log('catFin: '+catFin);
-                                                                                                                                                                                                                                                      console.log('limitsearchProducts: '+(index+1)*bot.limit);
-                                                                                                                                                                                                                                                      */if (idx > (index + 1) * bot.limit) {
-            buttons.push({ type: "postback", title: "Categorías " + (catIni + 1) + "-" + catFin, payload: "SendCategories-" + (index + 1) });elements.push({ title: "Ver más categorias ", subtitle: "Categorías disponibles", buttons: buttons });
-        }var messageData = { recipient: { id: recipientId }, message: { attachment: { type: "template", payload: { template_type: "generic", elements: elements } } } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
-    }, function (error) {
-        console.log('error');console.log(error);
+    bot.sendTypingOn(recipientId);authentication(recipientId, function () {
+        if (index == undefined) index = 0;else if (typeof index == 'string') index = parseInt(index);if (index == 0) {
+            renderCategoriesInitialMessage(recipientId);bot.sendTypingOn(recipientId);
+        }Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(function (result) {
+            var elements = splitCategories(recipientId, result.categories, index);var idx = Object.keys(result.categories).length;var buttons = [];var catIni = (index + 1) * bot.limit;var catFin = idx > catIni + bot.limit ? catIni + bot.limit : idx; /*
+                                                                                                                                                                                                                                                          console.log('length: '+idx);
+                                                                                                                                                                                                                                                          console.log('catIni: '+catIni);
+                                                                                                                                                                                                                                                          console.log('catFin: '+catFin);
+                                                                                                                                                                                                                                                          console.log('limitsearchProducts: '+(index+1)*bot.limit);
+                                                                                                                                                                                                                                                          */if (idx > (index + 1) * bot.limit) {
+                buttons.push({ type: "postback", title: "Categorías " + (catIni + 1) + "-" + catFin, payload: "SendCategories-" + (index + 1) });elements.push({ title: "Ver más categorias ", subtitle: "Categorías disponibles", buttons: buttons });
+            }var messageData = { recipient: { id: recipientId }, message: { attachment: { type: "template", payload: { template_type: "generic", elements: elements } } } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
+        }, function (error) {
+            console.log('error');console.log(error);
+        });
     });
 }function splitCategories(recipientId, categories, index) {
     var customer = getData(recipientId, 'customer');var image_url = customer.image.url;var idx = 0;var elements = [];categories.forEach(function (item) {
@@ -977,14 +965,12 @@ function getData(recipientId, property) {
     bot.sendTypingOn(recipientId);var messageData = { recipient: { id: recipientId }, message: { "text": "Registro exitoso." } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function sendOrders(recipientId) {
     bot.sendTypingOn(recipientId);authentication(recipientId, function (user) {
-        loadCustomer(recipientId).then(function () {
-            var consumer = getData(recipientId, 'consumer');Parse.Cloud.run('ordersBot', { businessId: BUSINESS_ID, consumerId: consumer.objectId }).then(function (orders) {
-                store.dispatch(Actions.setOrders(recipientId, orders)).then(function () {
-                    renderOrders(recipientId);
-                });
-            }).fail(function (error) {
-                console.log('error');console.log(error);
+        var consumer = getData(recipientId, 'consumer');Parse.Cloud.run('ordersBot', { businessId: BUSINESS_ID, consumerId: consumer.objectId }).then(function (orders) {
+            store.dispatch(Actions.setOrders(recipientId, orders)).then(function () {
+                renderOrders(recipientId);
             });
+        }).fail(function (error) {
+            console.log('error');console.log(error);
         });
     });
 }function renderOrders(recipientId) {

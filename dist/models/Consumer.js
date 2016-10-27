@@ -35,8 +35,8 @@ var Consumer = Parse.Object.extend('Consumer', {
         this.set('phone', phone);
         this.save();
     },
-    saveInStore: function saveInStore(store) {
-        return store.dispatch((0, _index.setConsumer)(this.get('recipientId'), this)).fail(function (error) {
+    saveInStore: function saveInStore(store, recipientId) {
+        return store.dispatch((0, _index.setConsumer)(recipientId, this)).fail(function (error) {
             console.log('Error code: ' + error.message);
         });
     }
