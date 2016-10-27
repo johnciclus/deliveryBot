@@ -239,7 +239,7 @@ function getData(recipientId, property) {
         });
     });
 }function createConsumer(user) {
-    console.log(user);console.log(user.get('first_name'));var consumer = new ParseModels.Consumer();consumer.setUser(user);return consumer.save().fail(function (error) {
+    var consumer = new ParseModels.Consumer();consumer.setUser(user);return consumer.save().fail(function (error) {
         console.log('Error code: ' + error.message);
     });
 }function getCustomer(recipientId) {
@@ -255,7 +255,7 @@ function getData(recipientId, property) {
 }function getConsumer(recipientId, user) {
     var consumer = getData(recipientId, 'consumer');if (typeof consumer == 'undefined') {
         return loadConsumer(recipientId, user).then(function () {
-            console.log('get Data');return getData(recipientId, 'consumer');
+            return getData(recipientId, 'consumer');
         });
     } else {
         return Parse.Promise.as().then(function () {
@@ -356,46 +356,48 @@ function getData(recipientId, property) {
 }function addressCheck(recipientId) {
     var userBuffer = bot.buffer[recipientId];_geocoder2.default.geocode(userBuffer.address, function (error, data) {
         if (!error && data.status == 'OK') {
-            var result = data.results[0];userBuffer.address = result.formatted_address;userBuffer.location = result.geometry.location;var _iteratorNormalCompletion3 = true;var _didIteratorError3 = false;var _iteratorError3 = undefined;try {
-                for (var _iterator3 = result.address_components[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                    var component = _step3.value;if (component.types.includes('route')) {
-                        userBuffer.route = component.long_name;
-                    } else if (component.types.includes('street_number')) {
-                        userBuffer.street_number = component.short_name;
-                    } else if (component.types.includes('locality')) {
-                        userBuffer.locality = component.short_name;
-                    } else if (component.types.includes('administrative_area_level_1')) {
-                        userBuffer.state = component.short_name;
-                    } else if (component.types.includes('administrative_area_level_2')) {
-                        userBuffer.administrative_area = component.short_name;
-                    } else if (component.types.includes('country')) {
-                        userBuffer.country = component.long_name;userBuffer.country_code = component.short_name;
-                    } else if (component.types.includes('postal_code')) {
-                        userBuffer.postal_code = component.short_name;
-                    }
-                }
-            } catch (err) {
-                _didIteratorError3 = true;_iteratorError3 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                        _iterator3.return();
-                    }
-                } finally {
-                    if (_didIteratorError3) {
-                        throw _iteratorError3;
-                    }
-                }
-            }renderMapMessage(recipientId, function () {
-                renderMap(recipientId, function () {
-                    var messageData = { recipient: { id: recipientId }, message: { "text": "Es correcta?", "quick_replies": [{ "content_type": "text", "title": "Si", "payload": "SetAddressComplement" }, { "content_type": "text", "title": "No", "payload": "NewAddress" }] } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
-                });
-            });
+            setAddressComponetsInBuffer(recipientId, data.results[0]);
         } else {
             console.log('Geocode not found');console.log(error);renderNullMapMessage(recipientId, function () {
                 newAddress(recipientId);
             });
         }
+    });
+}function setAddressComponetsInBuffer(recipientId, data) {
+    var userBuffer = bot.buffer[recipientId];userBuffer.address = data.formatted_address;userBuffer.location = data.geometry.location;var _iteratorNormalCompletion3 = true;var _didIteratorError3 = false;var _iteratorError3 = undefined;try {
+        for (var _iterator3 = data.address_components[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var component = _step3.value;if (component.types.includes('route')) {
+                userBuffer.route = component.long_name;
+            } else if (component.types.includes('street_number')) {
+                userBuffer.street_number = component.short_name;
+            } else if (component.types.includes('locality')) {
+                userBuffer.locality = component.short_name;
+            } else if (component.types.includes('administrative_area_level_1')) {
+                userBuffer.state = component.short_name;
+            } else if (component.types.includes('administrative_area_level_2')) {
+                userBuffer.administrative_area = component.short_name;
+            } else if (component.types.includes('country')) {
+                userBuffer.country = component.long_name;userBuffer.country_code = component.short_name;
+            } else if (component.types.includes('postal_code')) {
+                userBuffer.postal_code = component.short_name;
+            }
+        }
+    } catch (err) {
+        _didIteratorError3 = true;_iteratorError3 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                _iterator3.return();
+            }
+        } finally {
+            if (_didIteratorError3) {
+                throw _iteratorError3;
+            }
+        }
+    }renderMapMessage(recipientId, function () {
+        renderMap(recipientId, function () {
+            var messageData = { recipient: { id: recipientId }, message: { "text": "Es correcta?", "quick_replies": [{ "content_type": "text", "title": "Si", "payload": "SetAddressComplement" }, { "content_type": "text", "title": "No", "payload": "NewAddress" }] } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
+        });
     });
 }function setAddressComplement(recipientId) {
     bot.sendTypingOff(recipientId);var messageData = { recipient: { id: recipientId }, message: { "text": "Por favor escribe el complemento de tu dirección actual. \n\nEjemplo: Oficina 1068" } };bot.setListener(recipientId, 'complement', 'text', confirmAddress);bot.callSendAPI(messageData);
@@ -438,40 +440,11 @@ function getData(recipientId, property) {
 }function setLocationCheck(recipientId) {
     var userBuffer = bot.buffer[recipientId];_geocoder2.default.reverseGeocode(userBuffer.location.lat, userBuffer.location.lng, function (error, data) {
         if (!error && data.status == 'OK') {
-            var result = data.results[0];userBuffer.address = result.formatted_address;userBuffer.location = result.geometry.location;var _iteratorNormalCompletion4 = true;var _didIteratorError4 = false;var _iteratorError4 = undefined;try {
-                for (var _iterator4 = result.address_components[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var component = _step4.value; //console.log(component);
-                    if (component.types.includes('locality')) {
-                        userBuffer.locality = component.short_name;
-                    } else if (component.types.includes('administrative_area_level_1')) {
-                        userBuffer.state = component.short_name;
-                    } else if (component.types.includes('administrative_area_level_2')) {
-                        userBuffer.administrative_area = component.short_name;
-                    } else if (component.types.includes('country')) {
-                        userBuffer.country = component.short_name;
-                    } else if (component.types.includes('postal_code')) {
-                        userBuffer.postal_code = component.short_name;
-                    }
-                }
-            } catch (err) {
-                _didIteratorError4 = true;_iteratorError4 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                        _iterator4.return();
-                    }
-                } finally {
-                    if (_didIteratorError4) {
-                        throw _iteratorError4;
-                    }
-                }
-            }renderMapMessage(recipientId, function () {
-                renderMap(recipientId, function () {
-                    var messageData = { recipient: { id: recipientId }, message: { "text": "Es correcta?", "quick_replies": [{ "content_type": "text", "title": "Si", "payload": "ConfirmAddress" }, { "content_type": "text", "title": "No", "payload": "newAddress" }] } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
-                });
-            });
+            setAddressComponetsInBuffer(recipientId, data.results[0]);
         } else {
-            console.log('Geocode not found');
+            console.log('Geocode not found');console.log(error);renderNullMapMessage(recipientId, function () {
+                newAddress(recipientId);
+            });
         }
     });
 }function setAddress(recipientId, id) {
@@ -613,20 +586,20 @@ function getData(recipientId, property) {
     var cart = getData(recipientId, 'cart');console.log('Remove product ' + productId);if (cart == undefined) {
         cart = createCart(recipientId);
     }var items = cart.items;var item = items.get(productId);new Parse.Query(ParseModels.OrderItem).get(item.id, { success: function success(orderItem) {
-            orderItem.destroy({});items.delete(productId);var itemsPointers = [];var _iteratorNormalCompletion5 = true;var _didIteratorError5 = false;var _iteratorError5 = undefined;try {
-                for (var _iterator5 = items[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                    var _step5$value = _slicedToArray(_step5.value, 2);var key = _step5$value[0];var value = _step5$value[1];itemsPointers.push({ "__type": "Pointer", "className": "OrderItem", "objectId": value.id });
+            orderItem.destroy({});items.delete(productId);var itemsPointers = [];var _iteratorNormalCompletion4 = true;var _didIteratorError4 = false;var _iteratorError4 = undefined;try {
+                for (var _iterator4 = items[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    var _step4$value = _slicedToArray(_step4.value, 2);var key = _step4$value[0];var value = _step4$value[1];itemsPointers.push({ "__type": "Pointer", "className": "OrderItem", "objectId": value.id });
                 }
             } catch (err) {
-                _didIteratorError5 = true;_iteratorError5 = err;
+                _didIteratorError4 = true;_iteratorError4 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                        _iterator5.return();
+                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                        _iterator4.return();
                     }
                 } finally {
-                    if (_didIteratorError5) {
-                        throw _iteratorError5;
+                    if (_didIteratorError4) {
+                        throw _iteratorError4;
                     }
                 }
             }cart.itemsPointers = itemsPointers;if (items.size == 0) {
@@ -658,9 +631,9 @@ function getData(recipientId, property) {
         console.log('remove');console.log(item);removeProduct(recipientId, productId);
     }
 }function saveCart(recipientId) {
-    var consumerCart = new ParseModels.Cart();var consumer = getData(recipientId, 'consumer');var address = getData(recipientId, 'address');var cart = getData(recipientId, 'cart');var paymentMethod = getData(recipientId, 'paymentMethod');var items = [];var item = void 0;var _iteratorNormalCompletion6 = true;var _didIteratorError6 = false;var _iteratorError6 = undefined;try {
-        for (var _iterator6 = cart.items[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-            var _step6$value = _slicedToArray(_step6.value, 2);var id = _step6$value[0];var properties = _step6$value[1]; //console.log('\n'+id);
+    var consumerCart = new ParseModels.Cart();var consumer = getData(recipientId, 'consumer');var address = getData(recipientId, 'address');var cart = getData(recipientId, 'cart');var paymentMethod = getData(recipientId, 'paymentMethod');var items = [];var item = void 0;var _iteratorNormalCompletion5 = true;var _didIteratorError5 = false;var _iteratorError5 = undefined;try {
+        for (var _iterator5 = cart.items[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            var _step5$value = _slicedToArray(_step5.value, 2);var id = _step5$value[0];var properties = _step5$value[1]; //console.log('\n'+id);
             //console.log(properties);
             item = new ParseModels.OrderItem();if (properties.hasOwnProperty('id')) {
                 item.set('id', properties.id);
@@ -684,33 +657,33 @@ function getData(recipientId, property) {
                                                                                                                                                                                                                           */
         }
     } catch (err) {
-        _didIteratorError6 = true;_iteratorError6 = err;
+        _didIteratorError5 = true;_iteratorError5 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                _iterator6.return();
+            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
             }
         } finally {
-            if (_didIteratorError6) {
-                throw _iteratorError6;
+            if (_didIteratorError5) {
+                throw _iteratorError5;
             }
         }
     }Parse.Object.saveAll(items, { success: function success(result) {
-            var itemsPointers = [];var _iteratorNormalCompletion7 = true;var _didIteratorError7 = false;var _iteratorError7 = undefined;try {
-                for (var _iterator7 = result[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                    var _item = _step7.value;var itemId = _item.get('product').objectId;cart.items.get(itemId).id = _item.id;itemsPointers.push({ "__type": "Pointer", "className": "OrderItem", "objectId": _item.id });
+            var itemsPointers = [];var _iteratorNormalCompletion6 = true;var _didIteratorError6 = false;var _iteratorError6 = undefined;try {
+                for (var _iterator6 = result[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                    var _item = _step6.value;var itemId = _item.get('product').objectId;cart.items.get(itemId).id = _item.id;itemsPointers.push({ "__type": "Pointer", "className": "OrderItem", "objectId": _item.id });
                 } //console.log(cart.items);
                 //console.log(itemsPointers);
             } catch (err) {
-                _didIteratorError7 = true;_iteratorError7 = err;
+                _didIteratorError6 = true;_iteratorError6 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                        _iterator7.return();
+                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                        _iterator6.return();
                     }
                 } finally {
-                    if (_didIteratorError7) {
-                        throw _iteratorError7;
+                    if (_didIteratorError6) {
+                        throw _iteratorError6;
                     }
                 }
             }if (cart.hasOwnProperty('id')) {
@@ -927,22 +900,22 @@ function getData(recipientId, property) {
 }function renderNoRegisteredCreditCards(recipientId) {
     var messageData = { recipient: { id: recipientId }, message: { "text": "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?", "quick_replies": [{ "content_type": "text", "title": "Si", "payload": "RegisterCreditCard" }, { "content_type": "text", "title": "No", "payload": "CheckPayment" }] } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function renderRegisteredCreditCards(recipientId) {
-    var creditCards = getData(recipientId, 'creditCards');var quick_replies = [];quick_replies.push({ "content_type": "text", "title": "Agregar tarjeta", "payload": "RegisterCreditCard" });var _iteratorNormalCompletion8 = true;var _didIteratorError8 = false;var _iteratorError8 = undefined;try {
-        for (var _iterator8 = creditCards[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var card = _step8.value;if (quick_replies.length < bot.limit) {
+    var creditCards = getData(recipientId, 'creditCards');var quick_replies = [];quick_replies.push({ "content_type": "text", "title": "Agregar tarjeta", "payload": "RegisterCreditCard" });var _iteratorNormalCompletion7 = true;var _didIteratorError7 = false;var _iteratorError7 = undefined;try {
+        for (var _iterator7 = creditCards[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var card = _step7.value;if (quick_replies.length < bot.limit) {
                 quick_replies.push({ "content_type": "text", "title": card.type + " " + card.lastFour, "payload": "PayWithCreditCard-" + card.lastFour });
             }
         }
     } catch (err) {
-        _didIteratorError8 = true;_iteratorError8 = err;
+        _didIteratorError7 = true;_iteratorError7 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                _iterator8.return();
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
             }
         } finally {
-            if (_didIteratorError8) {
-                throw _iteratorError8;
+            if (_didIteratorError7) {
+                throw _iteratorError7;
             }
         }
     }var messageData = { recipient: { id: recipientId }, message: { "text": "Con cual tarjeta quieres pagar?", "quick_replies": quick_replies } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
@@ -1020,9 +993,9 @@ function getData(recipientId, property) {
         });
     });
 }function renderOrders(recipientId) {
-    var customer = getData(recipientId, 'customer');var orders = getData(recipientId, 'orders');var elements = [];elements.push({ "title": "Nueva orden", "subtitle": "Puedes realizar una orden", "image_url": SERVER_URL + "assets/conversation.jpg", "buttons": [{ "type": "postback", "title": "Nueva orden", "payload": "NewOrder" }] });var _iteratorNormalCompletion9 = true;var _didIteratorError9 = false;var _iteratorError9 = undefined;try {
-        for (var _iterator9 = orders.ongoing[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var order = _step9.value;if (elements.length < bot.limit) {
+    var customer = getData(recipientId, 'customer');var orders = getData(recipientId, 'orders');var elements = [];elements.push({ "title": "Nueva orden", "subtitle": "Puedes realizar una orden", "image_url": SERVER_URL + "assets/conversation.jpg", "buttons": [{ "type": "postback", "title": "Nueva orden", "payload": "NewOrder" }] });var _iteratorNormalCompletion8 = true;var _didIteratorError8 = false;var _iteratorError8 = undefined;try {
+        for (var _iterator8 = orders.ongoing[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            var order = _step8.value;if (elements.length < bot.limit) {
                 var datetime = _datetimeConverterNodejs2.default.dateString(order.createdAt);var image_url = customer.image.url; /*let image = order.image;
                                                                                                                                  if(image){
                                                                                                                                  image_url = image.url();
@@ -1030,36 +1003,36 @@ function getData(recipientId, property) {
             }
         }
     } catch (err) {
-        _didIteratorError9 = true;_iteratorError9 = err;
+        _didIteratorError8 = true;_iteratorError8 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                _iterator9.return();
+            if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                _iterator8.return();
             }
         } finally {
-            if (_didIteratorError9) {
-                throw _iteratorError9;
+            if (_didIteratorError8) {
+                throw _iteratorError8;
             }
         }
     }var messageData = { recipient: { id: recipientId }, message: { "attachment": { "type": "template", "payload": { "template_type": "generic", "elements": elements } } } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function sendOrder(recipientId, id) {
     bot.sendTypingOn(recipientId);authentication(recipientId, function () {
-        var orders = getData(recipientId, 'orders');var currentOrder = void 0;var elements = [];var _iteratorNormalCompletion10 = true;var _didIteratorError10 = false;var _iteratorError10 = undefined;try {
-            for (var _iterator10 = orders.ongoing[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                var order = _step10.value;if (order.objectId == id) {
+        var orders = getData(recipientId, 'orders');var currentOrder = void 0;var elements = [];var _iteratorNormalCompletion9 = true;var _didIteratorError9 = false;var _iteratorError9 = undefined;try {
+            for (var _iterator9 = orders.ongoing[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                var order = _step9.value;if (order.objectId == id) {
                     currentOrder = order;
                 }
             }
         } catch (err) {
-            _didIteratorError10 = true;_iteratorError10 = err;
+            _didIteratorError9 = true;_iteratorError9 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                    _iterator10.return();
+                if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                    _iterator9.return();
                 }
             } finally {
-                if (_didIteratorError10) {
-                    throw _iteratorError10;
+                if (_didIteratorError9) {
+                    throw _iteratorError9;
                 }
             }
         }var element = {};element['title'] = 'title';element['subtitle'] = 'subtitle';element['quantity'] = 1;element['price'] = 1000;element['currency'] = "COP"; //element['image_url'] = ;
@@ -1167,13 +1140,33 @@ function getData(recipientId, property) {
         });
         */res.json({ result: 'OK' });
 });var paymentTypes = new Map();new Parse.Query(ParseModels.PaymentMethod).find().then(function (methods) {
-    var _iteratorNormalCompletion11 = true;var _didIteratorError11 = false;var _iteratorError11 = undefined;try {
-        for (var _iterator11 = methods[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var method = _step11.value;var tmpMethod = (0, _ParseUtils.extractParseAttributes)(method);if (tmpMethod.objectId == 'Nn0joKC5VK') {
+    var _iteratorNormalCompletion10 = true;var _didIteratorError10 = false;var _iteratorError10 = undefined;try {
+        for (var _iterator10 = methods[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var method = _step10.value;var tmpMethod = (0, _ParseUtils.extractParseAttributes)(method);if (tmpMethod.objectId == 'Nn0joKC5VK') {
                 paymentTypes.set('Nn0joKC5VK', renderCash);
             } else if (tmpMethod.objectId == 'UdK0Ifc4IF') {
                 paymentTypes.set('UdK0Ifc4IF', renderCreditCard);
             } //orderStates.set(state.get('order'), extractParseAttributes(state));
+        }
+    } catch (err) {
+        _didIteratorError10 = true;_iteratorError10 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                _iterator10.return();
+            }
+        } finally {
+            if (_didIteratorError10) {
+                throw _iteratorError10;
+            }
+        }
+    }
+}, function (object, error) {
+    console.log(error);
+});var orderStates = new Map();new Parse.Query(ParseModels.OrderState).find().then(function (states) {
+    var _iteratorNormalCompletion11 = true;var _didIteratorError11 = false;var _iteratorError11 = undefined;try {
+        for (var _iterator11 = states[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var state = _step11.value;orderStates.set(state.get('order'), (0, _ParseUtils.extractParseAttributes)(state));
         }
     } catch (err) {
         _didIteratorError11 = true;_iteratorError11 = err;
@@ -1185,26 +1178,6 @@ function getData(recipientId, property) {
         } finally {
             if (_didIteratorError11) {
                 throw _iteratorError11;
-            }
-        }
-    }
-}, function (object, error) {
-    console.log(error);
-});var orderStates = new Map();new Parse.Query(ParseModels.OrderState).find().then(function (states) {
-    var _iteratorNormalCompletion12 = true;var _didIteratorError12 = false;var _iteratorError12 = undefined;try {
-        for (var _iterator12 = states[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var state = _step12.value;orderStates.set(state.get('order'), (0, _ParseUtils.extractParseAttributes)(state));
-        }
-    } catch (err) {
-        _didIteratorError12 = true;_iteratorError12 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion12 && _iterator12.return) {
-                _iterator12.return();
-            }
-        } finally {
-            if (_didIteratorError12) {
-                throw _iteratorError12;
             }
         }
     }
