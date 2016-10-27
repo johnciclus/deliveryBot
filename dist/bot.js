@@ -1051,6 +1051,13 @@ function deleteListener(recipientId, dataId) {
     return true;
 }
 
+function setDataBuffer(recipientId, key, value) {
+    if (!buffer[recipientId]) {
+        buffer[recipientId] = {};
+    }
+    buffer[recipientId][key] = value;
+}
+
 function defaultSearch(recipientId, query) {
     //console.log('defaultSearch');
     //console.log(search);
@@ -1153,4 +1160,4 @@ _server.app.listen(_server.app.get('port'), function () {
     //console.log('Node app is running on port', app.get('port'));
 });
 
-module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, buffer: buffer, listener: listener, limit: limit, defaultSearch: defaultSearch, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser, setListener: setListener, getListener: getListener, deleteListener: deleteListener };
+module.exports = { app: _server.app, Parse: _server.Parse, rules: rules, payloadRules: payloadRules, buffer: buffer, listener: listener, limit: limit, defaultSearch: defaultSearch, callSendAPI: callSendAPI, sendTypingOn: sendTypingOn, sendTypingOff: sendTypingOff, getFacebookUser: getFacebookUser, setListener: setListener, getListener: getListener, deleteListener: deleteListener, setDataBuffer: setDataBuffer };

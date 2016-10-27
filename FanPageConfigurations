@@ -60,22 +60,22 @@ curl -X POST -H "Content-Type: application/json" -d '{
     {
       "type":"postback",
       "title":"Mi cuenta",
-      "payload":"MyAccount"
+      "payload":"SendAccount"
     },
     {
       "type":"postback",
       "title":"Ayuda",
-      "payload":"Help"
+      "payload":"SendHelp"
     }	
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACsacYwrh4gRObJ8ZBFZApgGHzBmyZBtPZBPVnYbZCBZAst72aGNfPGR7XYxvmNvNsAf3lHpUB4lGa6zUaQhpVE2qXjReDAwhXYM86ka4LzGiFa9e2QtV8Mjw5ZAUQTq4Re2BOFzGVqlNYlMEVhRraAgMltYrhnmQZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAH9FhVZBKh1efALftk5NOZAUrm7w33stBeaj4PYFMoNZAHNvsQNqzWg1uPbxKD6DuoVZBhOAVwZC5bGvJCkigxnzG2tbntLBOIQXfwrpqeM5fZBFq9iZA3uAjZAnmqTwehdj0RVo3iwPNRO0ZBqwOTBm9Hp9aoQEIDAZDZD"
 
 * Delete Persistent Menu *
 
 curl -X DELETE -H "Content-Type: application/json" -d '{
   "setting_type":"call_to_actions",
   "thread_state":"existing_thread"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACsacYwrh4gRObJ8ZBFZApgGHzBmyZBtPZBPVnYbZCBZAst72aGNfPGR7XYxvmNvNsAf3lHpUB4lGa6zUaQhpVE2qXjReDAwhXYM86ka4LzGiFa9e2QtV8Mjw5ZAUQTq4Re2BOFzGVqlNYlMEVhRraAgMltYrhnmQZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAH9FhVZBKh1efALftk5NOZAUrm7w33stBeaj4PYFMoNZAHNvsQNqzWg1uPbxKD6DuoVZBhOAVwZC5bGvJCkigxnzG2tbntLBOIQXfwrpqeM5fZBFq9iZA3uAjZAnmqTwehdj0RVo3iwPNRO0ZBqwOTBm9Hp9aoQEIDAZDZD"
 
 
 

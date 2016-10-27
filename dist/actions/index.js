@@ -7,6 +7,7 @@ exports.loadCustomer = loadCustomer;
 exports.loadUser = loadUser;
 exports.loadConsumer = loadConsumer;
 exports.loadConsumerAddresses = loadConsumerAddresses;
+exports.loadConsumerCreditCards = loadConsumerCreditCards;
 exports.loadOrders = loadOrders;
 exports.setAddress = setAddress;
 exports.loadPaymentMethods = loadPaymentMethods;
@@ -171,6 +172,21 @@ function loadConsumerAddresses(recipientId, consumer) {
   return function (dispatch) {
     return new Parse.Query(_ParseModels.ConsumerAddress).equalTo('consumer', consumer).find().then(function (addresses) {
       dispatch({ type: types.CONSUMER_ADDRESSES_LOADED, data: { recipientId: recipientId, addresses: addresses } });
+    }).fail(function (error) {
+      console.log('Error ' + error);
+      //TODO dispatch action with error
+    });
+  };
+}
+
+/**
+ * Load Consumer Addresses and dispatch action with the results.
+ */
+function loadConsumerCreditCards(recipientId, user) {
+  if (consumer == null) return;
+  return function (dispatch) {
+    return new Parse.Query(_ParseModels.CreditCard).equalTo('consumer', user).find().then(function (creditCards) {
+      dispatch({ type: types.CONSUMER_CREDITCARDS_LOADED, data: { recipientId: recipientId, creditCards: creditCards } });
     }).fail(function (error) {
       console.log('Error ' + error);
       //TODO dispatch action with error
