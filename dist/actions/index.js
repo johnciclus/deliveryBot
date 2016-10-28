@@ -152,8 +152,6 @@ function loadConsumer(recipientId, user) {
       if (consumer) {
         dispatch({ type: types.CONSUMER_LOADED, data: { recipientId: recipientId, consumer: consumer } });
       } else {
-        console.log('Consumer not exits');
-        console.log(consumer);
         dispatch({ type: types.CONSUMER_NOT_FOUND, data: { user: user } });
       }
     }).fail(function (e) {

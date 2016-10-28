@@ -779,7 +779,7 @@ function getData(recipientId, property) {
     var user = getData(recipientId, 'user');var consumer = getData(recipientId, 'consumer');var address = getData(recipientId, 'address');var pointSale = getData(recipientId, 'pointSale');var payment_method = getData(recipientId, 'payment_method');var addressData = undefined;if (typeof payment_method == 'undefined') {
         payment_method = { name: 'Sin definir' };
     }if (typeof address != 'undefined') {
-        addressData = { street_1: address.address, street_2: "", city: address.city, postal_code: address.postalCode, state: address.state, country: address.countryCode };
+        addressData = { street_1: address.address ? address.address : 'Dirección no definida', street_2: "", city: address.city ? address.city : 'No definida', postal_code: address.postalCode ? address.postalCode : 'No definido', state: address.state ? address.state : 'No definido', country: address.countryCode ? address.countryCode : 'No definido' };
     }var messageData = { recipient: { id: recipientId }, message: { attachment: { type: "template", payload: { template_type: "receipt", recipient_name: user.first_name + " " + user.last_name, order_number: cartId, currency: "COP", payment_method: payment_method.name, //order_url: "http://petersapparel.parseapp.com/order?order_id=123456",
                     timestamp: Math.trunc(Date.now() / 1000).toString(), elements: elements, address: addressData, summary: { subtotal: total, shipping_cost: pointSale.deliveryCost, //total_tax: 0,
                         total_cost: total + pointSale.deliveryCost } //adjustments: [{
@@ -996,10 +996,7 @@ function getData(recipientId, property) {
     var customer = getData(recipientId, 'customer');var orders = getData(recipientId, 'orders');var elements = [];elements.push({ "title": "Nueva orden", "subtitle": "Puedes realizar una orden", "image_url": SERVER_URL + "assets/conversation.jpg", "buttons": [{ "type": "postback", "title": "Nueva orden", "payload": "NewOrder" }] });var _iteratorNormalCompletion8 = true;var _didIteratorError8 = false;var _iteratorError8 = undefined;try {
         for (var _iterator8 = orders.ongoing[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
             var order = _step8.value;if (elements.length < bot.limit) {
-                var datetime = _datetimeConverterNodejs2.default.dateString(order.createdAt);var image_url = customer.image.url; /*let image = order.image;
-                                                                                                                                 if(image){
-                                                                                                                                 image_url = image.url();
-                                                                                                                                 }*/elements.push({ "title": 'Orden: ' + (0, _dateformat2.default)(datetime, "h:MM:ss TT dd/mm/yyyy"), "subtitle": 'Estado: ' + order.state.name + ', Valor: $' + order.total, "image_url": image_url, "buttons": [{ "type": "postback", "title": "Ver orden", "payload": "SendOrder-" + order.objectId }, { "type": "postback", "title": "Cancelar orden", "payload": "CancelOrder-" + order.objectId }] });
+                var datetime = _datetimeConverterNodejs2.default.dateString(order.createdAt);var image_url = customer.image.url;var title = order.orderNumber ? 'Orden: ' + order.orderNumber : 'Orden: ' + (0, _dateformat2.default)(datetime, "h:MM:ss TT dd/mm/yyyy");elements.push({ "title": title, "subtitle": 'Estado: ' + order.state.name + ', Valor: $' + order.total, "image_url": image_url, "buttons": [{ "type": "postback", "title": "Ver orden", "payload": "SendOrder-" + order.objectId }, { "type": "postback", "title": "Cancelar orden", "payload": "CancelOrder-" + order.objectId }] });
             }
         }
     } catch (err) {
@@ -1017,7 +1014,7 @@ function getData(recipientId, property) {
     }var messageData = { recipient: { id: recipientId }, message: { "attachment": { "type": "template", "payload": { "template_type": "generic", "elements": elements } } } };bot.sendTypingOff(recipientId);bot.callSendAPI(messageData);
 }function sendOrder(recipientId, id) {
     bot.sendTypingOn(recipientId);authentication(recipientId, function () {
-        var orders = getData(recipientId, 'orders');var currentOrder = void 0;var elements = [];var _iteratorNormalCompletion9 = true;var _didIteratorError9 = false;var _iteratorError9 = undefined;try {
+        var orders = getData(recipientId, 'orders');var customer = getData(recipientId, 'customer');var customer_image_url = customer.image.url;var currentOrder = void 0;var elements = [];var element = void 0;var image_url = void 0;var product = void 0;var _iteratorNormalCompletion9 = true;var _didIteratorError9 = false;var _iteratorError9 = undefined;try {
             for (var _iterator9 = orders.ongoing[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
                 var order = _step9.value;if (order.objectId == id) {
                     currentOrder = order;
@@ -1035,15 +1032,33 @@ function getData(recipientId, property) {
                     throw _iteratorError9;
                 }
             }
-        }var element = {};element['title'] = 'title';element['subtitle'] = 'subtitle';element['quantity'] = 1;element['price'] = 1000;element['currency'] = "COP"; //element['image_url'] = ;
-        elements.push(element);renderOrder(recipientId, currentOrder, elements);
+        }var _iteratorNormalCompletion10 = true;var _didIteratorError10 = false;var _iteratorError10 = undefined;try {
+            for (var _iterator10 = currentOrder.items[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                var item = _step10.value;product = item.product;image_url = customer_image_url;if (product.image) {
+                    image_url = product.image.url;
+                }element = {};element['title'] = product.name; //element['subtitle'] = 'subtitle';
+                element['quantity'] = item.amount;element['price'] = item.price;element['currency'] = "COP";element['image_url'] = image_url;elements.push(element);
+            }
+        } catch (err) {
+            _didIteratorError10 = true;_iteratorError10 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                    _iterator10.return();
+                }
+            } finally {
+                if (_didIteratorError10) {
+                    throw _iteratorError10;
+                }
+            }
+        }renderOrder(recipientId, currentOrder, elements);
     });
 }function renderOrder(recipientId, order, elements) {
-    console.log(order);var user = getData(recipientId, 'user');var consumer = getData(recipientId, 'consumer');var address = order.consumerAddress;var pointSale = order.pointSale;var payment_method = order.paymentMethod;var addressData = undefined;if (typeof payment_method == 'undefined') {
+    var user = getData(recipientId, 'user');var consumer = getData(recipientId, 'consumer');var address = order.consumerAddress;var pointSale = order.pointSale;var payment_method = order.paymentMethod;var addressData = undefined;if (typeof payment_method == 'undefined') {
         payment_method = { name: 'Sin definir' };
     }if (typeof address != 'undefined') {
         addressData = { street_1: address.address, street_2: "", city: address.city, postal_code: address.postalCode, state: address.state, country: address.countryCode };
-    }console.log(user);var messageData = { recipient: { id: recipientId }, message: { attachment: { type: "template", payload: { template_type: "receipt", recipient_name: user.first_name + " " + user.last_name, order_number: order.objectId, currency: "COP", payment_method: payment_method.name, //order_url: "http://petersapparel.parseapp.com/order?order_id=123456",
+    }var messageData = { recipient: { id: recipientId }, message: { attachment: { type: "template", payload: { template_type: "receipt", recipient_name: user.first_name + " " + user.last_name, order_number: order.objectId, currency: "COP", payment_method: payment_method.name, //order_url: "http://petersapparel.parseapp.com/order?order_id=123456",
                     timestamp: Math.trunc(Date.now() / 1000).toString(), elements: elements, address: addressData, summary: { subtotal: order.total, shipping_cost: pointSale.deliveryCost, //total_tax: 0,
                         total_cost: order.total + pointSale.deliveryCost } //adjustments: [{
                     //  name: "New Customer Discount",
@@ -1140,33 +1155,13 @@ function getData(recipientId, property) {
         });
         */res.json({ result: 'OK' });
 });var paymentTypes = new Map();new Parse.Query(ParseModels.PaymentMethod).find().then(function (methods) {
-    var _iteratorNormalCompletion10 = true;var _didIteratorError10 = false;var _iteratorError10 = undefined;try {
-        for (var _iterator10 = methods[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-            var method = _step10.value;var tmpMethod = (0, _ParseUtils.extractParseAttributes)(method);if (tmpMethod.objectId == 'Nn0joKC5VK') {
+    var _iteratorNormalCompletion11 = true;var _didIteratorError11 = false;var _iteratorError11 = undefined;try {
+        for (var _iterator11 = methods[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var method = _step11.value;var tmpMethod = (0, _ParseUtils.extractParseAttributes)(method);if (tmpMethod.objectId == 'Nn0joKC5VK') {
                 paymentTypes.set('Nn0joKC5VK', renderCash);
             } else if (tmpMethod.objectId == 'UdK0Ifc4IF') {
                 paymentTypes.set('UdK0Ifc4IF', renderCreditCard);
             } //orderStates.set(state.get('order'), extractParseAttributes(state));
-        }
-    } catch (err) {
-        _didIteratorError10 = true;_iteratorError10 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                _iterator10.return();
-            }
-        } finally {
-            if (_didIteratorError10) {
-                throw _iteratorError10;
-            }
-        }
-    }
-}, function (object, error) {
-    console.log(error);
-});var orderStates = new Map();new Parse.Query(ParseModels.OrderState).find().then(function (states) {
-    var _iteratorNormalCompletion11 = true;var _didIteratorError11 = false;var _iteratorError11 = undefined;try {
-        for (var _iterator11 = states[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var state = _step11.value;orderStates.set(state.get('order'), (0, _ParseUtils.extractParseAttributes)(state));
         }
     } catch (err) {
         _didIteratorError11 = true;_iteratorError11 = err;
@@ -1178,6 +1173,26 @@ function getData(recipientId, property) {
         } finally {
             if (_didIteratorError11) {
                 throw _iteratorError11;
+            }
+        }
+    }
+}, function (object, error) {
+    console.log(error);
+});var orderStates = new Map();new Parse.Query(ParseModels.OrderState).find().then(function (states) {
+    var _iteratorNormalCompletion12 = true;var _didIteratorError12 = false;var _iteratorError12 = undefined;try {
+        for (var _iterator12 = states[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var state = _step12.value;orderStates.set(state.get('order'), (0, _ParseUtils.extractParseAttributes)(state));
+        }
+    } catch (err) {
+        _didIteratorError12 = true;_iteratorError12 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                _iterator12.return();
+            }
+        } finally {
+            if (_didIteratorError12) {
+                throw _iteratorError12;
             }
         }
     }
