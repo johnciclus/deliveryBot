@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon lib/app.js --exec babel-node",
     "test": "mocha --compilers js:babel-register",
-    "build": "babel lib/ -d dist/; cp -R lib/views dist/views",
+    "build": "browserify --entry public/assets/js/login.js --outfile public/assets/js/login.built.js; babel lib/ -d dist/; cp -R lib/views dist/views",
     "serve": "node dist/app.js",
     "clear": "rm -R dist/"
   },

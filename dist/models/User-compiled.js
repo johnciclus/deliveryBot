@@ -1,1 +1,6 @@
-'use strict';var User=Parse.Object.extend('User',{initialize:function initialize(attrs,options){console.log('new user');console.log(attrs);console.log(options);},authentication:function authentication(){console.log('authentication');}});var user=new User('john');console.log('User Class');console.log(user);console.log(user.authentication());//# sourceMappingURL=User-compiled.js.map
+'use strict';Object.defineProperty(exports,"__esModule",{value:true});var _index=require('../actions/index');var User=Parse.Object.extend('User',{initialize:function initialize(attrs,options){//console.log('new user');
+//console.log();
+//console.log(options);
+},signUpWithFacebook:function signUpWithFacebook(data){var recipientId=this.get('recipientId');return this.signUp(Object.assign(data,{username:recipientId.toString(),password:recipientId.toString(),facebookId:recipientId})).fail(function(error){console.log('Error code: '+error.message);});},registered:function registered(){return new Parse.Query('User').equalTo('facebookId',this.get('recipientId')).first().fail(function(error){console.log('Error code: '+error.message);});},saveInStore:function saveInStore(store,recipientId){return store.dispatch((0,_index.setUser)(recipientId,this)).fail(function(error){console.log('Error code: '+error.message);});}});exports.default=User;
+
+//# sourceMappingURL=User-compiled.js.map

@@ -80,10 +80,20 @@ curl -X DELETE -H "Content-Type: application/json" -d '{
 
 
 
+* Whitelist your domain
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "setting_type" : "domain_whitelisting",
+  "whitelisted_domains" : ["https://8baf4dca.ngrok.io"],
+  "domain_action_type": "add"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAH9FhVZBKh1efALftk5NOZAUrm7w33stBeaj4PYFMoNZAHNvsQNqzWg1uPbxKD6DuoVZBhOAVwZC5bGvJCkigxnzG2tbntLBOIQXfwrpqeM5fZBFq9iZA3uAjZAnmqTwehdj0RVo3iwPNRO0ZBqwOTBm9Hp9aoQEIDAZDZD"
 
 
 
 
+
+
+https://www.facebook.com/v2.8/dialog/oauth?client_id=182633898821445&redirect_uri=https://bot.inoutdelivery.com/
 
 
 
