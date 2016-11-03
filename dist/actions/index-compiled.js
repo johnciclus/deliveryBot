@@ -5,7 +5,13 @@
 //import { push } from 'react-router-redux'
 function loadCustomer(recipientId,businessId){if(businessId==null)return;return function(dispatch){return new Parse.Query(_ParseModels.Customer).contains('businessId',businessId).limit(1).first().then(function(customer){dispatch({type:types.CUSTOMER_LOADED,data:{recipientId:recipientId,customer:customer}});}).fail(function(e){dispatch({type:types.CUSTOMER_NOT_FOUND,data:{recipientId:recipientId,businessId:businessId}});});};}function setCustomer(recipientId,customer){return function(dispatch){return Parse.Promise.as().then(function(){dispatch({type:types.SET_CUSTOMER,data:{recipientId:recipientId,customer:customer}});});};}/**
  * Load Consumer of given user
- */function loadUser(recipientId){return function(dispatch){return new Parse.Query(_ParseModels.User).equalTo('facebookId',recipientId).first().then(function(user){if(user){dispatch({type:types.USER_LOADED,data:{recipientId:recipientId,user:user}});}}).fail(function(e){dispatch({type:types.CONSUMER_NOT_FOUND,data:{user:user}});});};}/**
+ */function loadUser(recipientId){return function(dispatch){return new Parse.Query(_ParseModels.Consumer).equalTo('conversationId',parseInt(recipientId)).first().then(function(consumer){if(consumer){return new Parse.Query(_ParseModels.User).get(consumer.get('user').id).then(function(user){dispatch({type:types.USER_LOADED,data:{recipientId:recipientId,user:user}});}).fail(function(e){dispatch({type:types.USER_NOT_FOUND,data:{user:user}});});}}).fail(function(e){dispatch({type:types.CONSUMER_NOT_FOUND,data:{consumer:consumer}});});/*
+         return new Parse.Query(User).equalTo('facebookId', recipientId).first().then(user => {
+            if (user) {
+                dispatch({type: types.USER_LOADED, data: {recipientId, user}})
+            }
+         })
+        * */};}/**
  * Load Consumer of given user
  */function loadConsumer(recipientId,user){if(user==null)return;return function(dispatch){return new Parse.Query(_ParseModels.Consumer).equalTo('user',user).first().then(function(consumer){if(consumer){dispatch({type:types.CONSUMER_LOADED,data:{recipientId:recipientId,consumer:consumer}});}else{dispatch({type:types.CONSUMER_NOT_FOUND,data:{user:user}});}}).fail(function(e){dispatch({type:types.CONSUMER_NOT_FOUND,data:{user:user}});});};}/**
  * Load Consumer Addresses and dispatch action with the results.

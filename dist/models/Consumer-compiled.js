@@ -7,6 +7,6 @@
             className: "User",
             objectId: user.id
         });
-        console.log(this.get('user'))*/},setUser:function setUser(user){this.set('name',user.get('first_name')+" "+user.get('last_name'));this.set('user',{__type:"Pointer",className:"_User",objectId:user.id});},setEmail:function setEmail(email){this.set('email',email);this.save();},setPhone:function setPhone(phone){this.set('phone',phone);this.save();},saveInStore:function saveInStore(store,recipientId){return store.dispatch((0,_index.setConsumer)(recipientId,this)).fail(function(error){console.log('Error code: '+error.message);});}});exports.default=Consumer;
+        console.log(this.get('user'))*/},setUser:function setUser(user){this.set('name',user.get('first_name')+" "+user.get('last_name'));this.set('email',user.get('email'));this.set('user',{__type:"Pointer",className:"_User",objectId:user.id});},setEmail:function setEmail(email){this.set('email',email);this.save();},setPhone:function setPhone(phone){this.set('phone',phone);this.save();},saveInStore:function saveInStore(store,recipientId){return store.dispatch((0,_index.setConsumer)(recipientId,this)).fail(function(error){console.log('Error code: '+error.message);});}});exports.default=Consumer;
 
 //# sourceMappingURL=Consumer-compiled.js.map

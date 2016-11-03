@@ -84,9 +84,9 @@ curl -X DELETE -H "Content-Type: application/json" -d '{
 
 curl -X POST -H "Content-Type: application/json" -d '{
   "setting_type" : "domain_whitelisting",
-  "whitelisted_domains" : ["https://5bd5844c.ngrok.io"],
+  "whitelisted_domains" : ["https://07dff67a.ngrok.io"],
   "domain_action_type": "add"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAH9FhVZBKh1efALftk5NOZAUrm7w33stBeaj4PYFMoNZAHNvsQNqzWg1uPbxKD6DuoVZBhOAVwZC5bGvJCkigxnzG2tbntLBOIQXfwrpqeM5fZBFq9iZA3uAjZAnmqTwehdj0RVo3iwPNRO0ZBqwOTBm9Hp9aoQEIDAZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBADylZAePZBipNyBGZBaN1L38tbiNoErDxxuoKF1ZAbXZBeTh0w1xNlbGrThFynUMniP2ezEcEbYRqHGp46WDCGluseZBhA7Drn7PSn092ZBiCQCBrgqGJZBz6oshZCuml7zitCmuGaFs3d3EDdsgbbK0ZCYJTYYWqkYgZDZD"
 
 
 
