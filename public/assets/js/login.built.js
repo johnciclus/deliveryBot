@@ -708,23 +708,19 @@ function statusChangeCallback(response) {
         MessengerExtensions.getUserID(function success(uids) {
             var psid = uids.psid;
 
-            callback = function(){
+            sendUserData(uid, psid, accessToken, function(){
                 MessengerExtensions.requestCloseBrowser(function success() {
 
                 }, function error(err) {
 
                 })
-            }
-
-            sendUserData(uid, psid, accessToken);
+            });
         }, function error(err) {
             var parameters = queryString.parse(location.search);
 
-            callback = function(){
+            sendUserData(uid, parameters.psid, accessToken, function(){
                 window.close();
-            };
-
-            sendUserData(uid, parameters.psid, accessToken);
+            });
         });
 
     } else if (response.status === 'not_authorized') {
@@ -739,16 +735,9 @@ function statusChangeCallback(response) {
     }
 }
 
-function sendUserData(uid, psid, accessToken) {
+function sendUserData(uid, psid, accessToken, callback) {
 
-    request({method:'POST', url:'/registerUser', json:{ uid: uid, psid: psid, accessToken: accessToken }}, on_response);
-
-    function on_response(er, response, body) {
-        console.log(callback);
-        if(callback){
-            callback();
-        }
-    }
+    request({method:'POST', url:'/registerUser', json:{ uid: uid, psid: psid, accessToken: accessToken }}, callback);
 }
 
 function checkLoginState() {
