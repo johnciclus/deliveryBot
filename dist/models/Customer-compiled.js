@@ -7,6 +7,4 @@
             className: "User",
             objectId: user.id
         });
-        console.log(this.get('user'))*/},saveInStore:function saveInStore(store,recipientId){return store.dispatch((0,_index.setCustomer)(recipientId,this)).fail(function(error){console.log('Error code: '+error.message);});}});exports.default=Consumer;
-
-//# sourceMappingURL=Customer-compiled.js.map
+        console.log(this.get('user'))*/},saveInStore:function saveInStore(store,recipientId){return store.dispatch((0,_index.setCustomer)(recipientId,this)).fail(function(error){console.log('Error code: '+error.message);});}});exports.default=Consumer;//# sourceMappingURL=Customer-compiled.js.map
