@@ -82,10 +82,24 @@ curl -X DELETE -H "Content-Type: application/json" -d '{
 
 * Whitelist your domain
 
+* List
+
+curl -i -X GET "https://graph.facebook.com/v2.6/me/thread_settings?fields=whitelisted_domains&access_token=EAACmGsSpx0UBACjteceMUf4kclVZCyPtvFeumLg4MGmnFImX6e6YNV2Brwzuo3YDCzm8SdKP3AY9mRMe8t91ocZAqkCKSOVR492v0zxWMzGz8SUfzGj0O7XqOyyy9XEzWUabYj3GZAaZBHcZBuZBCAySVeEfbhc5LSDUA4ZCZBl7ywZDZD"
+
+* Add
+
 curl -X POST -H "Content-Type: application/json" -d '{
   "setting_type" : "domain_whitelisting",
-  "whitelisted_domains" : ["https://b7bec8b2.ngrok.io"],
+  "whitelisted_domains" : ["https://6f43cef2.ngrok.io"],
   "domain_action_type": "add"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACjteceMUf4kclVZCyPtvFeumLg4MGmnFImX6e6YNV2Brwzuo3YDCzm8SdKP3AY9mRMe8t91ocZAqkCKSOVR492v0zxWMzGz8SUfzGj0O7XqOyyy9XEzWUabYj3GZAaZBHcZBuZBCAySVeEfbhc5LSDUA4ZCZBl7ywZDZD"
+
+* Remove
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "setting_type" : "domain_whitelisting",
+  "whitelisted_domains" : ["https://8baf4dca.ngrok.io/","https://6c9acc90.ngrok.io/","https://5bd5844c.ngrok.io/","https://7ef81118.ngrok.io/","https://f8ba94a6.ngrok.io/","https://bot.inoutdelivery.com/","https://07dff67a.ngrok.io/","https://eba95666.ngrok.io/","https://db50017c.ngrok.io/","https://b7bec8b2.ngrok.io/"],
+  "domain_action_type": "remove"
 }' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACjteceMUf4kclVZCyPtvFeumLg4MGmnFImX6e6YNV2Brwzuo3YDCzm8SdKP3AY9mRMe8t91ocZAqkCKSOVR492v0zxWMzGz8SUfzGj0O7XqOyyy9XEzWUabYj3GZAaZBHcZBuZBCAySVeEfbhc5LSDUA4ZCZBl7ywZDZD"
 
 
