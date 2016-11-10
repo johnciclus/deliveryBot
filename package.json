@@ -4,7 +4,7 @@
   "description": "Bot for e-commerce",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon lib/app.js --exec babel-node",
+    "start": "NODE_PATH=lib nodemon lib/app.js --exec babel-node",
     "test": "mocha --compilers js:babel-register",
     "build": "browserify --entry public/assets/js/login.js --outfile public/assets/js/login.built.js; babel lib/ -d dist/; cp -R lib/views dist/views",
     "serve": "node dist/app.js",
