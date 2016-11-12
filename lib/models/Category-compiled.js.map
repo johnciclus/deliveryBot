@@ -1,0 +1,1 @@
+{"version":3,"sources":["Category.js"],"names":[],"mappings":"sEAAA,GAAM,UAAW,MAAM,MAAN,CAAa,MAAb,CAAoB,UAApB,CAAgC,CAC7C,WAAY,oBAAU,KAAV,CAAiB,OAAjB,CAA0B,CAErC,CAH4C,CAAhC,CAAjB,C,gBAMe,Q","file":"Category-compiled.js","sourcesContent":["const Category = Parse.Object.extend('Category', {\n    initialize: function (attrs, options) {\n\n    }\n});\n\nexport default Category"]}

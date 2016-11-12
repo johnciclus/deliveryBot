@@ -6,9 +6,11 @@
         <item url="file://$PROJECT_DIR$/dist/models/Cart-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/models/ParseModels-compiled.js" />
         <item url="file://$PROJECT_DIR$/dist/models/ParseModels-compiled.js" />
+        <item url="file://$PROJECT_DIR$/lib/models/CustomerPointSale-compiled.js" />
         <item url="file://$PROJECT_DIR$/dist/src/parse-express-cookie-session/index-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/models/Cart-compiled.js" />
         <item url="file://$PROJECT_DIR$/public/assets/js/bootstrap.min-compiled.js" />
+        <item url="file://$PROJECT_DIR$/lib/models/Category-compiled.js" />
         <item url="file://$PROJECT_DIR$/public/assets/js/login.built-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/models/Order-compiled.js" />
         <item url="file://$PROJECT_DIR$/lib/src/parse-express-cookie-session/index-compiled.js" />
@@ -74,9 +76,11 @@
       <root url="file://$PROJECT_DIR$/dist/models/Cart-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/models/ParseModels-compiled.js" />
       <root url="file://$PROJECT_DIR$/dist/models/ParseModels-compiled.js" />
+      <root url="file://$PROJECT_DIR$/lib/models/CustomerPointSale-compiled.js" />
       <root url="file://$PROJECT_DIR$/dist/src/parse-express-cookie-session/index-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/models/Cart-compiled.js" />
       <root url="file://$PROJECT_DIR$/public/assets/js/bootstrap.min-compiled.js" />
+      <root url="file://$PROJECT_DIR$/lib/models/Category-compiled.js" />
       <root url="file://$PROJECT_DIR$/public/assets/js/login.built-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/models/Order-compiled.js" />
       <root url="file://$PROJECT_DIR$/lib/src/parse-express-cookie-session/index-compiled.js" />

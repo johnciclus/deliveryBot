@@ -90,7 +90,7 @@ curl -i -X GET "https://graph.facebook.com/v2.6/me/thread_settings?fields=whitel
 
 curl -X POST -H "Content-Type: application/json" -d '{
   "setting_type" : "domain_whitelisting",
-  "whitelisted_domains" : ["https://6f43cef2.ngrok.io"],
+  "whitelisted_domains" : ["https://93ad0ffb.ngrok.io"],
   "domain_action_type": "add"
 }' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBACjteceMUf4kclVZCyPtvFeumLg4MGmnFImX6e6YNV2Brwzuo3YDCzm8SdKP3AY9mRMe8t91ocZAqkCKSOVR492v0zxWMzGz8SUfzGj0O7XqOyyy9XEzWUabYj3GZAaZBHcZBuZBCAySVeEfbhc5LSDUA4ZCZBl7ywZDZD"
 
