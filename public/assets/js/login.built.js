@@ -736,7 +736,6 @@ function statusChangeCallback(response) {
 }
 
 function sendUserData(uid, psid, accessToken, callback) {
-
     request({method:'POST', url:'/registerUser', json:{ uid: uid, psid: psid, accessToken: accessToken }}, callback);
 }
 
