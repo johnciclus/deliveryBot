@@ -16,6 +16,4 @@
          if (attributes && attributes.location)  {
          this.location = new LatLng(attributes.location.lat, attributes.location.lat)
          }
-        * */}},{loadInStore:function loadInStore(store,recipientId,consumer){return store.dispatch((0,_index.loadConsumerAddresses)(recipientId,consumer.rawParseObject));}});exports.default=ConsumerAddress;
-
-//# sourceMappingURL=ConsumerAddress-compiled.js.map
+        * */}},{loadInStore:function loadInStore(store,recipientId,consumer){return store.dispatch((0,_index.loadConsumerAddresses)(recipientId,consumer.rawParseObject));}});exports.default=ConsumerAddress;//# sourceMappingURL=ConsumerAddress-compiled.js.map
