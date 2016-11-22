@@ -13,6 +13,6 @@ $('form').card({
     width: 200,
 
     formSelectors: {
-        nameInput: 'input[name="first-name"], input[name="last-name"]'
+        nameInput: 'input[name="holderName"]'
     }
 });

@@ -26,4 +26,6 @@ if(reqCookieJson!==resCookieJson){var val=JSON.stringify(resParseUserSession);va
 //var val = encrypt(resCookieJson, encryptionSecret);
 //val = 's:' + signature.sign(val, signatureSecret);
 }});if(options.fetchUser&&!_isNullOrUndefined(Parse.User.current())){Parse.User.current().fetch().then(function(user){next();},function(){// If user from cookie is invalid, reset Parse.User.current() to null.
-Parse.User.logOut();next();});}else{next();}};};//# sourceMappingURL=index-compiled.js.map
+Parse.User.logOut();next();});}else{next();}};};
+
+//# sourceMappingURL=index-compiled.js.map

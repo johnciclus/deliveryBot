@@ -12,11 +12,10 @@
     <link href="assets/css/styles.css" rel="stylesheet">
 </head>
 <body>
-<div class="wrapper">
-    <div class="column col-sm-12 col-xs-12" id="main">
-        <div class="full col-sm-12">
-            <div class="row">
-                <div class="well">
+    <div class="row">
+        <div class="col-sm-12 col-xs-12" id="main">
+            <div class="panel panel-default">
+                <div class="panel-body">
                     <form class="form-horizontal" role="form" action="/registerCreditCard" method="post">
                         <div class="form-container">
                             <div class="personal-information">
@@ -24,13 +23,8 @@
                             </div> <!-- end of personal-information -->
 
                             <div class="form-group">
-                                <label for="first-name">Nombres:</label>
-                                <input class="form-control" type="text" id="first-name" name="first-name" placeholder="Nombres"/>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="last-name">Apellidos:</label>
-                                <input class="form-control" type="text" id="last-name" name="last-name" placeholder="Apellidos"/>
+                                <label for="holderName">Nombres y Apellidos:</label>
+                                <input class="form-control" type="text" id="holderName" name="holderName" placeholder="Nombres y apellidos" maxlength="26"/>
                             </div>
 
                             <div class="form-group">
@@ -44,24 +38,23 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="CCV">CCV:</label>
-                                <input class="form-control" type="text" id="CCV" name="CCV" placeholder="CCV"/>
+                                <label for="cvc">CVC:</label>
+                                <input class="form-control" type="text" id="cvc" name="cvc" placeholder="CVC"/>
                             </div>
 
                             <button class="btn btn-primary" type="submit">Completar registro</button>
 
                             <div class="card-wrapper"></div>
                         </div>
-                    </form>
+                </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
 </body>
-<script src="assets/js/bootstrap.min.js"></script>
-<script src="assets/js/scripts.js"></script>
 <script src='assets/js/jquery.min.js'></script>
+<script src="assets/js/bootstrap.min.js"></script>
 <script src='assets/js/card.js'></script>
 <script src='assets/js/jquery.card.js'></script>
 <script src="assets/js/index.js"></script>
