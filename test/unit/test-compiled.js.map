@@ -1,0 +1,1 @@
+{"version":3,"sources":["test.js"],"names":[],"mappings":"aAAA,GAAI,GAAI,EAAR,CACA,GAAG,KAAH,CACK,EAAG,CAAC,CAAJ","file":"test-compiled.js","sourcesContent":["var x = 42;\nif(false)\n     x =-1;\n"]}
