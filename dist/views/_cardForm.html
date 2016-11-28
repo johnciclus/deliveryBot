@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>In Out Delivery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+    <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="assets/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="row">
+        <div class="col-sm-12 col-xs-12" id="main">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <form class="form-horizontal" role="form" action="/registerCreditCard" method="post">
+                        <div class="form-container">
+                            <div class="personal-information">
+                                <h1>Registro de tarjeta</h1>
+                            </div> <!-- end of personal-information -->
+
+                            <div class="form-group">
+                                <label for="holderName">Nombres y Apellidos:</label>
+                                <input class="form-control" type="text" id="holderName" name="holderName" placeholder="Nombres y apellidos" maxlength="26"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="number">Numero de tarjeta:</label>
+                                <input class="form-control" type="text" id="number" name="number" placeholder="Numero de tarjeta"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="expiry">MM / YYYY:</label>
+                                <input class="form-control" type="text" id="expiry" name="expiry" placeholder="MM / YYYY"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cvc">CVC:</label>
+                                <input class="form-control" type="text" id="cvc" name="cvc" placeholder="CVC"/>
+                            </div>
+
+                            <button class="btn btn-primary" type="submit">Completar registro</button>
+
+                            <div class="card-wrapper"></div>
+                        </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script src='assets/js/jquery.min.js'></script>
+<script src="assets/js/bootstrap.min.js"></script>
+<script src='assets/js/card.js'></script>
+<script src='assets/js/jquery.card.js'></script>
+<script src="assets/js/index.js"></script>
+</html>
