@@ -73,7 +73,7 @@ function loadCustomer(recipientId,businessId){if(businessId==null)return;return 
 * Filter products by given category
 */function filterProductsByCategory(category){return{type:types.FILTER_PRODUCTS_BY_CATEGORY,data:category};}/**
 * Add Product to cart action
-*/function addProductToCart(cartItem){return function(dispatch,getState){var _getState=getState();var cart=_getState.cart;if(cart.consumerAddress.location.isValid()){dispatch({type:types.ADD_TO_CART,data:cartItem});}else{dispatch(showAddressSearchModal());}};}/**
+*/function addProductToCart(cartItem){return function(dispatch,getState){var _getState=getState(),cart=_getState.cart;if(cart.consumerAddress.location.isValid()){dispatch({type:types.ADD_TO_CART,data:cartItem});}else{dispatch(showAddressSearchModal());}};}/**
 * Empty cart action
 */function emptyCart(){return{type:types.EMPTY_CART};}/**
 * Load User's Facebook data.
