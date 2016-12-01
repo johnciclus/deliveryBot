@@ -15,7 +15,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     s(r[o]);
   }return s;
 })({ 1: [function (require, module, exports) {
-    module.exports = require('./lib/extend');
+    module.exports = require('./src/extend');
   }, { "./lib/extend": 2 }], 2: [function (require, module, exports) {
     /*!
      * node.extend
