@@ -1,0 +1,2 @@
+'use strict';var User=Parse.Object.extend('User',{initialize:function initialize(attrs,options){console.log('new user');console.log(attrs);console.log(options);},authentication:function authentication(){console.log('authentication');}});var user=new User('john');console.log('User Class');console.log(user);console.log(user.authentication());//# sourceMappingURL=User-compiled.js.map
+//# sourceMappingURL=User-compiled.js.map

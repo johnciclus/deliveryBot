@@ -60,7 +60,7 @@ bot.rules.set('agregar tarjeta', registerCreditCard);
 
 bot.rules.set('ayuda', sendHelp);
 bot.rules.set('help', sendHelp);
-bot.rules.set('gracias', renderYouAreWelcome);
+bot.rules.set('gracias', sendYouAreWelcome);
 
 bot.payloadRules.set('Greeting', sendMenu);
 
@@ -115,7 +115,18 @@ bot.payloadRules.set('CustomerService', sendHelp);
 bot.defaultSearch = searchProducts;
 
 const initialState = {
-    userData: {}
+    userData: {},
+    paymentTypes: {
+        'Nn0joKC5VK': sendCash,
+        'UdK0Ifc4IF': sendCash,
+        'CHzoYrEtiY': sendRegisteredCreditCards
+    },
+    creditCardImages: {
+        'VISA': 'assets/images/visaCard.jpg',
+        'MASTERCARD': 'assets/images/masterCard.jpg',
+        'AMERICAN': 'assets/images/americanCard.jpg',
+        'DEFAULT': 'assets/images/creditCards.jpg'
+    }
 };
 
 const reducer = (state = initialState, action) => {
@@ -221,20 +232,110 @@ const reducer = (state = initialState, action) => {
             objectAssign(state.userData[data.recipientId], {orderState});
             return {...state};
         }
-        case types.RENDER_MENU: {
-            renderMenu();
-            return state;
-        }
-        case types.RENDER_ADDRESS_MENU: {
-            renderAddress();
-            return state;
-        }
         default:
             return state;
     }
 }
 
 createLocalStore(reducer);
+
+bot.app.get('/login', function(req, res) {
+    res.sendFile(path.join(__dirname+'/views/login.html'));
+});
+
+bot.app.post('/registerUser', function (req, res) {
+    let data = req.body;
+
+    signUp(data.psid, data.uid, data.accessToken).then(user =>{
+        sendMenu(data.psid);
+    });
+
+    res.status(200).end();
+});
+
+bot.app.get('/creditCard', function(req, res) {
+    console.log('creditCard');
+    res.sendFile(path.join(__dirname+'/views/cardForm.html'));
+});
+
+bot.app.post('/registerCreditCard', function (req, res) {
+    console.log('registerCreditCard');
+    let data = req.body;
+    let consumerID = data['consumerID'];
+
+    new Parse.Query(Consumer).get(consumerID).then(consumer => {
+            if(consumer){
+                new Parse.Query(User).get(consumer.get('user').id).then(user => {
+                    let username = user.get('username');
+                    let recipientId = consumer.get('conversationId');
+
+                    Parse.User.logIn(username, username, {
+                        success: function(userData) {
+                            addCreditCard(recipientId, userData.getSessionToken(), data)
+                        },
+                        error: function(user, error) {
+                            console.log('error');
+                            console.log(error);
+                        }
+                    });
+                });
+
+                res.sendFile(path.join(__dirname+'/views/cardRegistered.html'));
+            }
+        },
+        (object, error) => {
+            console.log(error);
+        });
+});
+
+bot.app.post('/creditCardRegistered', function (req, res) {
+    console.log('creditCardRegistered');
+    let data = req.body;
+    let userBuffer = bot.buffer[data.recipientId];
+
+    if (typeof userBuffer != 'undefined') {
+        if (userBuffer.creditCardPayload == 'SendCreditCards') {
+            sendRegisteredCreditCards(data.recipientId);
+            delete userBuffer.creditCardPayload
+        }
+        else {
+            sendCreditCards(data.recipientId)
+        }
+    }
+    else {
+        sendCreditCards(data.recipientId)
+    }
+})
+
+bot.app.post('/changeOrderState', function (req, res) {
+    let data = req.body;
+
+    new Parse.Query(Consumer).get(data['consumerID']).then(consumer => {
+            if(consumer){
+                new Parse.Query(User).get(consumer.get('user').id).then(user => {
+                    let username = user.get('username');
+                    let recipientId = consumer.get('conversationId');
+
+                    new Parse.Query(OrderState).get(data['stateID']).then(orderState => {
+
+                        store.dispatch(Actions.setOrderState(recipientId, orderState)).then(() => {
+                            sendOrderState(recipientId);
+                        })
+                    })
+                    .fail(error => {
+                        console.log('Error code: ' + error.message);
+                    });
+                });
+            }
+        },
+        (object, error) => {
+            console.log(error);
+        });
+
+    res.json({result: 'OK'});
+});
+
+store.dispatch({type: types.APP_LOADED});
 
 function signUp(recipientId, facebookId, conversationToken){
     return User.createUser(store, recipientId, facebookId, conversationToken).then(()=>{
@@ -350,202 +451,187 @@ function getConsumer(recipientId, user){
 }
 
 function sendSignUp(recipientId) {
-    bot.sendTypingOn(recipientId);
-
-    renderSignUp(recipientId);
-}
-
-function renderSignUp(recipientId) {
     let image_url = SERVER_URL+"assets/images/love.jpg";
-
-    bot.sendTypingOff(recipientId);
-
-    return bot.sendGenericMessage(recipientId, [{
-        "title":     "Hola, soy un Bot",
-        "subtitle":  "Soy tu asistente virtual. Quieres registrarte en nuestro sistema?",
-        "image_url": image_url,
-        "buttons":[
-            {
-                "type": "web_url",
-                "url": SERVER_URL + "login?psid="+recipientId,
-                "title": "Registrarme",
-                "webview_height_ratio": "full",
-                "messenger_extensions": true
-            }
-        ]
-    }]);
-}
+    return bot.sendTypingOn(recipientId).then(()=> {
+        return bot.sendTypingOff(recipientId).then(() => {
+            return bot.sendGenericMessage(recipientId, [{
+                "title": "Hola, soy un Bot",
+                "subtitle": "Soy tu asistente virtual. Quieres registrarte en nuestro sistema?",
+                "image_url": image_url,
+                "buttons": [
+                    {
+                        "type": "web_url",
+                        "url": SERVER_URL + "login?psid=" + recipientId,
+                        "title": "Registrarme",
+                        "webview_height_ratio": "full",
+                        "messenger_extensions": true
+                    }
+                ]
+            }]);
+        });
+    });
+};
 
 function sendMenu(recipientId) {
-    bot.sendTypingOn(recipientId);
-
-    authentication(recipientId).then(() =>{
-        renderMenu(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        authentication(recipientId).then(() =>{
+            let customer = getData(recipientId, 'customer');
+            let user = getData(recipientId, 'user');
+            let image_url = customer.image.url;
+            return bot.sendTypingOff(recipientId).then(()=>{
+                return bot.sendGenericMessage(recipientId, [{
+                    "title":     "Hola "+user.first_name+", Bienvenido a "+customer.name,
+                    "subtitle":  "Aquí puedes pedir un domicilio, escribe o selecciona alguna de las opciones:",
+                    "image_url": image_url,
+                    "buttons":[
+                        {
+                            "type":"postback",
+                            "title":"Pedir domicilio",
+                            "payload": "SendAddressesWithTitle"
+                        },
+                        {
+                            "type":"postback",
+                            "title":"Servicio al cliente",
+                            "payload": "CustomerService"
+                        }
+                    ]
+                }]);
+            });
+        });
     });
-}
-
-function renderMenu(recipientId) {
-    let customer = getData(recipientId, 'customer');
-    let user = getData(recipientId, 'user');
-
-    let image_url = customer.image.url;
-
-    bot.sendTypingOff(recipientId);
-
-    return bot.sendGenericMessage(recipientId, [{
-        "title":     "Hola "+user.first_name+", Bienvenido a "+customer.name,
-        "subtitle":  "Aquí puedes pedir un domicilio, escribe o selecciona alguna de las opciones:",
-        "image_url": image_url,
-        "buttons":[
-            {
-                "type":"postback",
-                "title":"Pedir domicilio",
-                "payload": "SendAddressesWithTitle"
-            },
-            {
-                "type":"postback",
-                "title":"Servicio al cliente",
-                "payload": "CustomerService"
-            }
-        ]
-    }]);
 }
 
 function sendAddressesWithTitle(recipientId){
-    renderAddressTitle(recipientId).then(()=>{
-        sendAddresses(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=> {
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o seleccionar una de tus direcciones guardadas").then(() => {
+                sendAddresses(recipientId);
+            });
+        });
     });
-}
-
-function renderAddressTitle(recipientId){
-
-    bot.sendTypingOff(recipientId);
-
-    return bot.sendTextMessage(recipientId, "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o seleccionar una de tus direcciones guardadas");
 }
 
 function sendAddresses(recipientId){
-    bot.sendTypingOn(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=> {
+        authentication(recipientId).then(() => {
+            let consumer = getData(recipientId, 'consumer');
 
-    authentication(recipientId).then( () =>{
-        let consumer = getData(recipientId, 'consumer');
+            ConsumerAddress.loadInStore(store, recipientId, consumer).then(() => {
+                let addresses = getData(recipientId, 'addresses');
+                let elements = [];
 
-        ConsumerAddress.loadInStore(store, recipientId, consumer).then(() => {
-            renderAddress(recipientId);
+                elements.push({
+                    "title": "Nueva dirección",
+                    "subtitle": "Puedes agregar una nueva dirección",
+                    "image_url": SERVER_URL+"assets/images/addAddress.jpg",
+                    "buttons": [
+                        {
+                            "type": "postback",
+                            "title": "Nueva dirección",
+                            "payload": "NewAddress"
+                        }
+                    ]
+                });
+
+                for(let address of addresses) {
+                    if (elements.length < bot.limit){
+                        elements.push({
+                            "title": address.name,
+                            "subtitle": address.address +", "+address.description+", "+address.city+", "+address.state,
+                            "image_url": GOOGLE_MAPS_URL+ "?center="+address.location.lat+","+address.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+address.location.lat+","+address.location.lng+"&key="+GOOGLE_MAPS_KEY,
+                            "buttons": [
+                                {
+                                    "type": "postback",
+                                    "title": "Seleccionar",
+                                    "payload": "SetAddress-"+address.objectId
+                                },
+                                {
+                                    "type": "postback",
+                                    "title": "Modificar",
+                                    "payload": "EditAddress-"+address.objectId
+                                },
+                                {
+                                    "type": "postback",
+                                    "title": "Quitar",
+                                    "payload": "RemoveAddress-"+address.objectId
+                                }
+                            ]
+                        });
+                    }
+                }
+
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendGenericMessage(recipientId, elements);
+                });
+            });
         });
     });
-}
-
-function renderAddress(recipientId){
-    let addresses = getData(recipientId, 'addresses');
-    let elements = [];
-
-    elements.push({
-        "title": "Nueva dirección",
-        "subtitle": "Puedes agregar una nueva dirección",
-        "image_url": SERVER_URL+"assets/images/addAddress.jpg",
-        "buttons": [
-            {
-                "type": "postback",
-                "title": "Nueva dirección",
-                "payload": "NewAddress"
-            }
-        ]
-    });
-
-    for(let address of addresses) {
-        if (elements.length < bot.limit){
-            elements.push({
-                "title": address.name,
-                "subtitle": address.address +", "+address.description+", "+address.city+", "+address.state,
-                "image_url": GOOGLE_MAPS_URL+ "?center="+address.location.lat+","+address.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+address.location.lat+","+address.location.lng+"&key="+GOOGLE_MAPS_KEY,
-                "buttons": [
-                    {
-                        "type": "postback",
-                        "title": "Seleccionar",
-                        "payload": "SetAddress-"+address.objectId
-                    },
-                    {
-                        "type": "postback",
-                        "title": "Modificar",
-                        "payload": "EditAddress-"+address.objectId
-                    },
-                    {
-                        "type": "postback",
-                        "title": "Quitar",
-                        "payload": "RemoveAddress-"+address.objectId
-                    }
-                ]
-            });
-        }
-    }
-
-    bot.sendTypingOff(recipientId);
-
-    return bot.sendGenericMessage(recipientId, elements);
 }
 
 function sendCreditCards(recipientId){
-    bot.sendTypingOn(recipientId).then(()=>{
+    return bot.sendTypingOn(recipientId).then(()=>{
         authentication(recipientId).then(() =>{
+            let state = store.getState();
             let user = getData(recipientId, 'user');
+            let creditCardsImages = state['creditCardImages'];
+
             CreditCard.loadInStore(store, recipientId, user).then(() => {
-                renderCreditCards(recipientId);
+                let creditCards = getData(recipientId, 'creditCards');
+                let userBuffer = bot.buffer[recipientId];
+                let creditCardImage;
+                let elements = [];
+
+                if(typeof userBuffer != 'undefined' && userBuffer.hasOwnProperty('creditCardPayload')){
+                    delete userBuffer.creditCardPayload;
+                }
+
+                elements.push({
+                    "title": "Registro de tarjeta",
+                    "subtitle": "Puedes agregar una tarjeta",
+                    "image_url": SERVER_URL+"assets/images/creditCards.jpg",
+                    "buttons": [
+                        {
+                            "type": "postback",
+                            "title": "Nueva tarjeta",
+                            "payload": "RegisterCreditCard"
+                        }
+                    ]
+                });
+
+                for(let creditCard of creditCards) {
+                    if (elements.length < bot.limit){
+
+                        creditCardImage = creditCardsImages.hasOwnProperty(creditCard.type) ? creditCardsImages[creditCard.type] : creditCardsImages['DEFAULT']
+                        elements.push({
+                            "title": creditCard.type+' '+creditCard.lastFour,
+                            "subtitle": creditCard.cardHolderName,
+                            "image_url": SERVER_URL+creditCardImage,
+                            "buttons": [
+                                {
+                                    "type": "postback",
+                                    "title": "Quitar",
+                                    "payload": "RemoveCreditCard-"+creditCard.objectId
+                                }
+                            ]
+                        });
+                    }
+                }
+
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendGenericMessage(recipientId, elements);
+                });
             });
         });
-    });
-}
-
-function renderCreditCards(recipientId){
-    let creditCards = getData(recipientId, 'creditCards');
-    let elements = [];
-    let userBuffer = bot.buffer[recipientId];
-    let creditCardImage;
-
-    if(typeof userBuffer != 'undefined' && userBuffer.hasOwnProperty('creditCardPayload')){
-        delete userBuffer.creditCardPayload;
-    }
-
-    elements.push({
-        "title": "Registro de tarjeta",
-        "subtitle": "Puedes agregar una tarjeta",
-        "image_url": SERVER_URL+"assets/images/creditCards.jpg",
-        "buttons": [
-            {
-                "type": "postback",
-                "title": "Nueva tarjeta",
-                "payload": "RegisterCreditCard"
-            }
-        ]
-    });
-
-    for(let creditCard of creditCards) {
-        if (elements.length < bot.limit){
-            creditCardImage = creditCardImages.has(creditCard.type) ? creditCardImages.get(creditCard.type) : creditCardImages.get('DEFAULT')
-            elements.push({
-                "title": creditCard.type+' '+creditCard.lastFour,
-                "subtitle": creditCard.cardHolderName,
-                "image_url": SERVER_URL+creditCardImage,
-                "buttons": [
-                    {
-                        "type": "postback",
-                        "title": "Quitar",
-                        "payload": "RemoveCreditCard-"+creditCard.objectId
-                    }
-                ]
-            });
-        }
-    }
-
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendGenericMessage(recipientId, elements);
     });
 }
 
 function newAddress(recipientId){
-    bot.sendTypingOff(recipientId);
-    bot.setDataBuffer(recipientId, 'addressPayload', 'NewAddress');
-    writeAddress(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=> {
+        return bot.sendTypingOff(recipientId).then(() => {
+            bot.setDataBuffer(recipientId, 'addressPayload', 'NewAddress');
+            writeAddress(recipientId);
+        });
+    });
 }
 
 function writeAddress(recipientId){
@@ -562,38 +648,26 @@ function writeAddress(recipientId){
     );
 }
 
-function renderMapMessage(recipientId){
-    let userBuffer = bot.buffer[recipientId];
-
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Encontré esta dirección en Google Maps:\n\n"+userBuffer.address)
-
-    });
-}
-
-function renderNullMapMessage(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "La dirección no ha sido encontrada en Google Maps, por favor intenta de nuevo")
+function sendNullMapMessage(recipientId){
+    return bot.sendTypingOn(recipientId).then(()=> {
+        return bot.sendTypingOff(recipientId).then(() => {
+            return bot.sendTextMessage(recipientId, "La dirección no ha sido encontrada en Google Maps, por favor intenta de nuevo")
+        });
     });
 }
 
 function sendMap(recipientId){
-    renderMap(recipientId).then(() => {
-        sendMapConfirmation(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        let userBuffer = bot.buffer[recipientId];
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendImageMessage(recipientId, GOOGLE_MAPS_URL+"?center="+userBuffer.location.lat+","+userBuffer.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+userBuffer.location.lat+","+userBuffer.location.lng+"&key="+GOOGLE_MAPS_KEY).then(()=>{
+                sendMapConfirmation(recipientId);
+            });
+        });
     });
 }
 
-function renderMap(recipientId){
-    bot.sendTypingOff(recipientId);
-    let userBuffer = bot.buffer[recipientId];
-    return bot.sendImageMessage(recipientId, GOOGLE_MAPS_URL+"?center="+userBuffer.location.lat+","+userBuffer.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+userBuffer.location.lat+","+userBuffer.location.lng+"&key="+GOOGLE_MAPS_KEY)
-}
-
 function sendMapConfirmation(recipientId){
-    renderMapConfirmation(recipientId)
-}
-
-function renderMapConfirmation(recipientId){
     return bot.sendTypingOff(recipientId).then(()=>{
         return bot.sendQuickReplyMessage(recipientId, "Es correcta?", [
             {
@@ -620,7 +694,7 @@ function addressCheck(recipientId){
         else{
             console.log('Geocode not found');
             console.log(error);
-            renderNullMapMessage(recipientId).then(()=>{
+            sendNullMapMessage(recipientId).then(()=>{
                 newAddress(recipientId)
             });
         }
@@ -628,45 +702,51 @@ function addressCheck(recipientId){
 }
 
 function setAddressComponetsInBuffer(recipientId, data){
-    let userBuffer = bot.buffer[recipientId];
-    userBuffer.address = data.formatted_address;
-    userBuffer.location = data.geometry.location;
+    return bot.sendTypingOn(recipientId).then(()=> {
+        let userBuffer = bot.buffer[recipientId];
+        userBuffer.address = data.formatted_address;
+        userBuffer.location = data.geometry.location;
 
-    for(let component of data.address_components){
-        if(component.types.includes('route')){
-            userBuffer.route = component.long_name;
+        for (let component of data.address_components) {
+            if (component.types.includes('route')) {
+                userBuffer.route = component.long_name;
+            }
+            else if (component.types.includes('street_number')) {
+                userBuffer.street_number = component.short_name;
+            }
+            else if (component.types.includes('locality')) {
+                userBuffer.locality = component.short_name;
+            }
+            else if (component.types.includes('administrative_area_level_1')) {
+                userBuffer.state = component.short_name;
+            }
+            else if (component.types.includes('administrative_area_level_2')) {
+                userBuffer.administrative_area = component.short_name;
+            }
+            else if (component.types.includes('country')) {
+                userBuffer.country = component.long_name;
+                userBuffer.country_code = component.short_name
+            }
+            else if (component.types.includes('postal_code')) {
+                userBuffer.postal_code = component.short_name;
+            }
         }
-        else if(component.types.includes('street_number')){
-            userBuffer.street_number = component.short_name;
-        }
-        else if(component.types.includes('locality')){
-            userBuffer.locality = component.short_name;
-        }
-        else if(component.types.includes('administrative_area_level_1')){
-            userBuffer.state = component.short_name;
-        }
-        else if(component.types.includes('administrative_area_level_2')){
-            userBuffer.administrative_area = component.short_name;
-        }
-        else if(component.types.includes('country')){
-            userBuffer.country = component.long_name;
-            userBuffer.country_code = component.short_name
-        }
-        else if(component.types.includes('postal_code')){
-            userBuffer.postal_code = component.short_name;
-        }
-    }
 
-    renderMapMessage(recipientId).then(() => {
-        sendMap(recipientId);
+        return bot.sendTypingOff(recipientId).then(() => {
+            return bot.sendTextMessage(recipientId, "Encontré esta dirección en Google Maps:\n\n" + userBuffer.address).then(() => {
+                sendMap(recipientId);
+            });
+        });
     });
 }
 
 function setAddressComplement(recipientId){
-    bot.setListener(recipientId, 'complement', 'text', confirmAddress);
+    return bot.sendTypingOn(recipientId).then(()=> {
+        bot.setListener(recipientId, 'complement', 'text', confirmAddress);
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Por favor escribe el complemento de tu dirección actual.\n\nEjemplo: Apto 303, edificio el palmar.\n\nNo olvides colocar el nombre del edificio o del barrio");
+        return bot.sendTypingOff(recipientId).then(() => {
+            return bot.sendTextMessage(recipientId, "Por favor escribe el complemento de tu dirección actual.\n\nEjemplo: Apto 303, edificio el palmar.\n\nNo olvides colocar el nombre del edificio o del barrio");
+        });
     });
 }
 
@@ -675,91 +755,89 @@ function confirmAddress(recipientId){
     let addressPayload = userBuffer['addressPayload'];
 
     if(addressPayload == 'NewAddress'){
-        bot.setListener(recipientId, 'address_name', 'text', saveAddress);
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "Por favor coloca un nombre a esta dirección para guardarla. \n\nEjemplo: casa, apartamento o oficina");
+        return bot.sendTypingOn(recipientId).then(()=>{
+            bot.setListener(recipientId, 'address_name', 'text', saveAddress);
+            return bot.sendTypingOff(recipientId).then(()=>{
+                return bot.sendTextMessage(recipientId, "Por favor coloca un nombre a esta dirección para guardarla. \n\nEjemplo: casa, apartamento o oficina");
+            });
         });
     }
     else if(addressPayload.startsWith('EditAddress')){
-        let data = addressPayload.split('-');
-        let location = new Parse.GeoPoint({latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng)});
+        return bot.sendTypingOn(recipientId).then(()=>{
+            let data = addressPayload.split('-');
+            let location = new Parse.GeoPoint({latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng)});
 
-        new Parse.Query(ConsumerAddress).get(data[1]).then((consumerAddress) => {
+            new Parse.Query(ConsumerAddress).get(data[1]).then((consumerAddress) => {
 
-            consumerAddress.set('address', userBuffer.route+" # "+userBuffer.street_number);
-            consumerAddress.set('location', location);
-            consumerAddress.set('country', userBuffer.country);
-            consumerAddress.set('countryCode', userBuffer.country_code);
-            consumerAddress.set('postalCode', userBuffer.postal_code);
-            consumerAddress.set('state', userBuffer.state);
-            consumerAddress.set('description', userBuffer.complement);
+                consumerAddress.set('address', userBuffer.route+" # "+userBuffer.street_number);
+                consumerAddress.set('location', location);
+                consumerAddress.set('country', userBuffer.country);
+                consumerAddress.set('countryCode', userBuffer.country_code);
+                consumerAddress.set('postalCode', userBuffer.postal_code);
+                consumerAddress.set('state', userBuffer.state);
+                consumerAddress.set('description', userBuffer.complement);
 
-            consumerAddress.save(undefined, {
-                success: function(address) {
-                    delete userBuffer.address;
-                    delete userBuffer.location;
-                    delete userBuffer.complement;
+                consumerAddress.save(undefined, {
+                    success: function(address) {
+                        delete userBuffer.address;
+                        delete userBuffer.location;
+                        delete userBuffer.complement;
 
-                    renderAddressUpdate(recipientId).then(() => {
-                        setAddress(recipientId, address.id)
-                    });
-                },
-                error: function(user, error) {
-                   console.log('Failed to create new object, with error code: ' + error.message);
-                }
+                        return bot.sendTypingOff(recipientId).then(()=>{
+                            return bot.sendTextMessage(recipientId, "La dirección ha sido actualizada.").then(()=>{
+                                setAddress(recipientId, address.id);
+                            })
+                        });
+                    },
+                    error: function(user, error) {
+                       console.log('Failed to create new object, with error code: ' + error.message);
+                    }
+                });
             });
         });
     }
 }
 
-function renderAddressUpdate(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "La dirección ha sido actualizada.");
-    });
-}
-
 function saveAddress(recipientId){
-    let consumer = getData(recipientId, 'consumer');
-    let userBuffer = bot.buffer[recipientId];
-    let location = new Parse.GeoPoint({latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng)});
+    return bot.sendTypingOn(recipientId).then(()=>{
+        let consumer = getData(recipientId, 'consumer');
+        let userBuffer = bot.buffer[recipientId];
+        let location = new Parse.GeoPoint({latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng)});
 
-    let consumerAddress = new ConsumerAddress();
-    consumerAddress.set('name', userBuffer.address_name);
-    consumerAddress.set('address', userBuffer.route+" # "+userBuffer.street_number);
-    consumerAddress.set('consumer', {
-        __type: "Pointer",
-        className: "Consumer",
-        objectId: consumer.objectId
-    });
-    consumerAddress.set('location', location);
-    consumerAddress.set('city', userBuffer.locality);
-    consumerAddress.set('country', userBuffer.country);
-    consumerAddress.set('countryCode', userBuffer.country_code);
-    consumerAddress.set('postalCode', userBuffer.postal_code);
-    consumerAddress.set('state', userBuffer.state);
-    consumerAddress.set('description', userBuffer.complement);
+        let consumerAddress = new ConsumerAddress();
+        consumerAddress.set('name', userBuffer.address_name);
+        consumerAddress.set('address', userBuffer.route+" # "+userBuffer.street_number);
+        consumerAddress.set('consumer', {
+            __type: "Pointer",
+            className: "Consumer",
+            objectId: consumer.objectId
+        });
+        consumerAddress.set('location', location);
+        consumerAddress.set('city', userBuffer.locality);
+        consumerAddress.set('country', userBuffer.country);
+        consumerAddress.set('countryCode', userBuffer.country_code);
+        consumerAddress.set('postalCode', userBuffer.postal_code);
+        consumerAddress.set('state', userBuffer.state);
+        consumerAddress.set('description', userBuffer.complement);
 
-    consumerAddress.save(undefined, {
-        success: function(result) {
+        consumerAddress.save(undefined, {
+            success: function(result) {
 
-            delete userBuffer.address;
-            delete userBuffer.location;
-            delete userBuffer.complement;
-            delete userBuffer['address_name'];
+                delete userBuffer.address;
+                delete userBuffer.location;
+                delete userBuffer.complement;
+                delete userBuffer['address_name'];
 
-            renderAddressSave(recipientId).then(() => {
-                setAddress(recipientId, result.id)
-            });
-        },
-        error: function(user, error) {
-            console.log('Failed to create new object, with error code: ' + error.message);
-        }
-    });
-}
-
-function renderAddressSave(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "La dirección ha sido almacenada.")
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendTextMessage(recipientId, "La dirección ha sido almacenada.").then(()=>{
+                        setAddress(recipientId, result.id)
+                    })
+                });
+            },
+            error: function(user, error) {
+                console.log('Failed to create new object, with error code: ' + error.message);
+            }
+        });
     });
 }
 
@@ -810,7 +888,7 @@ function setLocationCheck(recipientId){
         else{
             console.log('Geocode not found');
             console.log(error);
-            renderNullMapMessage(recipientId).then(()=>{
+            sendNullMapMessage(recipientId).then(()=>{
                 newAddress(recipientId)
             });
         }
@@ -818,9 +896,8 @@ function setLocationCheck(recipientId){
 }
 
 function setAddress(recipientId, id){
-    bot.sendTypingOn(recipientId);
-
-    store.dispatch(Actions.setAddress(recipientId, id)).then(() => {
+    return bot.sendTypingOn(recipientId).then(()=>{
+        store.dispatch(Actions.setAddress(recipientId, id)).then(() => {
             let address = getData(recipientId, 'address');
 
             Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, lat: address.location.lat, lng: address.location.lng}).then(
@@ -828,15 +905,19 @@ function setAddress(recipientId, id){
                     let pointSale = result.pointSale;
 
                     store.dispatch(Actions.setCustomerPointSale(recipientId, pointSale.id)).then(() => {
-                        renderAddressConfirmation(recipientId).then(()=>{
-                            sendCategories(recipientId, 0);
+                        return bot.sendTypingOff(recipientId).then(()=>{
+                            return bot.sendTextMessage(recipientId, "Perfecto, ya seleccioné tu dirección para este pedido").then(()=>{
+                                sendCategories(recipientId, 0);
+                            })
                         });
                     });
                 },
                 function(error) {
                     if(error.code == '141'){
-                        renderAddressOutOfCoverage(recipientId).then(()=>{
-                            sendAddressesWithTitle(recipientId)
+                        return bot.sendTypingOff(recipientId).then(()=>{
+                            return bot.sendTextMessage(recipientId, "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección").then(()=>{
+                                sendAddressesWithTitle(recipientId)
+                            });
                         });
                     }
                     else{
@@ -844,93 +925,75 @@ function setAddress(recipientId, id){
                         console.log(error);
                     }
                 });
-        }
-    );
+            }
+        );
+    });
 }
 
 function editAddress(recipientId, id){
-    bot.sendTypingOff(recipientId);
-    bot.setDataBuffer(recipientId, 'addressPayload', 'EditAddress-'+id);
-
-    writeAddress(recipientId);
-
-}
-
-function removeAddress(recipientId, id){
-    new Parse.Query(ConsumerAddress).get(id).then((consumerAddress) => {
-        consumerAddress.destroy().then(()=>{
-            renderRemoveAddress(recipientId).then(()=>{
-                sendAddresses(recipientId);
-            });
+    return bot.sendTypingOn(recipientId).then(()=> {
+        return bot.sendTypingOff(recipientId).then(()=>{
+            bot.setDataBuffer(recipientId, 'addressPayload', 'EditAddress-'+id);
+            writeAddress(recipientId);
         });
     });
 }
 
-function renderRemoveAddress(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "La dirección ha sido eliminada.");
+function removeAddress(recipientId, id){
+    return bot.sendTypingOn(recipientId).then(()=> {
+        new Parse.Query(ConsumerAddress).get(id).then((consumerAddress) => {
+            consumerAddress.destroy().then(()=>{
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendTextMessage(recipientId, "La dirección ha sido eliminada.").then(()=>{
+                        sendAddresses(recipientId);
+                    })
+                });
+            });
+        });
     });
 }
 
 function removeCreditCard(recipientId, id){
-    new Parse.Query(CreditCard).get(id).then((creditCard) => {
-        creditCard.destroy().then(()=>{
-            renderRemoveCreditCard(recipientId).then(()=> {
-                sendCreditCards(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=> {
+        new Parse.Query(CreditCard).get(id).then((creditCard) => {
+            creditCard.destroy().then(() => {
+
+                return bot.sendTypingOff(recipientId).then(() => {
+                    return bot.sendTextMessage(recipientId, "La tarjeta de credito ha sido eliminada.").then(() => {
+                        sendCreditCards(recipientId);
+                    });
+                });
             });
         });
     });
 }
 
-function renderRemoveCreditCard(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "La tarjeta de credito ha sido eliminada.")
-    });
-}
-
-function renderAddressOutOfCoverage(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección")
-    });
-}
-
-function renderAddressConfirmation(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        bot.sendTextMessage(recipientId, "Perfecto, ya seleccioné tu dirección para este pedido")
-    });
-}
-
-function renderCategoriesInitialMessage(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "A continuación te presentamos las categorías de productos disponibles.")
-    });
-}
-
 function sendCategories(recipientId, index){
-    bot.sendTypingOn(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        authentication(recipientId).then(()=>{
+            Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(function(result){
+                if(result.pointSaleIsOpen) {
+                    if(typeof index == 'undefined')
+                        index = 0;
+                    else if( typeof index == 'string')
+                        index = parseInt(index);
 
-    authentication(recipientId).then(()=>{
-        Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(function(result){
-            if(result.pointSaleIsOpen) {
-                if(typeof index == 'undefined')
-                    index = 0;
-                else if( typeof index == 'string')
-                    index = parseInt(index);
+                    if(index == 0){
+                        bot.sendTypingOff(recipientId).then(()=>{
+                            bot.sendTextMessage(recipientId, "A continuación te presentamos las categorías de productos disponibles.")
+                        });
+                    }
 
-                if(index == 0){
-                    renderCategoriesInitialMessage(recipientId)
-                    bot.sendTypingOn(recipientId);
+                    sendCategoriesDetail(recipientId, result.categories, index);
+
+                }else{
+                    sendScheduleRestriction(recipientId, result.pointSaleSchedules);
                 }
-
-                renderCategories(recipientId, result.categories, index);
-
-            }else{
-                sendScheduleRestriction(recipientId, result.pointSaleSchedules);
-            }
-        },
-        function(error) {
-            console.log('error');
-            console.log(error);
+            },
+            function(error) {
+                console.log('error');
+                console.log(error);
+            });
         });
     });
 }
@@ -963,7 +1026,7 @@ function splitCategories(recipientId, categories, index){
     return elements;
 }
 
-function renderCategories(recipientId, categories, index){
+function sendCategoriesDetail(recipientId, categories, index){
     let elements = splitCategories(recipientId, categories, index);
     let idx = Object.keys(categories).length;
     let buttons = [];
@@ -989,43 +1052,49 @@ function renderCategories(recipientId, categories, index){
     });
 }
 
-function renderProductsInitialMessage(recipientId, categoryId){
-    return new Parse.Query(Category).get(categoryId).then(
-        category => {
-            return bot.sendTypingOff(recipientId).then(()=>{
-                return bot.sendTextMessage(recipientId, "Selecciona "+category.get('name')+":");
-            });
-        },
-        (object, error) => {
-            console.log(error);
-        }
-    )
-}
-
 function sendProducts(recipientId, categoryId, proIdx){
-    bot.sendTypingOn(recipientId);
-    proIdx = parseInt(proIdx);
-    if(proIdx == 0){
-        renderProductsInitialMessage(recipientId, categoryId);
-        bot.sendTypingOn(recipientId);
-    }
-
-    Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, category: categoryId }).then(result => {
-        if(result.hasOwnProperty('categories')){
-            renderCategories(recipientId, result.categories, 0);
-        }else{
-            if(result.products.length == 0){
-                renderEmptyProducts(recipientId)
-            }
-            else{
-                renderProducts(recipientId, categoryId, result.products, proIdx);
-            }
+    return bot.sendTypingOn(recipientId).then(()=>{
+        proIdx = parseInt(proIdx);
+        if(proIdx == 0){
+            new Parse.Query(Category).get(categoryId).then(category => {
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendTextMessage(recipientId, "Selecciona "+category.get('name')+":");
+                });
+            },
+            (object, error) => {
+                console.log(error);
+            });
         }
-    },
-    function(error) {
-        console.log('error');
-        console.log(error);
-    })
+        Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, category: categoryId }).then(result => {
+            if(result.hasOwnProperty('categories')){
+                sendCategoriesDetail(recipientId, result.categories, 0);
+            }else{
+                if(result.products.length == 0){
+                    bot.sendTypingOff(recipientId).then(()=>{
+                        bot.sendQuickReplyMessage(recipientId,
+                            "No existen productos en esta categoría",
+                            [{
+                                "content_type": "text",
+                                "title": "Seguir pidiendo",
+                                "payload": "SendContinueOrder"
+                            },
+                            {
+                                "content_type": "text",
+                                "title": "Ver carrito",
+                                "payload": "SendCart"
+                            }]);
+                    });
+                }
+                else{
+                    sendProductsDetail(recipientId, categoryId, result.products, proIdx);
+                }
+            }
+        },
+        function(error) {
+            console.log('error');
+            console.log(error);
+        })
+    });
 }
 
 function splitProducts(recipientId, products, proIdx){
@@ -1063,7 +1132,7 @@ function splitProducts(recipientId, products, proIdx){
     return elements;
 }
 
-function renderProducts(recipientId, categoryId, products, index){
+function sendProductsDetail(recipientId, categoryId, products, index){
     let elements = splitProducts(recipientId, products, index);
     let idx = Object.keys(products).length;
     let buttons = [];
@@ -1086,24 +1155,6 @@ function renderProducts(recipientId, categoryId, products, index){
 
     return bot.sendTypingOff(recipientId).then(()=>{
         return bot.sendGenericMessage(recipientId, elements)
-    });
-}
-
-function renderEmptyProducts(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendQuickReplyMessage(recipientId,
-            "No existen productos en esta categoría", [
-            {
-                "content_type": "text",
-                "title": "Seguir pidiendo",
-                "payload": "SendContinueOrder"
-            },
-            {
-                "content_type": "text",
-                "title": "Ver carrito",
-                "payload": "SendCart"
-            }
-        ]);
     });
 }
 
@@ -1166,12 +1217,12 @@ function addProduct(recipientId, productId){
                 });
 
                 Parse.Promise.when(promises).then(function (modifierItems) {
-                    renderModifierMenu(recipientId, productId, undefinedModifiers[0], modifierItems);
+                    sendModifierMenu(recipientId, productId, undefinedModifiers[0], modifierItems);
                 })
             }
             else{
                 saveCart(recipientId);
-                renderAddProduct(recipientId, productId);
+                sendAddProductNenu(recipientId, productId);
             }
         });
     },
@@ -1180,7 +1231,7 @@ function addProduct(recipientId, productId){
     });
 }
 
-function renderAddProduct(recipientId, productId){
+function sendAddProductNenu(recipientId, productId){
     return new Parse.Query(Product).get(productId).then(product => {
         return bot.sendTypingOff(recipientId).then(()=>{
             return bot.sendQuickReplyMessage(recipientId, "El producto " + product.get('name') + " ha sido agregado.\n\nDeseas seguir pidiendo o ver tu carrito?", [
@@ -1203,18 +1254,14 @@ function renderAddProduct(recipientId, productId){
 }
 
 function sendContinueOrder(recipientId){
-    renderContinueOrder(recipientId).then( ()=> {
-        sendCategories(recipientId, 0);
-    });
-}
-
-function renderContinueOrder(recipientId){
     return bot.sendTypingOff(recipientId).then(()=>{
-        bot.sendTextMessage(recipientId, "Puedes escribir el nombre de un producto, ej: Ensalada mediterranea, o seleccionarlo en el siguiente menú:")
+        bot.sendTextMessage(recipientId, "Puedes escribir el nombre de un producto, ej: Ensalada mediterranea, o seleccionarlo en el siguiente menú:").then(()=>{
+            sendCategories(recipientId, 0);
+        })
     });
 }
 
-function renderModifierMenu(recipientId, productId, modifier, items){
+function sendModifierMenu(recipientId, productId, modifier, items){
     let quick_replies = [];
 
     items.forEach(function (item){
@@ -1261,7 +1308,7 @@ function addModifier(recipientId, productId, modifierId, itemId){
             });
 
             saveCart(recipientId);
-            renderAddProduct(recipientId, productId)
+            sendAddProductNenu(recipientId, productId)
         },
         error: function(user, error) {
             console.log('Failed to create new object, with error code: ' + error.message);
@@ -1315,7 +1362,7 @@ function checkModifiersComplete(recipientId, productId, modifiers){
             });
 
             return Parse.Promise.when(promises).then(function (elements) {
-                renderModifierMenu(recipientId, productId, modifier, elements);
+                sendModifierMenu(recipientId, productId, modifier, elements);
                 return true;
             });
         });
@@ -1520,44 +1567,45 @@ function saveCart(recipientId){
 }
 
 function saveOrder(recipientId){
-    let order = new Order();
-    let consumer = getData(recipientId, 'consumer');
-    let customer = getData(recipientId, 'customer');
-    let cart = getData(recipientId, 'cart');
-    let address = getData(recipientId, 'address');
-    let paymentMethod = getData(recipientId, 'paymentMethod');
-    let pointSale = getData(recipientId, 'pointSale');
-    let state0 = orderStates.get(0);
-    let total = 0 ;
+    getOrderState(0).then(state=>{
+        let order = new Order();
+        let consumer = getData(recipientId, 'consumer');
+        let customer = getData(recipientId, 'customer');
+        let cart = getData(recipientId, 'cart');
+        let address = getData(recipientId, 'address');
+        let paymentMethod = getData(recipientId, 'paymentMethod');
+        let pointSale = getData(recipientId, 'pointSale');
+        let total = 0 ;
 
-    cart.items.forEach(function(value, key){
-        total += value.quantity * value.price;
-    });
+        cart.items.forEach(function(value, key){
+            total += value.quantity * value.price;
+        });
 
-    order.set('consumer', { __type: 'Pointer', className: 'Consumer', objectId: consumer.objectId });
-    order.set('consumerAddress', { __type: 'Pointer', className: 'ConsumerAddress', objectId: address.objectId });
-    order.set('pointSale', { __type: 'Pointer', className: 'CustomerPointSale', objectId: pointSale.objectId });
-    order.set('state', { __type: 'Pointer', className: 'OrderState', objectId: state0.objectId });
-    order.set('items', cart.itemsPointers);
-    order.set('deliveryCost', pointSale.deliveryCost);
-    order.set('total', total);
-    order.set('paymentMethod', paymentMethod.method);
-    order.set('name', consumer.name);
-    order.set('email', consumer.email);
-    order.set('phone', consumer.phone);
-    order.set('platform', 'Bot');
+        order.set('consumer', { __type: 'Pointer', className: 'Consumer', objectId: consumer.objectId });
+        order.set('consumerAddress', { __type: 'Pointer', className: 'ConsumerAddress', objectId: address.objectId });
+        order.set('pointSale', { __type: 'Pointer', className: 'CustomerPointSale', objectId: pointSale.objectId });
+        order.set('state', { __type: 'Pointer', className: 'OrderState', objectId: state.objectId });
+        order.set('items', cart.itemsPointers);
+        order.set('deliveryCost', pointSale.deliveryCost);
+        order.set('total', total);
+        order.set('paymentMethod', paymentMethod.method);
+        order.set('name', consumer.name);
+        order.set('email', consumer.email);
+        order.set('phone', consumer.phone);
+        order.set('platform', 'Bot');
 
-    order.save(undefined, {
-        success: function(order) {
+        order.save(undefined, {
+            success: function(order) {
 
-            store.dispatch(Actions.setOrder(recipientId, order)).then(() => {
-                clearCart(recipientId);
-            });
-        },
-        error: function(user, error) {
-            console.log('Failed to create new object, with error code: ' + error.message);
-            console.log(error);
-        }
+                store.dispatch(Actions.setOrder(recipientId, order)).then(() => {
+                    clearCart(recipientId);
+                });
+            },
+            error: function(user, error) {
+                console.log('Failed to create new object, with error code: ' + error.message);
+                console.log(error);
+            }
+        });
     });
 }
 
@@ -1600,78 +1648,79 @@ function sendEmptyCartOptions(recipientId){
 }
 
 function sendCart(recipientId){
-    authentication(recipientId).then( () =>{
-        let user = getData(recipientId, 'user');
-        let customer = getData(recipientId, 'customer');
-        let consumer = getData(recipientId, 'consumer');
-        let cart = getData(recipientId, 'cart');
-        let address = getData(recipientId, 'address');
-        let customer_image_url;
+    bot.sendTypingOn(recipientId).then(()=>{
+        authentication(recipientId).then( () =>{
+            let user = getData(recipientId, 'user');
+            let customer = getData(recipientId, 'customer');
+            let consumer = getData(recipientId, 'consumer');
+            let cart = getData(recipientId, 'cart');
+            let address = getData(recipientId, 'address');
+            let customer_image_url;
 
-        if(typeof customer != 'undefined'){
-            customer_image_url = customer.image.url;
-        }
+            if(typeof customer != 'undefined'){
+                customer_image_url = customer.image.url;
+            }
 
-        if(cart == undefined){
-            cart = createCart(recipientId);
-        }
+            if(cart == undefined){
+                cart = createCart(recipientId);
+            }
 
-        let items = cart.items;
+            let items = cart.items;
+            let elements = [];
+            let element = {};
+            let total = 0;
+            let orderLimit = items.size;
+            let ind = 0;
+            let image;
+            let image_url;
 
-        bot.sendTypingOn(recipientId);
+            if(orderLimit == 0){
+                bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendTextMessage(recipientId, "Tu carrito de compras está vacío.").then(()=>{
+                        sendEmptyCartOptions(recipientId);
+                    })
+                });
+            }
+            else{
+                items.forEach(function(value, key){
+                    let product = new Parse.Query(Product);
 
-        let elements = [];
-        let element = {};
-        let total = 0;
-        let orderLimit = items.size;
-        let ind = 0;
-        let image;
-        let image_url;
+                    product.get(key, {
+                        success: function (item) {
+                            image = item.get('image');
+                            image_url = customer_image_url
+                            if(image){
+                                image_url = image.url();
+                            }
 
-        if(orderLimit == 0){
-            renderCartEmpty(recipientId).then(()=>{
-                sendEmptyCartOptions(recipientId);
-            });
-        }
-        else{
-            items.forEach(function(value, key){
-                let product = new Parse.Query(Product);
+                            element = {};
+                            element['title'] = item.get('name');
+                            element['subtitle'] = item.get('description');
+                            element['quantity'] = value.quantity;
+                            element['price'] = parseInt(item.get('priceDefault'));
+                            element['currency'] = "COP";
+                            element['image_url'] = image_url;
 
-                product.get(key, {
-                    success: function (item) {
-                        image = item.get('image');
-                        image_url = customer_image_url
-                        if(image){
-                            image_url = image.url();
+                            elements.push(element);
+                            total += element['quantity']*element['price'];
+
+                            ind++;
+
+                            if(ind == orderLimit){
+                                sendCartReceipt(recipientId, cart.id, elements, total)
+                            }
+                        },
+                        error: function (error) {
+                            alert("Error: " + error.code + " " + error.message);
                         }
-
-                        element = {};
-                        element['title'] = item.get('name');
-                        element['subtitle'] = item.get('description');
-                        element['quantity'] = value.quantity;
-                        element['price'] = parseInt(item.get('priceDefault'));
-                        element['currency'] = "COP";
-                        element['image_url'] = image_url;
-
-                        elements.push(element);
-                        total += element['quantity']*element['price'];
-
-                        ind++;
-
-                        if(ind == orderLimit){
-                            renderCart(recipientId, cart.id, elements, total)
-                        }
-                    },
-                    error: function (error) {
-                        alert("Error: " + error.code + " " + error.message);
-                    }
-                })
-            });
-        }
+                    })
+                });
+            }
+        });
     });
 }
 
-function renderCart(recipientId, cartId, elements, total){
+function sendCartReceipt(recipientId, cartId, elements, total){
     let user = getData(recipientId, 'user');
     let consumer = getData(recipientId, 'consumer');
     let address = getData(recipientId, 'address');
@@ -1737,62 +1786,59 @@ function renderCart(recipientId, cartId, elements, total){
 }
 
 function sendCartDetails(recipientId){
-    bot.sendTypingOn(recipientId);
-    renderCartDetails(recipientId).then(()=>{
-        renderEditCartOptions(recipientId)
-    });
-}
+    return bot.sendTypingOn(recipientId).then(()=>{
+        let cart = getData(recipientId, 'cart');
+        let customer = getData(recipientId, 'customer');
+        let consumer = getData(recipientId, 'consumer');
+        let image_url = customer.image.url;
+        let items = cart.items;
+        let promises = [];
 
-function renderCartDetails(recipientId){
-    let cart = getData(recipientId, 'cart');
-    let customer = getData(recipientId, 'customer');
-    let consumer = getData(recipientId, 'consumer');
-    let image_url = customer.image.url;
-    let items = cart.items;
-    let promises = [];
+        items.forEach(function(value, key) {
+            if (promises.length <= bot.limit) {
+                promises.push(new Parse.Query(Product).get(key).then(product => {
+                    let image = product.get('image');
+                    if(image){
+                        image_url = image.url();
+                    }
 
-    items.forEach(function(value, key) {
-        if (promises.length <= bot.limit) {
-            promises.push(new Parse.Query(Product).get(key).then(product => {
-                let image = product.get('image');
-                if(image){
-                    image_url = image.url();
-                }
+                    return {
+                        "title": product.get('name')+": $"+value.price,
+                        "subtitle": "Cantidad solicitada: "+value.quantity,
+                        "image_url": image_url,
+                        "buttons": [
+                            {
+                                "type": "postback",
+                                "title": "Quitar",
+                                "payload": "RemoveProduct-" + key
+                            },
+                            {
+                                "type": "postback",
+                                "title": "Aumentar 1",
+                                "payload": "IncreaseOneProduct-" + key
+                            },
+                            {
+                                "type": "postback",
+                                "title": "Disminuir 1",
+                                "payload": "DecreaseOneProduct-" + key
+                            }
+                        ]
+                    };
+                }));
+            }
+        });
 
-                return {
-                    "title": product.get('name')+": $"+value.price,
-                    "subtitle": "Cantidad solicitada: "+value.quantity,
-                    "image_url": image_url,
-                    "buttons": [
-                        {
-                            "type": "postback",
-                            "title": "Quitar",
-                            "payload": "RemoveProduct-" + key
-                        },
-                        {
-                            "type": "postback",
-                            "title": "Aumentar 1",
-                            "payload": "IncreaseOneProduct-" + key
-                        },
-                        {
-                            "type": "postback",
-                            "title": "Disminuir 1",
-                            "payload": "DecreaseOneProduct-" + key
-                        }
-                    ]
-                };
-            }));
-        }
-    });
-
-    return Parse.Promise.when(promises).then(function(elements) {
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendGenericMessage(recipientId, elements)
+        return Parse.Promise.when(promises).then(function(elements) {
+            return bot.sendTypingOff(recipientId).then(()=>{
+                return bot.sendGenericMessage(recipientId, elements).then(()=>{
+                    sendEditCartOptions(recipientId)
+                });
+            });
         });
     });
 }
 
-function renderEditCartOptions(recipientId){
+function sendEditCartOptions(recipientId){
     return bot.sendQuickReplyMessage(recipientId, "Opciones del carrito:", [
         {
             "content_type":"text",
@@ -1805,12 +1851,6 @@ function renderEditCartOptions(recipientId){
             "payload":"SendContinueOrder"
         }
     ]);
-}
-
-function renderCartEmpty(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Tu carrito de compras está vacío.")
-    });
 }
 
 function editCart(recipientId){
@@ -1889,27 +1929,24 @@ function checkAddress(recipientId){
 }
 
 function checkPayment(recipientId){
-    bot.sendTypingOn(recipientId);
-    store.dispatch(Actions.loadPaymentMethods(recipientId)).then(() => {
-        renderCheckPayment(recipientId)
-    });
-}
+    return bot.sendTypingOn(recipientId).then(()=>{
+        store.dispatch(Actions.loadPaymentMethods(recipientId)).then(() => {
+            let paymentMethods = getData(recipientId, 'paymentMethods');
+            let quick_replies = [];
 
-function renderCheckPayment(recipientId){
-    let paymentMethods = getData(recipientId, 'paymentMethods');
-    let quick_replies = [];
+            for(let i in paymentMethods){
 
-    for(let i in paymentMethods){
+                quick_replies.push({
+                    "content_type": "text",
+                    "title": paymentMethods[i].name.substring(0,20),
+                    "payload": "Checkout-"+paymentMethods[i].objectId
+                });
+            }
 
-        quick_replies.push({
-            "content_type": "text",
-            "title": paymentMethods[i].name.substring(0,20),
-            "payload": "Checkout-"+paymentMethods[i].objectId
+            return bot.sendTypingOff(recipientId).then(()=>{
+                return bot.sendQuickReplyMessage(recipientId, "Como vas a pagar tu pedido? (Tu pedido se cobra cuando lo recibes)", quick_replies)
+            });
         });
-    }
-
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendQuickReplyMessage(recipientId, "Como vas a pagar tu pedido? (Tu pedido se cobra cuando lo recibes)", quick_replies)
     });
 }
 
@@ -1917,24 +1954,22 @@ function checkout(recipientId, id){
     bot.sendTypingOn(recipientId);
 
     store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(() => {
+        let state = store.getState();
+        let paymentTypes = state['paymentTypes'];
         let paymentMethod = getData(recipientId, 'paymentMethod');
-        let paymentFunction = paymentTypes.get(paymentMethod.method.objectId);
+        let paymentFunction = paymentTypes[paymentMethod.method.objectId];
 
         paymentFunction(recipientId);
     });
 }
 
 function sendMinOrderPriceRestriction(recipientId){
-    renderMinOrderPriceRestriction(recipientId).then(()=>{
-        sendPurchaseOptions(recipientId);
-    });
-}
-
-function renderMinOrderPriceRestriction(recipientId){
     let pointSale = getData(recipientId, 'pointSale');
 
     return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "El valor minimo de una orden con domicilio es "+pointSale.minOrderPrice+", \npor favor modifica tu pedido para cumplir este requisito")
+        return bot.sendTextMessage(recipientId, "El valor minimo de una orden con domicilio es "+pointSale.minOrderPrice+", \npor favor modifica tu pedido para cumplir este requisito").then(()=>{
+            sendPurchaseOptions(recipientId);
+        })
     });
 }
 
@@ -1966,30 +2001,24 @@ function sendScheduleRestriction(recipientId, pointSaleSchedules){
         }
         text +="\n"
     }
-    renderScheduleRestriction(recipientId, text).then(()=>{
-        sendMenu(recipientId)
-    });
-}
 
-function renderScheduleRestriction(recipientId, text){
     return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, text)
+        return bot.sendTextMessage(recipientId, text).then(()=>{
+            sendMenu(recipientId)
+        });
     });
 }
 
 function sendCash(recipientId){
-    saveCart(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        let paymentMethod = getData(recipientId, 'paymentMethod');
+        saveCart(recipientId);
 
-    renderCash(recipientId).then(()=>{
-        orderConfirmation(recipientId);
-    });
-}
-
-function renderCash(recipientId){
-    let paymentMethod = getData(recipientId, 'paymentMethod')
-
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Se ha registrado el pago con "+paymentMethod.name )
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "Se ha registrado el pago con "+paymentMethod.name ).then(()=>{
+                orderConfirmation(recipientId);
+            })
+        });
     });
 }
 
@@ -2028,81 +2057,70 @@ function registerCreditCardAndPay(recipientId){
 }
 
 function cancelRegisterCreditCard(recipientId){
-    bot.sendTypingOn(recipientId);
+    bot.sendTypingOn(recipientId).then(()=>{
+        let userBuffer = bot.buffer[recipientId];
 
-    let userBuffer = bot.buffer[recipientId];
-
-    renderCancelRegisterCreditCard(recipientId).then(()=> {
-        if (typeof userBuffer != 'undefined' && userBuffer.hasOwnProperty('creditCardPayload')) {
-            checkPayment(recipientId);
-        }
-        else{
-            sendAccount(recipientId);
-        }
-    });
-}
-
-function renderCancelRegisterCreditCard(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-       return bot.sendTextMessage(recipientId, "Si no ingresas los datos de tu tarjeta en nuestro sitio seguro, no podras comprar con tarjeta online")
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "Si no ingresas los datos de tu tarjeta en nuestro sitio seguro, no podras comprar con tarjeta online").then(()=>{
+                if (typeof userBuffer != 'undefined' && userBuffer.hasOwnProperty('creditCardPayload')) {
+                    checkPayment(recipientId);
+                }
+                else{
+                    sendAccount(recipientId);
+                }
+            });
+        });
     });
 }
 
 function sendRegisteredCreditCards(recipientId){
-    bot.sendTypingOn(recipientId);
-    let user = getData(recipientId, 'user');
-    let consumer = getData(recipientId, 'consumer');
+    bot.sendTypingOn(recipientId).then(()=>{
+        let user = getData(recipientId, 'user');
+        let consumer = getData(recipientId, 'consumer');
 
-    CreditCard.loadInStore(store, recipientId, user).then(() => {
-        let creditCards = getData(recipientId, 'creditCards');
-        if (creditCards.length == 0) {
-            renderNoRegisteredCreditCards(recipientId);
-        }
-        else {
-            renderRegisteredCreditCards(recipientId);
-        }
-    });
-}
-
-function renderNoRegisteredCreditCards(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendQuickReplyMessage(recipientId, "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?", [
-            {
-                "content_type":"text",
-                "title":"Si",
-                "payload":"RegisterCreditCardAndPay"
-            },
-            {
-                "content_type":"text",
-                "title":"No",
-                "payload":"CheckPayment"
+        CreditCard.loadInStore(store, recipientId, user).then(() => {
+            let creditCards = getData(recipientId, 'creditCards');
+            if (creditCards.length == 0) {
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendQuickReplyMessage(recipientId, "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?", [
+                        {
+                            "content_type":"text",
+                            "title":"Si",
+                            "payload":"RegisterCreditCardAndPay"
+                        },
+                        {
+                            "content_type":"text",
+                            "title":"No",
+                            "payload":"CheckPayment"
+                        }
+                    ])
+                });
             }
-        ])
-    });
-}
+            else {
+                let creditCards = getData(recipientId, 'creditCards');
+                let quick_replies = [];
 
-function renderRegisteredCreditCards(recipientId){
-    let creditCards = getData(recipientId, 'creditCards');
-    let quick_replies = [];
+                quick_replies.push({
+                    "content_type": "text",
+                    "title": "Agregar tarjeta",
+                    "payload": "RegisterCreditCardAndPay"
+                });
 
-    quick_replies.push({
-        "content_type": "text",
-        "title": "Agregar tarjeta",
-        "payload": "RegisterCreditCardAndPay"
-    });
+                for(let card of creditCards){
+                    if (quick_replies.length < bot.limit) {
+                        quick_replies.push({
+                            "content_type": "text",
+                            "title": card.type+" "+card.lastFour,
+                            "payload": "PayWithCreditCard-" + card.lastFour
+                        });
+                    }
+                }
 
-    for(let card of creditCards){
-        if (quick_replies.length < bot.limit) {
-            quick_replies.push({
-                "content_type": "text",
-                "title": card.type+" "+card.lastFour,
-                "payload": "PayWithCreditCard-" + card.lastFour
-            });
-        }
-    }
-
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendQuickReplyMessage(recipientId, "Con cual tarjeta quieres pagar?", quick_replies)
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendQuickReplyMessage(recipientId, "Con cual tarjeta quieres pagar?", quick_replies)
+                });
+            }
+        });
     });
 }
 
@@ -2113,73 +2131,61 @@ function payWithCreditCard(recipientId, creditCardId){
 }
 
 function orderConfirmation(recipientId){
-    bot.sendTypingOn(recipientId);
-
-    saveOrder(recipientId);
-
-    renderOrderConfirmation(recipientId).then(()=>{
-        bot.sendTypingOff(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        saveOrder(recipientId);
+        getOrderState(0).then(state=> {
+            return bot.sendTypingOff(recipientId).then(() => {
+                return bot.sendTextMessage(recipientId, state.messagePush + "\n\nEn un momento te estaremos dando información en tiempo real sobre tu pedido")
+            });
+        });
     });
-}
-
-function renderOrderConfirmation(recipientId){
-    let state0 = orderStates.get(0);
-    return bot.sendTextMessage(recipientId, state0.messagePush+"\n\nEn un momento te estaremos dando información en tiempo real sobre tu pedido")
 }
 
 function orderState(recipientId){
     bot.sendTypingOn(recipientId);
-    renderOrderState(recipientId).then(()=>{
-        orderSent(recipientId)
-    });
-}
 
-function renderOrderState(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente 10 minutos")
-    });
+    orderSent(recipientId)
 }
 
 function orderSent(recipientId){
-    bot.sendTypingOn(recipientId);
-    renderOrderSent(recipientId).then(()=>{
-        serviceRating(recipientId);
-    });
-}
-
-function renderOrderSent(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Buenas noticias, Tu pedido ha sido Enviado. \n\nHaz click en el mapa para vel tu pedido")
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "Buenas noticias, Tu pedido ha sido Enviado. \n\nHaz click en el mapa para vel tu pedido").then(()=>{
+                sendserviceRating(recipientId);
+            })
+        });
     });
 }
 
 function sendOrderState(recipientId){
-    let orderState = getData(recipientId, 'orderState');
-    bot.sendTypingOn(recipientId);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        let orderState = getData(recipientId, 'orderState');
+        let pointSale = getData(recipientId, 'pointSale');
 
-
-    renderOrderState(recipientId).then(()=>{
-        if(orderState.order == 5){
-            serviceRating(recipientId);
-        }
+        return bot.sendTypingOff(recipientId).then(()=>{
+            if(orderState.order == 1){
+                return bot.sendTextMessage(recipientId, "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente "+pointSale.deliveryTime+" minutos")
+            }
+            else if(orderState.order == 5){
+                return bot.sendTextMessage(recipientId, orderState.messagePush).then(()=>{
+                    sendserviceRating(recipientId);
+                });
+            }
+            else if(orderState.order == 6){
+                return new Promise((resolve, reject) => {
+                    resolve()
+                });
+            }
+            else{
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    return bot.sendTextMessage(recipientId, orderState.messagePush)
+                });
+            }
+        });
     });
 }
 
-function renderOrderState(recipientId){
-    let orderState = getData(recipientId, 'orderState');
-    if(orderState.order == 6){
-        return new Promise((resolve, reject) => {
-            resolve()
-        });
-    }
-    else{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, orderState.messagePush)
-        });
-    }
-}
-
-function serviceRating(recipientId){
+function sendserviceRating(recipientId){
     return bot.sendTypingOn(recipientId).then(()=>{
         return bot.sendTypingOff(recipientId).then(()=>{
             return bot.sendQuickReplyMessage(recipientId, "Califica tu experiencia para ayudarnos a mejorar. \n\nDe 1 a 5 cuantas extrellas merece nuestro servicio?", [
@@ -2215,17 +2221,20 @@ function serviceRating(recipientId){
 
 function setScore(recipientId, score){
     let order = getData(recipientId, 'order');
+    return bot.sendTypingOn(recipientId).then(()=>{
+        Parse.Cloud.run('rateOrder', { orderId: order.objectId, score: Number(score), comment: ''}).then(
+            function(result){
+                return bot.sendTypingOff(recipientId).then(()=>{
+                    thank(recipientId)
+                });
+            },
+            function(error) {
+                console.log('error');
+                console.log(error);
+            });
+    });
 
-    bot.sendTypingOn(recipientId);
 
-    Parse.Cloud.run('rateOrder', { orderId: order.objectId, score: Number(score), comment: ''}).then(
-        function(result){
-            thank(recipientId)
-        },
-        function(error) {
-            console.log('error');
-            console.log(error);
-        });
 }
 
 function thank(recipientId){
@@ -2597,9 +2606,11 @@ function renderAccount(recipientId){
     });
 }
 
-function renderYouAreWelcome(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "De nada, gracias por usar nuestros servicios")
+function sendYouAreWelcome(recipientId){
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "De nada, gracias por usar nuestros servicios")
+        });
     });
 }
 
@@ -2633,211 +2644,13 @@ function addCreditCard(recipientId, token, data){
     });
 }
 
-function createOrder(recipientId){
-    let userData = getData(recipientId);
-    Object.assign(userData, {'order': new Map()});
-    return getData(recipientId, 'order')
-}
-
-function checkSchedulesDeliveryPointSale(recipientId){
-    let pointSale = getData(recipientId, 'pointSale');
-    let params = {
-        pointSale: pointSale.objectId,
-        date: (new Date()).toJSON().slice(0, 10)
-    };
-
-    return Parse.Cloud.run('getSchedulesDeliveryPointSale', params).then((result) => {
-        return result;
-    }).fail(error => {
-        console.log('Error code: ' + error.message);
-    });
-}
-
-function renderShoppingCartOptions(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendQuickReplyMessage(recipientId, "Opciones del carrito", [
-            {
-                "content_type":"text",
-                "title":"Finalizar pedido",
-                "payload":"CheckOrder"
-            },
-            {
-                "content_type":"text",
-                "title":"Seguir pidiendo",
-                "payload":"SendContinueOrder"
-            },
-            {
-                "content_type":"text",
-                "title":"Borrar carrito",
-                "payload": "ClearAndSendCart"
-            }
-        ])
-    });
-}
-
-function updateCart(recipientId){
-    let consumerCart = new Cart();
-    let localCart = getData(recipientId, 'cart');
-
-    new Parse.Query(consumerCart).get(localCart.id).then(
-        cart => {
-            console.log(cart);
-        },
-        (object, error) => {
-            console.log(error);
-        }
-    );
-}
-
-function setPayment(recipientId, id){
-
-}
-
-function sendRegisterFacebookUser(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "Registro exitoso.")
-        })
-    });
-}
-
-bot.app.get('/login', function(req, res) {
-    res.sendFile(path.join(__dirname+'/views/login.html'));
-});
-
-bot.app.post('/registerUser', function (req, res) {
-    let data = req.body;
-
-    signUp(data.psid, data.uid, data.accessToken).then(user =>{
-        sendMenu(data.psid);
-    });
-
-    res.status(200).end();
-});
-
-bot.app.get('/creditCard', function(req, res) {
-    console.log('creditCard');
-    res.sendFile(path.join(__dirname+'/views/cardForm.html'));
-});
-
-bot.app.post('/registerCreditCard', function (req, res) {
-    console.log('registerCreditCard');
-    let data = req.body;
-    let consumerID = data['consumerID'];
-
-    new Parse.Query(Consumer).get(consumerID).then(consumer => {
-        if(consumer){
-            new Parse.Query(User).get(consumer.get('user').id).then(user => {
-                let username = user.get('username');
-                let recipientId = consumer.get('conversationId');
-
-                Parse.User.logIn(username, username, {
-                    success: function(userData) {
-                        addCreditCard(recipientId, userData.getSessionToken(), data)
-                    },
-                    error: function(user, error) {
-                        console.log('error');
-                        console.log(error);
-                    }
-                });
-            });
-
-            res.sendFile(path.join(__dirname+'/views/cardRegistered.html'));
-        }
+function getOrderState(orderStateNumber){
+    return new Parse.Query(OrderState).equalTo('order', orderStateNumber).find().then( state => {
+        return extractParseAttributes(state[0]);
     },
     (object, error) => {
         console.log(error);
     });
-});
-
-bot.app.post('/creditCardRegistered', function (req, res) {
-    console.log('creditCardRegistered');
-    let data = req.body;
-    let userBuffer = bot.buffer[data.recipientId];
-
-    if (typeof userBuffer != 'undefined') {
-        if (userBuffer.creditCardPayload == 'SendCreditCards') {
-            sendRegisteredCreditCards(data.recipientId);
-            delete userBuffer.creditCardPayload
-        }
-        else {
-            sendCreditCards(data.recipientId)
-        }
-    }
-    else {
-        sendCreditCards(data.recipientId)
-    }
-})
-
-bot.app.post('/changeOrderState', function (req, res) {
-    console.log('changeOrderState');
-    let data = req.body;
-
-    new Parse.Query(Consumer).get(data['consumerID']).then(consumer => {
-            if(consumer){
-                new Parse.Query(User).get(consumer.get('user').id).then(user => {
-                    let username = user.get('username');
-                    let recipientId = consumer.get('conversationId');
-
-                    new Parse.Query(OrderState).get(data['stateID']).then(orderState => {
-                        store.dispatch(Actions.setOrderState(recipientId, orderState)).then(() => {
-                            sendOrderState(recipientId);
-                        })
-                    })
-                    .fail(error => {
-                        console.log('Error code: ' + error.message);
-                    });
-                });
-            }
-        },
-        (object, error) => {
-            console.log(error);
-        });
-
-    res.json({result: 'OK'});
-});
-
-let paymentTypes = new Map();
-
-new Parse.Query(PaymentMethod).find().then(methods => {
-    for(let method of methods){
-        let tmpMethod = extractParseAttributes(method);
-        if(tmpMethod.objectId == 'Nn0joKC5VK'){
-            paymentTypes.set('Nn0joKC5VK', sendCash);
-        }
-        else if(tmpMethod.objectId == 'UdK0Ifc4IF'){
-            paymentTypes.set('UdK0Ifc4IF', sendCash);
-        }
-        else if(tmpMethod.objectId == 'CHzoYrEtiY'){
-            paymentTypes.set('CHzoYrEtiY', sendRegisteredCreditCards);
-        }
-    }
-},
-(object, error) => {
-    console.log(error);
-});
-
-let orderStates = new Map();
-
-orderStates.set('Nn0joKC5VK', sendCash);
-
-new Parse.Query(OrderState).find().then( states => {
-    for(let state of states){
-        orderStates.set(state.get('order'), extractParseAttributes(state));
-    }
-},
-(object, error) => {
-    console.log(error);
-});
-
-let creditCardImages = new Map();
-
-creditCardImages.set('VISA', 'assets/images/visaCard.jpg');
-creditCardImages.set('MASTERCARD', 'assets/images/masterCard.jpg')
-creditCardImages.set('AMERICAN', 'assets/images/americanCard.jpg')
-creditCardImages.set('DEFAULT', 'assets/images/creditCards.jpg')
-
-
-store.dispatch({type: types.APP_LOADED});
+}
 
 module.exports = {store, getData}
