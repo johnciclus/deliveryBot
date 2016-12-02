@@ -121,5 +121,9 @@
     "request": "^2.75.0",
     "request-promise": "^4.1.1",
     "underscore": "^1.8.3"
+  },
+  "jspm": {
+    "dependencies": {},
+    "devDependencies": {}
   }
 }

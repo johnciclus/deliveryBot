@@ -116,39 +116,6 @@ bot.defaultSearch = searchProducts;
 
 const initialState = {
     userData: {}
-
-    /*
-    geocodedLocation: {lat: -1, lng: -1},
-    addresses: [],
-    mapBounds: {},
-    mapAddress: '',
-    useSubCategories: false,
-    products: [],
-    pointOfSales: [],
-    categories: [],
-    paymentMethods: [],
-    consumer: {},
-    customer: {},
-    orders: { ongoing: [], delivered: [] },
-    orderToRate: null,
-    currentOrder: {
-        consumerAddress:{},
-        items: []
-    },
-    locationZoom: 3,
-    profileIsOpen: false,
-    mapAddressIsOpen: false,
-    addressFormIsOpen: false,
-    addressListIsOpen: false,
-    savingAddress: false,
-    creatingOrder: false,
-    paymentMethodNotSelected: false,
-    cartTotalIsBelowMinimumPrice: false,
-    currentCategory: {},
-    consumerNotFound: false,
-    updatingConsumer: false,
-    currentUser: {},
-    pendingOrder: false*/
 };
 
 const reducer = (state = initialState, action) => {
@@ -157,7 +124,7 @@ const reducer = (state = initialState, action) => {
     let data = action.data;
 
     if(data && data.hasOwnProperty('recipientId')){
-        if(typeof state.userData[data.recipientId] != 'object'){
+        if(typeof state.userData[data.recipientId] == 'undefined'){
             state.userData[data.recipientId] = {};
         }
     }
@@ -169,10 +136,6 @@ const reducer = (state = initialState, action) => {
         }
         case types.CUSTOMER_LOADED: {
             let customer = extractParseAttributes(data.customer);
-
-            if(typeof state.userData[data.recipientId] != 'object'){
-                state.userData[data.recipientId] = {};
-            }
             objectAssign(state.userData[data.recipientId], {customer});
             return {...state};
         }
@@ -259,7 +222,7 @@ const reducer = (state = initialState, action) => {
             return {...state};
         }
         case types.RENDER_MENU: {
-            renderMenu()
+            renderMenu();
             return state;
         }
         case types.RENDER_ADDRESS_MENU: {
@@ -279,7 +242,7 @@ function signUp(recipientId, facebookId, conversationToken){
         let user = userObject.rawParseObject;
 
         return user.createConsumer(store, recipientId, conversationToken).then(consumer => {
-            return new Promise(function(resolve, reject){
+            return new Promise((resolve, reject) => {
                 resolve(userObject)
             });
         });
@@ -308,7 +271,7 @@ function authentication(recipientId){
                     let user = userObject.rawParseObject;
 
                     return user.createConsumer(store, recipientId, PAGE_ACCESS_TOKEN).then(consumer => {
-                        return new Promise(function(resolve, reject){
+                        return new Promise((resolve, reject) => {
                             resolve(userObject)
                         });
                     });
@@ -316,7 +279,7 @@ function authentication(recipientId){
             }
             else{
                 return getConsumer(recipientId, user.rawParseObject).then(consumer => {
-                    return new Promise(function(resolve, reject){
+                    return new Promise((resolve, reject) => {
                         resolve(user)
                     });
 
@@ -340,9 +303,9 @@ function getCustomer(recipientId){
         });
     }
     else{
-        return Parse.Promise.as().then(() => {
-            return customer;
-        })
+        return new Promise((resolve, reject) => {
+            resolve(customer)
+        });
     }
 }
 
@@ -354,9 +317,9 @@ function getUser(recipientId){
         });
     }
     else{
-        return Parse.Promise.as().then(() => {
-            return userObj;
-        })
+        return new Promise((resolve, reject) => {
+            resolve(userObj)
+        });
     }
 }
 
@@ -368,9 +331,9 @@ function getConsumer(recipientId, user){
             consumerObj = getData(recipientId, 'consumer');
 
             if(typeof consumerObj != 'undefined'){
-                return Parse.Promise.as().then(() => {
-                    return consumerObj;
-                })
+                return new Promise((resolve, reject) => {
+                    resolve(consumerObj)
+                });
             }else{
                 console.log('create consumer');
                 /*return createConsumer(recipientId, user).then( () => {
@@ -380,9 +343,9 @@ function getConsumer(recipientId, user){
         });
     }
     else{
-        return Parse.Promise.as().then(() => {
-            return consumerObj;
-        })
+        return new Promise((resolve, reject) => {
+            resolve(consumerObj)
+        });
     }
 }
 
@@ -394,36 +357,23 @@ function sendSignUp(recipientId) {
 
 function renderSignUp(recipientId) {
     let image_url = SERVER_URL+"assets/images/love.jpg";
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: [{
-                        "title":     "Hola, soy un Bot",
-                        "subtitle":  "Soy tu asistente virtual. Quieres registrarte en nuestro sistema?",
-                        "image_url": image_url,
-                        "buttons":[
-                            {
-                                "type": "web_url",
-                                "url": SERVER_URL + "login?psid="+recipientId,
-                                "title": "Registrarme",
-                                "webview_height_ratio": "full",
-                                "messenger_extensions": true
-                            }
-                        ]
-                    }]
-                }
-            }
-        }
-    };
 
     bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+
+    return bot.sendGenericMessage(recipientId, [{
+        "title":     "Hola, soy un Bot",
+        "subtitle":  "Soy tu asistente virtual. Quieres registrarte en nuestro sistema?",
+        "image_url": image_url,
+        "buttons":[
+            {
+                "type": "web_url",
+                "url": SERVER_URL + "login?psid="+recipientId,
+                "title": "Registrarme",
+                "webview_height_ratio": "full",
+                "messenger_extensions": true
+            }
+        ]
+    }]);
 }
 
 function sendMenu(recipientId) {
@@ -440,40 +390,25 @@ function renderMenu(recipientId) {
 
     let image_url = customer.image.url;
 
-    //bot.sendGeneric(title, subtitle, image_url, buttons)
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: [{
-                        "title":     "Hola "+user.first_name+", Bienvenido a "+customer.name,
-                        "subtitle":  "Aquí puedes pedir un domicilio, escribe o selecciona alguna de las opciones:",
-                        "image_url": image_url,
-                        "buttons":[
-                            {
-                                "type":"postback",
-                                "title":"Pedir domicilio",
-                                "payload": "SendAddressesWithTitle"
-                            },
-                            {
-                                "type":"postback",
-                                "title":"Servicio al cliente",
-                                "payload": "CustomerService"
-                            }
-                        ]
-                    }]
-                }
-            }
-        }
-    };
-
     bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+
+    return bot.sendGenericMessage(recipientId, [{
+        "title":     "Hola "+user.first_name+", Bienvenido a "+customer.name,
+        "subtitle":  "Aquí puedes pedir un domicilio, escribe o selecciona alguna de las opciones:",
+        "image_url": image_url,
+        "buttons":[
+            {
+                "type":"postback",
+                "title":"Pedir domicilio",
+                "payload": "SendAddressesWithTitle"
+            },
+            {
+                "type":"postback",
+                "title":"Servicio al cliente",
+                "payload": "CustomerService"
+            }
+        ]
+    }]);
 }
 
 function sendAddressesWithTitle(recipientId){
@@ -483,17 +418,10 @@ function sendAddressesWithTitle(recipientId){
 }
 
 function renderAddressTitle(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o seleccionar una de tus direcciones guardadas"
-        }
-    };
+
     bot.sendTypingOff(recipientId);
 
-    return bot.callSendAPI(messageData)
+    return bot.sendTextMessage(recipientId, "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o seleccionar una de tus direcciones guardadas");
 }
 
 function sendAddresses(recipientId){
@@ -552,34 +480,19 @@ function renderAddress(recipientId){
         }
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "attachment":{
-                "type": "template",
-                "payload":{
-                    "template_type": "generic",
-                    "elements": elements
-                }
-            }
-        }
-    };
-    
     bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+
+    return bot.sendGenericMessage(recipientId, elements);
 }
 
 function sendCreditCards(recipientId){
-    bot.sendTypingOn(recipientId);
-
-    authentication(recipientId).then( () =>{
-        let user = getData(recipientId, 'user');
-        CreditCard.loadInStore(store, recipientId, user).then(() => {
-            renderCreditCards(recipientId);
+    bot.sendTypingOn(recipientId).then(()=>{
+        authentication(recipientId).then(() =>{
+            let user = getData(recipientId, 'user');
+            CreditCard.loadInStore(store, recipientId, user).then(() => {
+                renderCreditCards(recipientId);
+            });
         });
-
     });
 }
 
@@ -624,23 +537,9 @@ function renderCreditCards(recipientId){
         }
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "attachment":{
-                "type": "template",
-                "payload":{
-                    "template_type": "generic",
-                    "elements": elements
-                }
-            }
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendGenericMessage(recipientId, elements);
+    });
 }
 
 function newAddress(recipientId){
@@ -650,55 +549,32 @@ function newAddress(recipientId){
 }
 
 function writeAddress(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Puedes escribir o compartir tu ubicación actual?\n\nEjemplo: Calle 67 #52-20, Medellín.\n\nNo olvides escribir la ciudad al final de la dirección.",
-            "quick_replies":[
-                {
-                    "content_type": "location",
-                    "title": "Enviar ubicación"
-                }
-            ]
-        }
-    };
-
     bot.setListener(recipientId, 'address', 'text', addressCheck);
     bot.setListener(recipientId, 'location', 'attachment', setLocationCheck);
 
-    return bot.callSendAPI(messageData);
+    return bot.sendQuickReplyMessage(
+        recipientId,
+        "Puedes escribir o compartir tu ubicación actual?\n\nEjemplo: Calle 67 #52-20, Medellín.\n\nNo olvides escribir la ciudad al final de la dirección.",
+        [{
+            "content_type": "location",
+            "title": "Enviar ubicación"
+        }]
+    );
 }
 
 function renderMapMessage(recipientId){
     let userBuffer = bot.buffer[recipientId];
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        "message": {
-            "text": "Encontré esta dirección en Google Maps:\n\n"+userBuffer.address+""
-        }
-    };
 
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Encontré esta dirección en Google Maps:\n\n"+userBuffer.address)
+
+    });
 }
 
 function renderNullMapMessage(recipientId){
-
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        "message": {
-            "text": "La dirección no ha sido encontrada en Google Maps, por favor intenta de nuevo"
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "La dirección no ha sido encontrada en Google Maps, por favor intenta de nuevo")
+    });
 }
 
 function sendMap(recipientId){
@@ -710,21 +586,7 @@ function sendMap(recipientId){
 function renderMap(recipientId){
     bot.sendTypingOff(recipientId);
     let userBuffer = bot.buffer[recipientId];
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        "message": {
-            "attachment": {
-                "type": "image",
-                "payload": {
-                    "url": GOOGLE_MAPS_URL+"?center="+userBuffer.location.lat+","+userBuffer.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+userBuffer.location.lat+","+userBuffer.location.lng+"&key="+GOOGLE_MAPS_KEY
-                }
-            }
-        }
-    };
-
-    return bot.callSendAPI(messageData);
+    return bot.sendImageMessage(recipientId, GOOGLE_MAPS_URL+"?center="+userBuffer.location.lat+","+userBuffer.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+userBuffer.location.lat+","+userBuffer.location.lng+"&key="+GOOGLE_MAPS_KEY)
 }
 
 function sendMapConfirmation(recipientId){
@@ -732,28 +594,20 @@ function sendMapConfirmation(recipientId){
 }
 
 function renderMapConfirmation(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Es correcta?",
-            "quick_replies":[
-                {
-                    "content_type": "text",
-                    "title": "Si",
-                    "payload": "SetAddressComplement"
-                },
-                {
-                    "content_type": "text",
-                    "title": "No",
-                    "payload": "NewAddress"
-                }
-            ]
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, "Es correcta?", [
+            {
+                "content_type": "text",
+                "title": "Si",
+                "payload": "SetAddressComplement"
+            },
+            {
+                "content_type": "text",
+                "title": "No",
+                "payload": "NewAddress"
+            }
+        ]);
+    });
 }
 
 function addressCheck(recipientId){
@@ -809,17 +663,11 @@ function setAddressComponetsInBuffer(recipientId, data){
 }
 
 function setAddressComplement(recipientId){
-    bot.sendTypingOff(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Por favor escribe el complemento de tu dirección actual.\n\nEjemplo: Apto 303, edificio el palmar.\n\nNo olvides colocar el nombre del edificio o del barrio"
-        }
-    };
     bot.setListener(recipientId, 'complement', 'text', confirmAddress);
-    return bot.callSendAPI(messageData);
+
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Por favor escribe el complemento de tu dirección actual.\n\nEjemplo: Apto 303, edificio el palmar.\n\nNo olvides colocar el nombre del edificio o del barrio");
+    });
 }
 
 function confirmAddress(recipientId){
@@ -827,17 +675,10 @@ function confirmAddress(recipientId){
     let addressPayload = userBuffer['addressPayload'];
 
     if(addressPayload == 'NewAddress'){
-        let messageData = {
-            recipient: {
-                id: recipientId
-            },
-            message: {
-                "text": "Por favor coloca un nombre a esta dirección para guardarla. \n\nEjemplo: casa, apartamento o oficina"
-            }
-        };
         bot.setListener(recipientId, 'address_name', 'text', saveAddress);
-        bot.sendTypingOff(recipientId);
-        return bot.callSendAPI(messageData);
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "Por favor coloca un nombre a esta dirección para guardarla. \n\nEjemplo: casa, apartamento o oficina");
+        });
     }
     else if(addressPayload.startsWith('EditAddress')){
         let data = addressPayload.split('-');
@@ -872,17 +713,9 @@ function confirmAddress(recipientId){
 }
 
 function renderAddressUpdate(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "La dirección ha sido actualizada."
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "La dirección ha sido actualizada.");
+    });
 }
 
 function saveAddress(recipientId){
@@ -925,31 +758,17 @@ function saveAddress(recipientId){
 }
 
 function renderAddressSave(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "La dirección ha sido almacenada."
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "La dirección ha sido almacenada.")
+    });
 }
 
 function setEmail(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Por favor escribe tu email:"
-        }
-    };
     bot.setListener(recipientId, 'email', 'text', setEmailCheck);
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Por favor escribe tu email:")
+    });
 }
 
 function setEmailCheck(recipientId, value){
@@ -964,17 +783,10 @@ function setEmailCheck(recipientId, value){
 }
 
 function setTelephone(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Por favor escribe tu número telefónico:"
-        }
-    };
     bot.setListener(recipientId, 'telephone', 'text', setTelephoneCheck);
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Por favor escribe tu número telefónico:")
+    });
 }
 
 function setTelephoneCheck(recipientId){
@@ -1055,17 +867,9 @@ function removeAddress(recipientId, id){
 }
 
 function renderRemoveAddress(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "La dirección ha sido eliminada."
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "La dirección ha sido eliminada.");
+    });
 }
 
 function removeCreditCard(recipientId, id){
@@ -1079,56 +883,27 @@ function removeCreditCard(recipientId, id){
 }
 
 function renderRemoveCreditCard(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "La tarjeta de credito ha sido eliminada."
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "La tarjeta de credito ha sido eliminada.")
+    });
 }
 
 function renderAddressOutOfCoverage(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección")
+    });
 }
 
 function renderAddressConfirmation(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Perfecto, ya seleccioné tu dirección para este pedido"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        bot.sendTextMessage(recipientId, "Perfecto, ya seleccioné tu dirección para este pedido")
+    });
 }
 
 function renderCategoriesInitialMessage(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "A continuación te presentamos las categorías de productos disponibles."
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "A continuación te presentamos las categorías de productos disponibles.")
+    });
 }
 
 function sendCategories(recipientId, index){
@@ -1209,37 +984,17 @@ function renderCategories(recipientId, categories, index){
         });
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: elements
-                }
-            }
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendGenericMessage(recipientId, elements)
+    });
 }
 
 function renderProductsInitialMessage(recipientId, categoryId){
     return new Parse.Query(Category).get(categoryId).then(
         category => {
-            let messageData = {
-                recipient: {
-                    id: recipientId
-                },
-                message: {
-                    text: "Selecciona "+category.get('name')+":"
-                }
-            };
-            bot.sendTypingOff(recipientId);
-            return bot.callSendAPI(messageData);
+            return bot.sendTypingOff(recipientId).then(()=>{
+                return bot.sendTextMessage(recipientId, "Selecciona "+category.get('name')+":");
+            });
         },
         (object, error) => {
             console.log(error);
@@ -1329,48 +1084,27 @@ function renderProducts(recipientId, categoryId, products, index){
         });
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: elements
-                }
-            }
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendGenericMessage(recipientId, elements)
+    });
 }
 
 function renderEmptyProducts(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "No existen productos en esta categoría",
-            "quick_replies": [
-                {
-                    "content_type": "text",
-                    "title": "Seguir pidiendo",
-                    "payload": "SendContinueOrder"
-                },
-                {
-                    "content_type": "text",
-                    "title": "Ver carrito",
-                    "payload": "SendCart"
-                }
-            ]
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId,
+            "No existen productos en esta categoría", [
+            {
+                "content_type": "text",
+                "title": "Seguir pidiendo",
+                "payload": "SendContinueOrder"
+            },
+            {
+                "content_type": "text",
+                "title": "Ver carrito",
+                "payload": "SendCart"
+            }
+        ]);
+    });
 }
 
 function createCart(recipientId){
@@ -1448,28 +1182,20 @@ function addProduct(recipientId, productId){
 
 function renderAddProduct(recipientId, productId){
     return new Parse.Query(Product).get(productId).then(product => {
-        let messageData = {
-            recipient: {
-                id: recipientId
-            },
-            message: {
-                "text": "El producto " + product.get('name') + " ha sido agregado.\n\nDeseas seguir pidiendo o ver tu carrito?",
-                "quick_replies": [
-                    {
-                        "content_type": "text",
-                        "title": "Seguir pidiendo",
-                        "payload": "SendContinueOrder"
-                    },
-                    {
-                        "content_type": "text",
-                        "title": "Ver carrito",
-                        "payload": "SendCart"
-                    }
-                ]
-            }
-        };
-        bot.sendTypingOff(recipientId);
-        return bot.callSendAPI(messageData);
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, "El producto " + product.get('name') + " ha sido agregado.\n\nDeseas seguir pidiendo o ver tu carrito?", [
+                {
+                    "content_type": "text",
+                    "title": "Seguir pidiendo",
+                    "payload": "SendContinueOrder"
+                },
+                {
+                    "content_type": "text",
+                    "title": "Ver carrito",
+                    "payload": "SendCart"
+                }
+            ])
+        });
     },
     (object, error) => {
         console.log(error);
@@ -1483,16 +1209,9 @@ function sendContinueOrder(recipientId){
 }
 
 function renderContinueOrder(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Puedes escribir el nombre de un producto, ej: Ensalada mediterranea, o seleccionarlo en el siguiente menú:"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        bot.sendTextMessage(recipientId, "Puedes escribir el nombre de un producto, ej: Ensalada mediterranea, o seleccionarlo en el siguiente menú:")
+    });
 }
 
 function renderModifierMenu(recipientId, productId, modifier, items){
@@ -1508,17 +1227,9 @@ function renderModifierMenu(recipientId, productId, modifier, items){
         }
     });
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Escoge " + modifier.name + ":",
-            "quick_replies": quick_replies
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, "Escoge " + modifier.name + ":", quick_replies)
+    })
 }
 
 function addModifier(recipientId, productId, modifierId, itemId){
@@ -1706,33 +1417,25 @@ function sendProductDescription(recipientId, productId){
 
     new Parse.Query(product).get(productId).then(
         product => {
-            let messageData = {
-                recipient: {
-                    id: recipientId
-                },
-                message: {
-                    "text": product.get('name')+": "+product.get('description'),
-                    "quick_replies":[
-                        {
-                            "content_type":"text",
-                            "title":"Agregar",
-                            "payload":"AddProduct-"+productId
-                        },
-                        {
-                            "content_type":"text",
-                            "title":"Seguir pidiendo",
-                            "payload":"SendContinueOrder"
-                        },
-                        {
-                            "content_type":"text",
-                            "title":"Ver carrito",
-                            "payload":"SendCart"
-                        }
-                    ]
-                }
-            };
-            bot.sendTypingOff(recipientId);
-            return bot.callSendAPI(messageData);
+            return bot.sendTypingOff(recipientId).then(()=>{
+                return bot.sendQuickReplyMessage(recipientId, product.get('name')+": "+product.get('description'), [
+                    {
+                        "content_type":"text",
+                        "title":"Agregar",
+                        "payload":"AddProduct-"+productId
+                    },
+                    {
+                        "content_type":"text",
+                        "title":"Seguir pidiendo",
+                        "payload":"SendContinueOrder"
+                    },
+                    {
+                        "content_type":"text",
+                        "title":"Ver carrito",
+                        "payload":"SendCart"
+                    }
+                ])
+            });
         },
         (object, error) => {
             console.log(error);
@@ -1859,14 +1562,9 @@ function saveOrder(recipientId){
 }
 
 function sendPurchaseOptions(recipientId){
-    bot.sendTypingOn(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Tenemos las siguientes opciones disponibles:",
-            "quick_replies":[
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, "Tenemos las siguientes opciones disponibles:", [
                 {
                     "content_type":"text",
                     "title":"Ver categorias",
@@ -1877,22 +1575,15 @@ function sendPurchaseOptions(recipientId){
                     "title":"Ver carrito",
                     "payload":"SendCart"
                 }
-            ]
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+            ])
+        });
+    });
 }
 
 function sendEmptyCartOptions(recipientId){
-    bot.sendTypingOn(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Tenemos las siguientes opciones disponibles:",
-            "quick_replies":[
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, "Tenemos las siguientes opciones disponibles:", [
                 {
                     "content_type":"text",
                     "title":"Ver categorias",
@@ -1903,11 +1594,9 @@ function sendEmptyCartOptions(recipientId){
                     "title":"Mis órdenes",
                     "payload":"SendOrders"
                 }
-            ]
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+            ])
+        });
+    });
 }
 
 function sendCart(recipientId){
@@ -2005,56 +1694,45 @@ function renderCart(recipientId, cartId, elements, total){
         }
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendReceiptMessage(recipientId, {
+            template_type: "receipt",
+            recipient_name: user.first_name+" "+user.last_name,
+            order_number: cartId,
+            currency: "COP",
+            payment_method: payment_method.name,
+            timestamp: Math.trunc(Date.now()/1000).toString(),
+            elements: elements,
+            address: addressData,
+            summary: {
+                subtotal: total,
+                shipping_cost: pointSale.deliveryCost,
+                total_cost: total+pointSale.deliveryCost
+            }
         },
-        message:{
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "receipt",
-                    recipient_name: user.first_name+" "+user.last_name,
-                    order_number: cartId,
-                    currency: "COP",
-                    payment_method: payment_method.name,
-                    timestamp: Math.trunc(Date.now()/1000).toString(),
-                    elements: elements,
-                    address: addressData,
-                    summary: {
-                        subtotal: total,
-                        shipping_cost: pointSale.deliveryCost,
-                        total_cost: total+pointSale.deliveryCost
-                    }
-                }
+        [
+            {
+                "content_type":"text",
+                "title":"Finalizar pedido",
+                "payload":"CheckOrder"
             },
-            "quick_replies":[
-                {
-                    "content_type":"text",
-                    "title":"Finalizar pedido",
-                    "payload":"CheckOrder"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Seguir Pidiendo",
-                    "payload":"SendContinueOrder"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Modificar carrito",
-                    "payload":"SendCartDetails"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Borrar carrito",
-                    "payload": "ClearAndSendCart"
-                }
-            ]
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+            {
+                "content_type":"text",
+                "title":"Seguir Pidiendo",
+                "payload":"SendContinueOrder"
+            },
+            {
+                "content_type":"text",
+                "title":"Modificar carrito",
+                "payload":"SendCartDetails"
+            },
+            {
+                "content_type":"text",
+                "title":"Borrar carrito",
+                "payload": "ClearAndSendCart"
+            }
+        ])
+    });
 
 }
 
@@ -2108,98 +1786,54 @@ function renderCartDetails(recipientId){
     });
 
     return Parse.Promise.when(promises).then(function(elements) {
-        let messageData = {
-            recipient: {
-                id: recipientId
-            },
-            message: {
-                "attachment":{
-                    "type": "template",
-                    "payload":{
-                        "template_type": "generic",
-                        "elements": elements
-                    }
-                }
-            }
-        };
-        bot.sendTypingOff(recipientId);
-        return bot.callSendAPI(messageData)
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendGenericMessage(recipientId, elements)
+        });
     });
 }
 
 function renderEditCartOptions(recipientId){
-
-    let messageData = {
-        "recipient": {
-            "id": recipientId
+    return bot.sendQuickReplyMessage(recipientId, "Opciones del carrito:", [
+        {
+            "content_type":"text",
+            "title":"Finalizar pedido",
+            "payload":"CheckOrder"
         },
-        "message": {
-            "text": "Opciones del carrito:",
-            "quick_replies":[
-                {
-                    "content_type":"text",
-                    "title":"Finalizar pedido",
-                    "payload":"CheckOrder"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Seguir pidiendo",
-                    "payload":"SendContinueOrder"
-                }
-            ]
+        {
+            "content_type":"text",
+            "title":"Seguir pidiendo",
+            "payload":"SendContinueOrder"
         }
-    };
-
-    return bot.callSendAPI(messageData);
+    ]);
 }
 
 function renderCartEmpty(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Tu carrito de compras está vacío."
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Tu carrito de compras está vacío.")
+    });
 }
 
 function editCart(recipientId){
     let cart = getData(recipientId, 'cart');
 
     bot.sendTypingOn(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "attachment": {
-                "type": "template",
-                "payload": {
-                    "template_type": "generic",
-                    "elements": [
-                        {
-                            "title": "Opciones",
-                            "image_url": SERVER_URL+"assets/thinking.jpg",
-                            "buttons": [
-                                {
-                                    "type": "web_url",
-                                    "url": SERVER_URL+"cart?"+cart.id,
-                                    "title": "Remover producto",
-                                    "webview_height_ratio": "full",
-                                    "messenger_extensions": true
-                                }
-                            ]
-                        }
-                    ]
-                }
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendGenericMessage(recipientId, [
+            {
+                "title": "Opciones",
+                "image_url": SERVER_URL+"assets/thinking.jpg",
+                "buttons": [
+                    {
+                        "type": "web_url",
+                        "url": SERVER_URL+"cart?"+cart.id,
+                        "title": "Remover producto",
+                        "webview_height_ratio": "full",
+                        "messenger_extensions": true
+                    }
+                ]
             }
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+        ])
+    });
 
 }
 
@@ -2214,7 +1848,9 @@ function clearCart(recipientId){
             items.delete(key);
         });
     }
-    return Parse.Promise.as()
+    return new Promise((resolve, reject) => {
+        resolve()
+    });
 }
 
 function clearAndSendCart(recipientId){
@@ -2272,17 +1908,9 @@ function renderCheckPayment(recipientId){
         });
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Como vas a pagar tu pedido? (Tu pedido se cobra cuando lo recibes)",
-            "quick_replies": quick_replies
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, "Como vas a pagar tu pedido? (Tu pedido se cobra cuando lo recibes)", quick_replies)
+    });
 }
 
 function checkout(recipientId, id){
@@ -2305,16 +1933,9 @@ function sendMinOrderPriceRestriction(recipientId){
 function renderMinOrderPriceRestriction(recipientId){
     let pointSale = getData(recipientId, 'pointSale');
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "El valor minimo de una orden con domicilio es "+pointSale.minOrderPrice+", \npor favor modifica tu pedido para cumplir este requisito"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "El valor minimo de una orden con domicilio es "+pointSale.minOrderPrice+", \npor favor modifica tu pedido para cumplir este requisito")
+    });
 }
 
 function sendScheduleRestriction(recipientId, pointSaleSchedules){
@@ -2351,17 +1972,9 @@ function sendScheduleRestriction(recipientId, pointSaleSchedules){
 }
 
 function renderScheduleRestriction(recipientId, text){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": text
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, text)
+    });
 }
 
 function sendCash(recipientId){
@@ -2375,17 +1988,9 @@ function sendCash(recipientId){
 function renderCash(recipientId){
     let paymentMethod = getData(recipientId, 'paymentMethod')
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Se ha registrado el pago con "+paymentMethod.name
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Se ha registrado el pago con "+paymentMethod.name )
+    });
 }
 
 function registerCreditCard(recipientId){
@@ -2393,40 +1998,26 @@ function registerCreditCard(recipientId){
     authentication(recipientId).then( () => {
         let consumer = getData(recipientId, 'consumer');
 
-        let messageData = {
-            recipient: {
-                id: recipientId
-            },
-            message: {
-                "attachment": {
-                    "type": "template",
-                    "payload": {
-                        "template_type": "generic",
-                        "elements": [{
-                            "title": "Registro de tarjeta de credito y finalización de tu pedido.\n\nEstas de acuerdo?",
-                            "image_url": SERVER_URL + "assets/images/creditCards.jpg",
-                            "subtitle": "Por razones de seguridad te redireccionaremos a una página web segura.",
-                            "buttons": [
-                                {
-                                    "type": "web_url",
-                                    "title": "Si",
-                                    "url": SERVER_URL + "creditCard?id=" + consumer.objectId,
-                                    "webview_height_ratio": "full",
-                                    "messenger_extensions": true
-                                },
-                                {
-                                    "type": "postback",
-                                    "title": "No",
-                                    "payload": "CancelRegisterCreditCard"
-                                }]
-                        }]
-                    }
-                }
-            }
-        };
-
-        bot.sendTypingOff(recipientId);
-        return bot.callSendAPI(messageData);
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendGenericMessage(recipientId, [{
+                "title": "Registro de tarjeta de credito y finalización de tu pedido.\n\nEstas de acuerdo?",
+                "image_url": SERVER_URL + "assets/images/creditCards.jpg",
+                "subtitle": "Por razones de seguridad te redireccionaremos a una página web segura.",
+                "buttons": [
+                    {
+                        "type": "web_url",
+                        "title": "Si",
+                        "url": SERVER_URL + "creditCard?id=" + consumer.objectId,
+                        "webview_height_ratio": "full",
+                        "messenger_extensions": true
+                    },
+                    {
+                        "type": "postback",
+                        "title": "No",
+                        "payload": "CancelRegisterCreditCard"
+                    }]
+            }]);
+        });
     });
 }
 
@@ -2452,16 +2043,9 @@ function cancelRegisterCreditCard(recipientId){
 }
 
 function renderCancelRegisterCreditCard(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Si no ingresas los datos de tu tarjeta en nuestro sitio seguro, no podras comprar con tarjeta online"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+       return bot.sendTextMessage(recipientId, "Si no ingresas los datos de tu tarjeta en nuestro sitio seguro, no podras comprar con tarjeta online")
+    });
 }
 
 function sendRegisteredCreditCards(recipientId){
@@ -2481,29 +2065,20 @@ function sendRegisteredCreditCards(recipientId){
 }
 
 function renderNoRegisteredCreditCards(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?",
-            "quick_replies": [
-                {
-                    "content_type":"text",
-                    "title":"Si",
-                    "payload":"RegisterCreditCardAndPay"
-                },
-                {
-                    "content_type":"text",
-                    "title":"No",
-                    "payload":"CheckPayment"
-                }
-            ]
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?", [
+            {
+                "content_type":"text",
+                "title":"Si",
+                "payload":"RegisterCreditCardAndPay"
+            },
+            {
+                "content_type":"text",
+                "title":"No",
+                "payload":"CheckPayment"
+            }
+        ])
+    });
 }
 
 function renderRegisteredCreditCards(recipientId){
@@ -2526,17 +2101,9 @@ function renderRegisteredCreditCards(recipientId){
         }
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Con cual tarjeta quieres pagar?",
-            "quick_replies": quick_replies
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, "Con cual tarjeta quieres pagar?", quick_replies)
+    });
 }
 
 function payWithCreditCard(recipientId, creditCardId){
@@ -2557,17 +2124,7 @@ function orderConfirmation(recipientId){
 
 function renderOrderConfirmation(recipientId){
     let state0 = orderStates.get(0);
-
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": state0.messagePush+"\n\nEn un momento te estaremos dando información en tiempo real sobre tu pedido"
-        }
-    };
-
-    return bot.callSendAPI(messageData)
+    return bot.sendTextMessage(recipientId, state0.messagePush+"\n\nEn un momento te estaremos dando información en tiempo real sobre tu pedido")
 }
 
 function orderState(recipientId){
@@ -2578,16 +2135,9 @@ function orderState(recipientId){
 }
 
 function renderOrderState(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente 10 minutos"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente 10 minutos")
+    });
 }
 
 function orderSent(recipientId){
@@ -2598,16 +2148,9 @@ function orderSent(recipientId){
 }
 
 function renderOrderSent(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Buenas noticias, Tu pedido ha sido Enviado. \n\nHaz click en el mapa para vel tu pedido"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Buenas noticias, Tu pedido ha sido Enviado. \n\nHaz click en el mapa para vel tu pedido")
+    });
 }
 
 function sendOrderState(recipientId){
@@ -2625,32 +2168,21 @@ function sendOrderState(recipientId){
 function renderOrderState(recipientId){
     let orderState = getData(recipientId, 'orderState');
     if(orderState.order == 6){
-        return Parse.Promise.as()
+        return new Promise((resolve, reject) => {
+            resolve()
+        });
     }
     else{
-        let messageData = {
-            recipient: {
-                id: recipientId
-            },
-            message: {
-                "text": orderState.messagePush
-            }
-        };
-        bot.sendTypingOff(recipientId);
-
-        return bot.callSendAPI(messageData);
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, orderState.messagePush)
+        });
     }
 }
 
 function serviceRating(recipientId){
-    bot.sendTypingOn(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Califica tu experiencia para ayudarnos a mejorar. \n\nDe 1 a 5 cuantas extrellas merece nuestro servicio?",
-            "quick_replies":[
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, "Califica tu experiencia para ayudarnos a mejorar. \n\nDe 1 a 5 cuantas extrellas merece nuestro servicio?", [
                 {
                     "content_type":"text",
                     "title":"5 (Excelente)",
@@ -2676,11 +2208,9 @@ function serviceRating(recipientId){
                     "title":"2 (Muy mal)",
                     "payload":"SetScore-1"
                 },
-            ]
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+            ]);
+        });
+    });
 }
 
 function setScore(recipientId, score){
@@ -2699,17 +2229,11 @@ function setScore(recipientId, score){
 }
 
 function thank(recipientId){
-    bot.sendTypingOn(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Gracias, esperamos tener el gusto de atenderle nuevamente"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "Gracias, esperamos tener el gusto de atenderle nuevamente")
+        });
+    });
 }
 
 function searchProducts(recipientId, query, index){
@@ -2754,23 +2278,9 @@ function searchProducts(recipientId, query, index){
                         });
                     }
 
-                    let messageData = {
-                        recipient: {
-                            id: recipientId
-                        },
-                        message: {
-                            attachment: {
-                                type: "template",
-                                payload: {
-                                    template_type: "generic",
-                                    elements: elements
-                                }
-                            }
-                        }
-                    };
-
-                    bot.sendTypingOff(recipientId);
-                    return bot.callSendAPI(messageData);
+                    return bot.sendTypingOff(recipientId).then(()=>{
+                        return bot.sendGenericMessage(recipientId, elements)
+                    });
                 });
             }
         },
@@ -2782,29 +2292,15 @@ function searchProducts(recipientId, query, index){
 }
 
 function renderSearchInitial(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Se han encontrado los siguientes productos:"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "Se han encontrado los siguientes productos:")
+    });
 }
 
 function renderSearchEmpty(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "No se han encontrado productos que coincidan"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "No se han encontrado productos que coincidan")
+    })
 }
 
 function splitSearchResult(recipientId, products, index){
@@ -2859,30 +2355,17 @@ function sendHelp(recipientId){
 }
 
 function renderHelp(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "InOut Bot.\n\nTe permite visualizar las opciones de productos, agregarlos al carrito y realizar tu compra por medio del chat de facebook.\n\nFuncionalidades disponibles: \n\n'Hola', para iniciar la conversación\n'Pedir Domicilio', si quieres realizar un domicilio\n'Carrito', para ver el estado actual de tu carrito"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData)
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "InOut Bot.\n\nTe permite visualizar las opciones de productos, agregarlos al carrito y realizar tu compra por medio del chat de facebook.\n\nFuncionalidades disponibles: \n\n'Hola', para iniciar la conversación\n'Pedir Domicilio', si quieres realizar un domicilio\n'Carrito', para ver el estado actual de tu carrito")
+    });
 }
 
 function sendContactUs(recipientId){
-    bot.sendTypingOn(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": " Para mayor información puedes contactarnos en:\n\n Web: http://www.inoutdelivery.com/\n\n Email: soporte@inoutdelivery.com"
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, " Para mayor información puedes contactarnos en:\n\n Web: http://www.inoutdelivery.com/\n\n Email: soporte@inoutdelivery.com")
+        });
+    });
 }
 
 function sendOrders(recipientId){
@@ -2945,23 +2428,9 @@ function renderOrders(recipientId){
         }
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "attachment":{
-                "type": "template",
-                "payload":{
-                    "template_type": "generic",
-                    "elements": elements
-                }
-            }
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendGenericMessage(recipientId, elements)
+    });
 }
 
 function sendOrder(recipientId, id){
@@ -3027,52 +2496,40 @@ function renderOrder(recipientId, order, elements){
         }
     }
 
-    let messageData = {
-        recipient: {
-            id: recipientId
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendReceiptMessage(recipientId, {
+            template_type: "receipt",
+            recipient_name: user.first_name+" "+user.last_name,
+            order_number: order.objectId,
+            currency: "COP",
+            payment_method: payment_method.name,
+            timestamp: Math.trunc(Date.now()/1000).toString(),
+            elements: elements,
+            address: addressData,
+            summary: {
+                subtotal: order.total,
+                shipping_cost: pointSale.deliveryCost,
+                total_cost: order.total+pointSale.deliveryCost
+            }
         },
-        message:{
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "receipt",
-                    recipient_name: user.first_name+" "+user.last_name,
-                    order_number: order.objectId,
-                    currency: "COP",
-                    payment_method: payment_method.name,
-                    timestamp: Math.trunc(Date.now()/1000).toString(),
-                    elements: elements,
-                    address: addressData,
-                    summary: {
-                        subtotal: order.total,
-                        shipping_cost: pointSale.deliveryCost,
-                        total_cost: order.total+pointSale.deliveryCost
-                    }
-                }
+        [
+            {
+                "content_type":"text",
+                "title":"Nueva orden",
+                "payload":"NewOrder"
             },
-            "quick_replies":[
-                {
-                    "content_type":"text",
-                    "title":"Nueva orden",
-                    "payload":"NewOrder"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Ver órdenes",
-                    "payload":"SendOrders"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Cancelar orden",
-                    "payload":"CancelOrder-"+order.objectId
-                }
-            ]
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
-
+            {
+                "content_type":"text",
+                "title":"Ver órdenes",
+                "payload":"SendOrders"
+            },
+            {
+                "content_type":"text",
+                "title":"Cancelar orden",
+                "payload":"CancelOrder-"+order.objectId
+            }
+        ]);
+    });
 }
 
 function newOrder(recipientId){
@@ -3095,17 +2552,9 @@ function cancelOrder(recipientId, id){
 }
 
 function renderCancelOrder(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "La orden ha sido cancelada."
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "La orden ha sido cancelada.")
+    });
 }
 
 function sendAccount(recipientId){
@@ -3143,38 +2592,15 @@ function renderAccount(recipientId){
         ]
     }];
 
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "attachment":{
-                "type": "template",
-                "payload":{
-                    "template_type": "generic",
-                    "elements": elements
-                }
-            }
-        }
-    };
-
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendGenericMessage(recipientId, elements)
+    });
 }
 
 function renderYouAreWelcome(recipientId){
-    bot.sendTypingOff(recipientId);
-
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "De nada, gracias por usar nuestros servicios"
-        }
-    };
-
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTextMessage(recipientId, "De nada, gracias por usar nuestros servicios")
+    });
 }
 
 function addCreditCard(recipientId, token, data){
@@ -3228,33 +2654,25 @@ function checkSchedulesDeliveryPointSale(recipientId){
 }
 
 function renderShoppingCartOptions(recipientId){
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Opciones del carrito",
-            "quick_replies":[
-                {
-                    "content_type":"text",
-                    "title":"Finalizar pedido",
-                    "payload":"CheckOrder"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Seguir pidiendo",
-                    "payload":"SendContinueOrder"
-                },
-                {
-                    "content_type":"text",
-                    "title":"Borrar carrito",
-                    "payload": "ClearAndSendCart"
-                }
-            ]
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, "Opciones del carrito", [
+            {
+                "content_type":"text",
+                "title":"Finalizar pedido",
+                "payload":"CheckOrder"
+            },
+            {
+                "content_type":"text",
+                "title":"Seguir pidiendo",
+                "payload":"SendContinueOrder"
+            },
+            {
+                "content_type":"text",
+                "title":"Borrar carrito",
+                "payload": "ClearAndSendCart"
+            }
+        ])
+    });
 }
 
 function updateCart(recipientId){
@@ -3276,18 +2694,11 @@ function setPayment(recipientId, id){
 }
 
 function sendRegisterFacebookUser(recipientId){
-    bot.sendTypingOn(recipientId);
-    let messageData = {
-        recipient: {
-            id: recipientId
-        },
-        message: {
-            "text": "Registro exitoso.",
-
-        }
-    };
-    bot.sendTypingOff(recipientId);
-    return bot.callSendAPI(messageData);
+    return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId).then(()=>{
+            return bot.sendTextMessage(recipientId, "Registro exitoso.")
+        })
+    });
 }
 
 bot.app.get('/login', function(req, res) {

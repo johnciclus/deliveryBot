@@ -12,7 +12,7 @@ module.exports = function (config) {
         ],
 
         jspm: {
-            config: 'src/config.js',
+            config: 'config.js',
             loadFiles: [
                 'test/unit/*.spec.js'
             ],
