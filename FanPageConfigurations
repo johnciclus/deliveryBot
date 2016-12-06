@@ -68,7 +68,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "payload":"SendHelp"
     }	
   ]
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAEZCXUHN8RkBACxN9NIi2RpJR8qLQycx7uNKeIlZBZCEjU3gsuugkpfNvIU6OQxiDMIZCpzpXBc6ZAtFQODYJuBsAFIRTilX8IuESrXzNuSTxrhDZA6aMh7tZACD4oh7lGp3K5iMShAX4pptQxqCKgfby55YQCDw0pZCsb5km5sbQZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAAEZCXUHN8RkBABdfz2sEhU6o9dW5c1LkRsfcKFoEjs5bRpFzSgKmHQ22RxyW9OZCZAoQkPebtGBVa06EsVm8WrlKzG5yKyYh2acEvYoVZBUF28N0L0Ylama3OIddqeEZCBv5PYc6fPw98Yto92gDqFgzqiABSpCUoOiuzpDvVAZDZD"
 
 * Delete Persistent Menu *
 

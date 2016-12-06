@@ -335,8 +335,6 @@ bot.app.post('/changeOrderState', function (req, res) {
     res.json({result: 'OK'});
 });
 
-store.dispatch({type: types.APP_LOADED});
-
 function signUp(recipientId, facebookId, conversationToken){
     return User.createUser(store, recipientId, facebookId, conversationToken).then(()=>{
         let userObject = getData(recipientId, 'user');
@@ -450,11 +448,11 @@ function getConsumer(recipientId, user){
     }
 }
 
-function sendSignUp(recipientId) {
+function sendSignUp(recipientId, senderId) {
     let image_url = SERVER_URL+"assets/images/love.jpg";
-    return bot.sendTypingOn(recipientId).then(()=> {
-        return bot.sendTypingOff(recipientId).then(() => {
-            return bot.sendGenericMessage(recipientId, [{
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
+        return bot.sendTypingOff(recipientId, senderId).then(() => {
+            return bot.sendGenericMessage(recipientId, senderId, [{
                 "title": "Hola, soy un Bot",
                 "subtitle": "Soy tu asistente virtual. Quieres registrarte en nuestro sistema?",
                 "image_url": image_url,
@@ -472,14 +470,14 @@ function sendSignUp(recipientId) {
     });
 };
 
-function sendMenu(recipientId) {
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendMenu(recipientId, senderId) {
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId).then(() =>{
             let customer = getData(recipientId, 'customer');
             let user = getData(recipientId, 'user');
             let image_url = customer.image.url;
-            return bot.sendTypingOff(recipientId).then(()=>{
-                return bot.sendGenericMessage(recipientId, [{
+            return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                return bot.sendGenericMessage(recipientId, senderId, [{
                     "title":     "Hola "+user.first_name+", Bienvenido a "+customer.name,
                     "subtitle":  "Aquí puedes pedir un domicilio, escribe o selecciona alguna de las opciones:",
                     "image_url": image_url,
@@ -501,18 +499,18 @@ function sendMenu(recipientId) {
     });
 }
 
-function sendAddressesWithTitle(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=> {
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o seleccionar una de tus direcciones guardadas").then(() => {
-                sendAddresses(recipientId);
+function sendAddressesWithTitle(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendTextMessage(recipientId, senderId, "A cual dirección vas hacer tu pedido?\n\nPuedes escoger entre agregar una nueva dirección o seleccionar una de tus direcciones guardadas").then(() => {
+                sendAddresses(recipientId, senderId);
             });
         });
     });
 }
 
-function sendAddresses(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=> {
+function sendAddresses(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
         authentication(recipientId).then(() => {
             let consumer = getData(recipientId, 'consumer');
 
@@ -560,16 +558,16 @@ function sendAddresses(recipientId){
                     }
                 }
 
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendGenericMessage(recipientId, elements);
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendGenericMessage(recipientId, senderId, elements);
                 });
             });
         });
     });
 }
 
-function sendCreditCards(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendCreditCards(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId).then(() =>{
             let state = store.getState();
             let user = getData(recipientId, 'user');
@@ -617,29 +615,30 @@ function sendCreditCards(recipientId){
                     }
                 }
 
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendGenericMessage(recipientId, elements);
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendGenericMessage(recipientId, senderId, elements);
                 });
             });
         });
     });
 }
 
-function newAddress(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=> {
-        return bot.sendTypingOff(recipientId).then(() => {
+function newAddress(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
+        return bot.sendTypingOff(recipientId, senderId).then(() => {
             bot.setDataBuffer(recipientId, 'addressPayload', 'NewAddress');
-            writeAddress(recipientId);
+            writeAddress(recipientId, senderId);
         });
     });
 }
 
-function writeAddress(recipientId){
+function writeAddress(recipientId, senderId){
     bot.setListener(recipientId, 'address', 'text', addressCheck);
     bot.setListener(recipientId, 'location', 'attachment', setLocationCheck);
 
     return bot.sendQuickReplyMessage(
         recipientId,
+        senderId,
         "Puedes escribir o compartir tu ubicación actual?\n\nEjemplo: Calle 67 #52-20, Medellín.\n\nNo olvides escribir la ciudad al final de la dirección.",
         [{
             "content_type": "location",
@@ -648,28 +647,28 @@ function writeAddress(recipientId){
     );
 }
 
-function sendNullMapMessage(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=> {
-        return bot.sendTypingOff(recipientId).then(() => {
-            return bot.sendTextMessage(recipientId, "La dirección no ha sido encontrada en Google Maps, por favor intenta de nuevo")
+function sendNullMapMessage(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
+        return bot.sendTypingOff(recipientId, senderId).then(() => {
+            return bot.sendTextMessage(recipientId, senderId, "La dirección no ha sido encontrada en Google Maps, por favor intenta de nuevo")
         });
     });
 }
 
-function sendMap(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendMap(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         let userBuffer = bot.buffer[recipientId];
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendImageMessage(recipientId, GOOGLE_MAPS_URL+"?center="+userBuffer.location.lat+","+userBuffer.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+userBuffer.location.lat+","+userBuffer.location.lng+"&key="+GOOGLE_MAPS_KEY).then(()=>{
-                sendMapConfirmation(recipientId);
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendImageMessage(recipientId, senderId, GOOGLE_MAPS_URL+"?center="+userBuffer.location.lat+","+userBuffer.location.lng+"&zoom=16&size=400x400&markers=color:red%7C"+userBuffer.location.lat+","+userBuffer.location.lng+"&key="+GOOGLE_MAPS_KEY).then(()=>{
+                sendMapConfirmation(recipientId, senderId);
             });
         });
     });
 }
 
-function sendMapConfirmation(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendQuickReplyMessage(recipientId, "Es correcta?", [
+function sendMapConfirmation(recipientId, senderId){
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, senderId, "Es correcta?", [
             {
                 "content_type": "text",
                 "title": "Si",
@@ -684,25 +683,26 @@ function sendMapConfirmation(recipientId){
     });
 }
 
-function addressCheck(recipientId){
+function addressCheck(recipientId, senderId){
+    console.log(recipientId +' ' +senderId);
     let userBuffer = bot.buffer[recipientId];
 
     geocoder.geocode(userBuffer.address, (error, data) =>{
         if(!error && data.status == 'OK'){
-            setAddressComponetsInBuffer(recipientId, data.results[0]);
+            setAddressComponetsInBuffer(recipientId, senderId, data.results[0]);
         }
         else{
             console.log('Geocode not found');
             console.log(error);
-            sendNullMapMessage(recipientId).then(()=>{
+            sendNullMapMessage(recipientId, senderId).then(()=>{
                 newAddress(recipientId)
             });
         }
     });
 }
 
-function setAddressComponetsInBuffer(recipientId, data){
-    return bot.sendTypingOn(recipientId).then(()=> {
+function setAddressComponetsInBuffer(recipientId, senderId, data){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
         let userBuffer = bot.buffer[recipientId];
         userBuffer.address = data.formatted_address;
         userBuffer.location = data.geometry.location;
@@ -732,38 +732,38 @@ function setAddressComponetsInBuffer(recipientId, data){
             }
         }
 
-        return bot.sendTypingOff(recipientId).then(() => {
-            return bot.sendTextMessage(recipientId, "Encontré esta dirección en Google Maps:\n\n" + userBuffer.address).then(() => {
-                sendMap(recipientId);
+        return bot.sendTypingOff(recipientId, senderId).then(() => {
+            return bot.sendTextMessage(recipientId, senderId, "Encontré esta dirección en Google Maps:\n\n" + userBuffer.address).then(() => {
+                sendMap(recipientId, senderId);
             });
         });
     });
 }
 
-function setAddressComplement(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=> {
+function setAddressComplement(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
         bot.setListener(recipientId, 'complement', 'text', confirmAddress);
 
-        return bot.sendTypingOff(recipientId).then(() => {
-            return bot.sendTextMessage(recipientId, "Por favor escribe el complemento de tu dirección actual.\n\nEjemplo: Apto 303, edificio el palmar.\n\nNo olvides colocar el nombre del edificio o del barrio");
+        return bot.sendTypingOff(recipientId, senderId).then(() => {
+            return bot.sendTextMessage(recipientId, senderId, "Por favor escribe el complemento de tu dirección actual.\n\nEjemplo: Apto 303, edificio el palmar.\n\nNo olvides colocar el nombre del edificio o del barrio");
         });
     });
 }
 
-function confirmAddress(recipientId){
+function confirmAddress(recipientId, senderId){
     let userBuffer = bot.buffer[recipientId];
     let addressPayload = userBuffer['addressPayload'];
 
     if(addressPayload == 'NewAddress'){
-        return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOn(recipientId, senderId).then(()=>{
             bot.setListener(recipientId, 'address_name', 'text', saveAddress);
-            return bot.sendTypingOff(recipientId).then(()=>{
-                return bot.sendTextMessage(recipientId, "Por favor coloca un nombre a esta dirección para guardarla. \n\nEjemplo: casa, apartamento o oficina");
+            return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                return bot.sendTextMessage(recipientId, senderId, "Por favor coloca un nombre a esta dirección para guardarla. \n\nEjemplo: casa, apartamento o oficina");
             });
         });
     }
     else if(addressPayload.startsWith('EditAddress')){
-        return bot.sendTypingOn(recipientId).then(()=>{
+        return bot.sendTypingOn(recipientId, senderId).then(()=>{
             let data = addressPayload.split('-');
             let location = new Parse.GeoPoint({latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng)});
 
@@ -783,9 +783,9 @@ function confirmAddress(recipientId){
                         delete userBuffer.location;
                         delete userBuffer.complement;
 
-                        return bot.sendTypingOff(recipientId).then(()=>{
-                            return bot.sendTextMessage(recipientId, "La dirección ha sido actualizada.").then(()=>{
-                                setAddress(recipientId, address.id);
+                        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                            return bot.sendTextMessage(recipientId, senderId, "La dirección ha sido actualizada.").then(()=>{
+                                setAddress(recipientId, senderId, address.id);
                             })
                         });
                     },
@@ -798,8 +798,8 @@ function confirmAddress(recipientId){
     }
 }
 
-function saveAddress(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function saveAddress(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         let consumer = getData(recipientId, 'consumer');
         let userBuffer = bot.buffer[recipientId];
         let location = new Parse.GeoPoint({latitude: parseFloat(userBuffer.location.lat), longitude: parseFloat(userBuffer.location.lng)});
@@ -828,9 +828,9 @@ function saveAddress(recipientId){
                 delete userBuffer.complement;
                 delete userBuffer['address_name'];
 
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendTextMessage(recipientId, "La dirección ha sido almacenada.").then(()=>{
-                        setAddress(recipientId, result.id)
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendTextMessage(recipientId, senderId, "La dirección ha sido almacenada.").then(()=>{
+                        setAddress(recipientId, senderId, result.id)
                     })
                 });
             },
@@ -841,15 +841,15 @@ function saveAddress(recipientId){
     });
 }
 
-function setEmail(recipientId){
+function setEmail(recipientId, senderId){
     bot.setListener(recipientId, 'email', 'text', setEmailCheck);
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Por favor escribe tu email:")
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, "Por favor escribe tu email:")
     });
 }
 
-function setEmailCheck(recipientId, value){
+function setEmailCheck(recipientId, senderId, value){
     let userBuffer = bot.buffer[recipientId];
     let consumer = getData(recipientId, 'consumer').rawParseObject;
 
@@ -860,14 +860,14 @@ function setEmailCheck(recipientId, value){
     });
 }
 
-function setTelephone(recipientId){
+function setTelephone(recipientId, senderId){
     bot.setListener(recipientId, 'telephone', 'text', setTelephoneCheck);
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Por favor escribe tu número telefónico:")
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, "Por favor escribe tu número telefónico:")
     });
 }
 
-function setTelephoneCheck(recipientId){
+function setTelephoneCheck(recipientId, senderId){
     let userBuffer = bot.buffer[recipientId];
     let consumer = getData(recipientId, 'consumer').rawParseObject;
 
@@ -878,7 +878,7 @@ function setTelephoneCheck(recipientId){
     });
 }
 
-function setLocationCheck(recipientId){
+function setLocationCheck(recipientId, senderId){
     let userBuffer = bot.buffer[recipientId];
 
     geocoder.reverseGeocode( userBuffer.location.lat, userBuffer.location.lng, (error, data) =>{
@@ -895,8 +895,8 @@ function setLocationCheck(recipientId){
     });
 }
 
-function setAddress(recipientId, id){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function setAddress(recipientId, senderId, id){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         store.dispatch(Actions.setAddress(recipientId, id)).then(() => {
             let address = getData(recipientId, 'address');
 
@@ -905,17 +905,17 @@ function setAddress(recipientId, id){
                     let pointSale = result.pointSale;
 
                     store.dispatch(Actions.setCustomerPointSale(recipientId, pointSale.id)).then(() => {
-                        return bot.sendTypingOff(recipientId).then(()=>{
-                            return bot.sendTextMessage(recipientId, "Perfecto, ya seleccioné tu dirección para este pedido").then(()=>{
-                                sendCategories(recipientId, 0);
+                        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                            return bot.sendTextMessage(recipientId, senderId, "Perfecto, ya seleccioné tu dirección para este pedido").then(()=>{
+                                sendCategories(recipientId, senderId, 0);
                             })
                         });
                     });
                 },
                 function(error) {
                     if(error.code == '141'){
-                        return bot.sendTypingOff(recipientId).then(()=>{
-                            return bot.sendTextMessage(recipientId, "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección").then(()=>{
+                        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                            return bot.sendTextMessage(recipientId, senderId, "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección").then(()=>{
                                 sendAddressesWithTitle(recipientId)
                             });
                         });
@@ -930,21 +930,21 @@ function setAddress(recipientId, id){
     });
 }
 
-function editAddress(recipientId, id){
-    return bot.sendTypingOn(recipientId).then(()=> {
-        return bot.sendTypingOff(recipientId).then(()=>{
+function editAddress(recipientId, senderId, id){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
             bot.setDataBuffer(recipientId, 'addressPayload', 'EditAddress-'+id);
             writeAddress(recipientId);
         });
     });
 }
 
-function removeAddress(recipientId, id){
-    return bot.sendTypingOn(recipientId).then(()=> {
+function removeAddress(recipientId, senderId, id){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
         new Parse.Query(ConsumerAddress).get(id).then((consumerAddress) => {
             consumerAddress.destroy().then(()=>{
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendTextMessage(recipientId, "La dirección ha sido eliminada.").then(()=>{
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendTextMessage(recipientId, senderId, "La dirección ha sido eliminada.").then(()=>{
                         sendAddresses(recipientId);
                     })
                 });
@@ -953,13 +953,13 @@ function removeAddress(recipientId, id){
     });
 }
 
-function removeCreditCard(recipientId, id){
-    return bot.sendTypingOn(recipientId).then(()=> {
+function removeCreditCard(recipientId, senderId, id){
+    return bot.sendTypingOn(recipientId, senderId).then(()=> {
         new Parse.Query(CreditCard).get(id).then((creditCard) => {
             creditCard.destroy().then(() => {
 
-                return bot.sendTypingOff(recipientId).then(() => {
-                    return bot.sendTextMessage(recipientId, "La tarjeta de credito ha sido eliminada.").then(() => {
+                return bot.sendTypingOff(recipientId, senderId).then(() => {
+                    return bot.sendTextMessage(recipientId, senderId, "La tarjeta de credito ha sido eliminada.").then(() => {
                         sendCreditCards(recipientId);
                     });
                 });
@@ -968,8 +968,8 @@ function removeCreditCard(recipientId, id){
     });
 }
 
-function sendCategories(recipientId, index){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendCategories(recipientId, senderId, index){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId).then(()=>{
             Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(function(result){
                 if(result.pointSaleIsOpen) {
@@ -979,12 +979,12 @@ function sendCategories(recipientId, index){
                         index = parseInt(index);
 
                     if(index == 0){
-                        bot.sendTypingOff(recipientId).then(()=>{
-                            bot.sendTextMessage(recipientId, "A continuación te presentamos las categorías de productos disponibles.")
+                        bot.sendTypingOff(recipientId, senderId).then(()=>{
+                            bot.sendTextMessage(recipientId, senderId, "A continuación te presentamos las categorías de productos disponibles.")
                         });
                     }
 
-                    sendCategoriesDetail(recipientId, result.categories, index);
+                    sendCategoriesDetail(recipientId, senderId, result.categories, index);
 
                 }else{
                     sendScheduleRestriction(recipientId, result.pointSaleSchedules);
@@ -1026,7 +1026,7 @@ function splitCategories(recipientId, categories, index){
     return elements;
 }
 
-function sendCategoriesDetail(recipientId, categories, index){
+function sendCategoriesDetail(recipientId, senderId, categories, index){
     let elements = splitCategories(recipientId, categories, index);
     let idx = Object.keys(categories).length;
     let buttons = [];
@@ -1047,18 +1047,18 @@ function sendCategoriesDetail(recipientId, categories, index){
         });
     }
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendGenericMessage(recipientId, elements)
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendGenericMessage(recipientId, senderId, elements)
     });
 }
 
-function sendProducts(recipientId, categoryId, proIdx){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendProducts(recipientId, senderId, categoryId, proIdx){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         proIdx = parseInt(proIdx);
         if(proIdx == 0){
             new Parse.Query(Category).get(categoryId).then(category => {
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendTextMessage(recipientId, "Selecciona "+category.get('name')+":");
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendTextMessage(recipientId, senderId, "Selecciona "+category.get('name')+":");
                 });
             },
             (object, error) => {
@@ -1067,11 +1067,11 @@ function sendProducts(recipientId, categoryId, proIdx){
         }
         Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, category: categoryId }).then(result => {
             if(result.hasOwnProperty('categories')){
-                sendCategoriesDetail(recipientId, result.categories, 0);
+                sendCategoriesDetail(recipientId, senderId, result.categories, 0);
             }else{
                 if(result.products.length == 0){
-                    bot.sendTypingOff(recipientId).then(()=>{
-                        bot.sendQuickReplyMessage(recipientId,
+                    bot.sendTypingOff(recipientId, senderId).then(()=>{
+                        bot.sendQuickReplyMessage(recipientId, senderId,
                             "No existen productos en esta categoría",
                             [{
                                 "content_type": "text",
@@ -1132,7 +1132,7 @@ function splitProducts(recipientId, products, proIdx){
     return elements;
 }
 
-function sendProductsDetail(recipientId, categoryId, products, index){
+function sendProductsDetail(recipientId, senderId, categoryId, products, index){
     let elements = splitProducts(recipientId, products, index);
     let idx = Object.keys(products).length;
     let buttons = [];
@@ -1153,18 +1153,18 @@ function sendProductsDetail(recipientId, categoryId, products, index){
         });
     }
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendGenericMessage(recipientId, elements)
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendGenericMessage(recipientId, senderId, elements)
     });
 }
 
-function createCart(recipientId){
+function createCart(recipientId, senderId){
     let userData = getData(recipientId);
     Object.assign(userData, {'cart': {items: new Map()}});
     return userData.cart;
 }
 
-function addProduct(recipientId, productId){
+function addProduct(recipientId, senderId, productId){
     let cart = getData(recipientId, 'cart');
 
     if(typeof cart == 'undefined'){
@@ -1231,10 +1231,10 @@ function addProduct(recipientId, productId){
     });
 }
 
-function sendAddProductNenu(recipientId, productId){
+function sendAddProductNenu(recipientId, senderId, productId){
     return new Parse.Query(Product).get(productId).then(product => {
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendQuickReplyMessage(recipientId, "El producto " + product.get('name') + " ha sido agregado.\n\nDeseas seguir pidiendo o ver tu carrito?", [
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, senderId, "El producto " + product.get('name') + " ha sido agregado.\n\nDeseas seguir pidiendo o ver tu carrito?", [
                 {
                     "content_type": "text",
                     "title": "Seguir pidiendo",
@@ -1253,15 +1253,15 @@ function sendAddProductNenu(recipientId, productId){
     })
 }
 
-function sendContinueOrder(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        bot.sendTextMessage(recipientId, "Puedes escribir el nombre de un producto, ej: Ensalada mediterranea, o seleccionarlo en el siguiente menú:").then(()=>{
-            sendCategories(recipientId, 0);
+function sendContinueOrder(recipientId, senderId){
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        bot.sendTextMessage(recipientId, senderId, "Puedes escribir el nombre de un producto, ej: Ensalada mediterranea, o seleccionarlo en el siguiente menú:").then(()=>{
+            sendCategories(recipientId, senderId, 0);
         })
     });
 }
 
-function sendModifierMenu(recipientId, productId, modifier, items){
+function sendModifierMenu(recipientId, senderId, productId, modifier, items){
     let quick_replies = [];
 
     items.forEach(function (item){
@@ -1274,12 +1274,12 @@ function sendModifierMenu(recipientId, productId, modifier, items){
         }
     });
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendQuickReplyMessage(recipientId, "Escoge " + modifier.name + ":", quick_replies)
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendQuickReplyMessage(recipientId, senderId, "Escoge " + modifier.name + ":", quick_replies)
     })
 }
 
-function addModifier(recipientId, productId, modifierId, itemId){
+function addModifier(recipientId, senderId, productId, modifierId, itemId){
     let cart = getData(recipientId, 'cart');
     let items = cart.items;
     let item = items.get(productId);
@@ -1317,7 +1317,7 @@ function addModifier(recipientId, productId, modifierId, itemId){
 
 }
 
-function checkModifiers(recipientId, productId, modifiers){
+function checkModifiers(recipientId, senderId, productId, modifiers){
     let cart = getData(recipientId, 'cart');
     let items = cart.items;
     let item = items.get(productId);
@@ -1340,7 +1340,7 @@ function checkModifiers(recipientId, productId, modifiers){
     return result;
 }
 
-function checkModifiersComplete(recipientId, productId, modifiers){
+function checkModifiersComplete(recipientId, senderId, productId, modifiers){
     let cart = getData(recipientId, 'cart');
     let items = cart.items;
     let item = items.get(productId);
@@ -1370,7 +1370,7 @@ function checkModifiersComplete(recipientId, productId, modifiers){
 
 }
 
-function removeProduct(recipientId, productId){
+function removeProduct(recipientId, senderId, productId){
     let cart = getData(recipientId, 'cart');
     if(cart == undefined){
         cart = createCart(recipientId);
@@ -1404,7 +1404,7 @@ function removeProduct(recipientId, productId){
     });
 }
 
-function increaseOneProduct(recipientId, productId){
+function increaseOneProduct(recipientId, senderId, productId){
     let cart = getData(recipientId, 'cart');
 
     if(cart == undefined){
@@ -1429,7 +1429,7 @@ function increaseOneProduct(recipientId, productId){
     });
 }
 
-function decreaseOneProduct(recipientId, productId){
+function decreaseOneProduct(recipientId, senderId, productId){
     let cart = getData(recipientId, 'cart');
 
     if(cart == undefined){
@@ -1459,13 +1459,13 @@ function decreaseOneProduct(recipientId, productId){
     }
 }
 
-function sendProductDescription(recipientId, productId){
+function sendProductDescription(recipientId, senderId, productId){
     let product = new Product();
 
     new Parse.Query(product).get(productId).then(
         product => {
-            return bot.sendTypingOff(recipientId).then(()=>{
-                return bot.sendQuickReplyMessage(recipientId, product.get('name')+": "+product.get('description'), [
+            return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                return bot.sendQuickReplyMessage(recipientId, senderId, product.get('name')+": "+product.get('description'), [
                     {
                         "content_type":"text",
                         "title":"Agregar",
@@ -1490,7 +1490,7 @@ function sendProductDescription(recipientId, productId){
     );
 }
 
-function saveCart(recipientId){
+function saveCart(recipientId, senderId){
     let consumerCart = new Cart();
     let consumer = getData(recipientId, 'consumer');
     let address = getData(recipientId, 'address');
@@ -1566,7 +1566,7 @@ function saveCart(recipientId){
     });
 }
 
-function saveOrder(recipientId){
+function saveOrder(recipientId, senderId){
     getOrderState(0).then(state=>{
         let order = new Order();
         let consumer = getData(recipientId, 'consumer');
@@ -1609,10 +1609,10 @@ function saveOrder(recipientId){
     });
 }
 
-function sendPurchaseOptions(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendQuickReplyMessage(recipientId, "Tenemos las siguientes opciones disponibles:", [
+function sendPurchaseOptions(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, senderId, "Tenemos las siguientes opciones disponibles:", [
                 {
                     "content_type":"text",
                     "title":"Ver categorias",
@@ -1628,10 +1628,10 @@ function sendPurchaseOptions(recipientId){
     });
 }
 
-function sendEmptyCartOptions(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendQuickReplyMessage(recipientId, "Tenemos las siguientes opciones disponibles:", [
+function sendEmptyCartOptions(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, senderId, "Tenemos las siguientes opciones disponibles:", [
                 {
                     "content_type":"text",
                     "title":"Ver categorias",
@@ -1647,8 +1647,8 @@ function sendEmptyCartOptions(recipientId){
     });
 }
 
-function sendCart(recipientId){
-    bot.sendTypingOn(recipientId).then(()=>{
+function sendCart(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId).then( () =>{
             let user = getData(recipientId, 'user');
             let customer = getData(recipientId, 'customer');
@@ -1675,8 +1675,8 @@ function sendCart(recipientId){
             let image_url;
 
             if(orderLimit == 0){
-                bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendTextMessage(recipientId, "Tu carrito de compras está vacío.").then(()=>{
+                bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendTextMessage(recipientId, senderId, "Tu carrito de compras está vacío.").then(()=>{
                         sendEmptyCartOptions(recipientId);
                     })
                 });
@@ -1720,7 +1720,7 @@ function sendCart(recipientId){
     });
 }
 
-function sendCartReceipt(recipientId, cartId, elements, total){
+function sendCartReceipt(recipientId, senderId, cartId, elements, total){
     let user = getData(recipientId, 'user');
     let consumer = getData(recipientId, 'consumer');
     let address = getData(recipientId, 'address');
@@ -1743,7 +1743,7 @@ function sendCartReceipt(recipientId, cartId, elements, total){
         }
     }
 
-    return bot.sendTypingOff(recipientId).then(()=>{
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
         return bot.sendReceiptMessage(recipientId, {
             template_type: "receipt",
             recipient_name: user.first_name+" "+user.last_name,
@@ -1785,8 +1785,8 @@ function sendCartReceipt(recipientId, cartId, elements, total){
 
 }
 
-function sendCartDetails(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendCartDetails(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         let cart = getData(recipientId, 'cart');
         let customer = getData(recipientId, 'customer');
         let consumer = getData(recipientId, 'consumer');
@@ -1829,8 +1829,8 @@ function sendCartDetails(recipientId){
         });
 
         return Parse.Promise.when(promises).then(function(elements) {
-            return bot.sendTypingOff(recipientId).then(()=>{
-                return bot.sendGenericMessage(recipientId, elements).then(()=>{
+            return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                return bot.sendGenericMessage(recipientId, senderId, elements).then(()=>{
                     sendEditCartOptions(recipientId)
                 });
             });
@@ -1838,8 +1838,8 @@ function sendCartDetails(recipientId){
     });
 }
 
-function sendEditCartOptions(recipientId){
-    return bot.sendQuickReplyMessage(recipientId, "Opciones del carrito:", [
+function sendEditCartOptions(recipientId, senderId){
+    return bot.sendQuickReplyMessage(recipientId, senderId, "Opciones del carrito:", [
         {
             "content_type":"text",
             "title":"Finalizar pedido",
@@ -1853,12 +1853,12 @@ function sendEditCartOptions(recipientId){
     ]);
 }
 
-function editCart(recipientId){
+function editCart(recipientId, senderId){
     let cart = getData(recipientId, 'cart');
 
-    bot.sendTypingOn(recipientId);
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendGenericMessage(recipientId, [
+    bot.sendTypingOn(recipientId, senderId);
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendGenericMessage(recipientId, senderId, [
             {
                 "title": "Opciones",
                 "image_url": SERVER_URL+"assets/thinking.jpg",
@@ -1877,7 +1877,7 @@ function editCart(recipientId){
 
 }
 
-function clearCart(recipientId){
+function clearCart(recipientId, senderId){
     let cart = getData(recipientId, 'cart');
 
     if(typeof cart != 'undefined'){
@@ -1893,13 +1893,13 @@ function clearCart(recipientId){
     });
 }
 
-function clearAndSendCart(recipientId){
+function clearAndSendCart(recipientId, senderId){
     clearCart(recipientId).then(()=>{
         sendCart(recipientId)
     });
 }
 
-function checkOrder(recipientId){
+function checkOrder(recipientId, senderId){
     let cart = getData(recipientId, 'cart');
     let consumer = getData(recipientId, 'consumer');
     let pointSale = getData(recipientId, 'pointSale');
@@ -1924,12 +1924,12 @@ function checkOrder(recipientId){
 
 }
 
-function checkAddress(recipientId){
+function checkAddress(recipientId, senderId){
 
 }
 
-function checkPayment(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function checkPayment(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         store.dispatch(Actions.loadPaymentMethods(recipientId)).then(() => {
             let paymentMethods = getData(recipientId, 'paymentMethods');
             let quick_replies = [];
@@ -1943,15 +1943,15 @@ function checkPayment(recipientId){
                 });
             }
 
-            return bot.sendTypingOff(recipientId).then(()=>{
-                return bot.sendQuickReplyMessage(recipientId, "Como vas a pagar tu pedido? (Tu pedido se cobra cuando lo recibes)", quick_replies)
+            return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                return bot.sendQuickReplyMessage(recipientId, senderId, "Como vas a pagar tu pedido? (Tu pedido se cobra cuando lo recibes)", quick_replies)
             });
         });
     });
 }
 
-function checkout(recipientId, id){
-    bot.sendTypingOn(recipientId);
+function checkout(recipientId, senderId, id){
+    bot.sendTypingOn(recipientId, senderId);
 
     store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(() => {
         let state = store.getState();
@@ -1963,17 +1963,17 @@ function checkout(recipientId, id){
     });
 }
 
-function sendMinOrderPriceRestriction(recipientId){
+function sendMinOrderPriceRestriction(recipientId, senderId){
     let pointSale = getData(recipientId, 'pointSale');
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "El valor minimo de una orden con domicilio es "+pointSale.minOrderPrice+", \npor favor modifica tu pedido para cumplir este requisito").then(()=>{
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, "El valor minimo de una orden con domicilio es "+pointSale.minOrderPrice+", \npor favor modifica tu pedido para cumplir este requisito").then(()=>{
             sendPurchaseOptions(recipientId);
         })
     });
 }
 
-function sendScheduleRestriction(recipientId, pointSaleSchedules){
+function sendScheduleRestriction(recipientId, senderId, pointSaleSchedules){
     let pointSale = getData(recipientId, 'pointSale');
 
     let days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
@@ -2002,33 +2002,33 @@ function sendScheduleRestriction(recipientId, pointSaleSchedules){
         text +="\n"
     }
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, text).then(()=>{
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, text).then(()=>{
             sendMenu(recipientId)
         });
     });
 }
 
-function sendCash(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendCash(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         let paymentMethod = getData(recipientId, 'paymentMethod');
         saveCart(recipientId);
 
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "Se ha registrado el pago con "+paymentMethod.name ).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendTextMessage(recipientId, senderId, "Se ha registrado el pago con "+paymentMethod.name ).then(()=>{
                 orderConfirmation(recipientId);
             })
         });
     });
 }
 
-function registerCreditCard(recipientId){
-    bot.sendTypingOn(recipientId);
+function registerCreditCard(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId);
     authentication(recipientId).then( () => {
         let consumer = getData(recipientId, 'consumer');
 
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendGenericMessage(recipientId, [{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendGenericMessage(recipientId, senderId, [{
                 "title": "Registro de tarjeta de credito y finalización de tu pedido.\n\nEstas de acuerdo?",
                 "image_url": SERVER_URL + "assets/images/creditCards.jpg",
                 "subtitle": "Por razones de seguridad te redireccionaremos a una página web segura.",
@@ -2050,18 +2050,18 @@ function registerCreditCard(recipientId){
     });
 }
 
-function registerCreditCardAndPay(recipientId){
+function registerCreditCardAndPay(recipientId, senderId){
     bot.setDataBuffer(recipientId, 'creditCardPayload', 'SendCreditCards');
 
     registerCreditCard(recipientId)
 }
 
-function cancelRegisterCreditCard(recipientId){
-    bot.sendTypingOn(recipientId).then(()=>{
+function cancelRegisterCreditCard(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId).then(()=>{
         let userBuffer = bot.buffer[recipientId];
 
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "Si no ingresas los datos de tu tarjeta en nuestro sitio seguro, no podras comprar con tarjeta online").then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendTextMessage(recipientId, senderId, "Si no ingresas los datos de tu tarjeta en nuestro sitio seguro, no podras comprar con tarjeta online").then(()=>{
                 if (typeof userBuffer != 'undefined' && userBuffer.hasOwnProperty('creditCardPayload')) {
                     checkPayment(recipientId);
                 }
@@ -2073,16 +2073,16 @@ function cancelRegisterCreditCard(recipientId){
     });
 }
 
-function sendRegisteredCreditCards(recipientId){
-    bot.sendTypingOn(recipientId).then(()=>{
+function sendRegisteredCreditCards(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId).then(()=>{
         let user = getData(recipientId, 'user');
         let consumer = getData(recipientId, 'consumer');
 
         CreditCard.loadInStore(store, recipientId, user).then(() => {
             let creditCards = getData(recipientId, 'creditCards');
             if (creditCards.length == 0) {
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendQuickReplyMessage(recipientId, "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?", [
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendQuickReplyMessage(recipientId, senderId, "Aun no tienes tarjetas registradas, deseas registrar una tarjeta?", [
                         {
                             "content_type":"text",
                             "title":"Si",
@@ -2116,58 +2116,58 @@ function sendRegisteredCreditCards(recipientId){
                     }
                 }
 
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendQuickReplyMessage(recipientId, "Con cual tarjeta quieres pagar?", quick_replies)
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendQuickReplyMessage(recipientId, senderId, "Con cual tarjeta quieres pagar?", quick_replies)
                 });
             }
         });
     });
 }
 
-function payWithCreditCard(recipientId, creditCardId){
-    bot.sendTypingOn(recipientId);
+function payWithCreditCard(recipientId, senderId, creditCardId){
+    bot.sendTypingOn(recipientId, senderId);
 
     orderConfirmation(recipientId)
 }
 
-function orderConfirmation(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function orderConfirmation(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         saveOrder(recipientId);
         getOrderState(0).then(state=> {
-            return bot.sendTypingOff(recipientId).then(() => {
-                return bot.sendTextMessage(recipientId, state.messagePush + "\n\nEn un momento te estaremos dando información en tiempo real sobre tu pedido")
+            return bot.sendTypingOff(recipientId, senderId).then(() => {
+                return bot.sendTextMessage(recipientId, senderId, state.messagePush + "\n\nEn un momento te estaremos dando información en tiempo real sobre tu pedido")
             });
         });
     });
 }
 
-function orderState(recipientId){
-    bot.sendTypingOn(recipientId);
+function orderState(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId);
 
     orderSent(recipientId)
 }
 
-function orderSent(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "Buenas noticias, Tu pedido ha sido Enviado. \n\nHaz click en el mapa para vel tu pedido").then(()=>{
+function orderSent(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendTextMessage(recipientId, senderId, "Buenas noticias, Tu pedido ha sido Enviado. \n\nHaz click en el mapa para vel tu pedido").then(()=>{
                 sendserviceRating(recipientId);
             })
         });
     });
 }
 
-function sendOrderState(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
+function sendOrderState(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         let orderState = getData(recipientId, 'orderState');
         let pointSale = getData(recipientId, 'pointSale');
 
-        return bot.sendTypingOff(recipientId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
             if(orderState.order == 1){
-                return bot.sendTextMessage(recipientId, "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente "+pointSale.deliveryTime+" minutos")
+                return bot.sendTextMessage(recipientId, senderId, "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente "+pointSale.deliveryTime+" minutos")
             }
             else if(orderState.order == 5){
-                return bot.sendTextMessage(recipientId, orderState.messagePush).then(()=>{
+                return bot.sendTextMessage(recipientId, senderId, orderState.messagePush).then(()=>{
                     sendserviceRating(recipientId);
                 });
             }
@@ -2177,18 +2177,18 @@ function sendOrderState(recipientId){
                 });
             }
             else{
-                return bot.sendTypingOff(recipientId).then(()=>{
-                    return bot.sendTextMessage(recipientId, orderState.messagePush)
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    return bot.sendTextMessage(recipientId, senderId, orderState.messagePush)
                 });
             }
         });
     });
 }
 
-function sendserviceRating(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendQuickReplyMessage(recipientId, "Califica tu experiencia para ayudarnos a mejorar. \n\nDe 1 a 5 cuantas extrellas merece nuestro servicio?", [
+function sendserviceRating(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendQuickReplyMessage(recipientId, senderId, "Califica tu experiencia para ayudarnos a mejorar. \n\nDe 1 a 5 cuantas extrellas merece nuestro servicio?", [
                 {
                     "content_type":"text",
                     "title":"5 (Excelente)",
@@ -2219,12 +2219,12 @@ function sendserviceRating(recipientId){
     });
 }
 
-function setScore(recipientId, score){
+function setScore(recipientId, senderId, score){
     let order = getData(recipientId, 'order');
-    return bot.sendTypingOn(recipientId).then(()=>{
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
         Parse.Cloud.run('rateOrder', { orderId: order.objectId, score: Number(score), comment: ''}).then(
             function(result){
-                return bot.sendTypingOff(recipientId).then(()=>{
+                return bot.sendTypingOff(recipientId, senderId).then(()=>{
                     thank(recipientId)
                 });
             },
@@ -2237,16 +2237,16 @@ function setScore(recipientId, score){
 
 }
 
-function thank(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "Gracias, esperamos tener el gusto de atenderle nuevamente")
+function thank(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendTextMessage(recipientId, senderId, "Gracias, esperamos tener el gusto de atenderle nuevamente")
         });
     });
 }
 
-function searchProducts(recipientId, query, index){
-    bot.sendTypingOn(recipientId);
+function searchProducts(recipientId, senderId, query, index){
+    bot.sendTypingOn(recipientId, senderId);
 
     Parse.Cloud.run('search', { businessId: BUSINESS_ID, q: query }).then(
         function(result){
@@ -2254,7 +2254,7 @@ function searchProducts(recipientId, query, index){
                 renderSearchEmpty(recipientId);
             }
             else if(result.length == 1 && result[0].type == 'Category'){
-                sendProducts(recipientId, result[0].id, 0)
+                sendProducts(recipientId, senderId, result[0].id, 0)
             }
             else{
                 if(index == undefined)
@@ -2264,7 +2264,7 @@ function searchProducts(recipientId, query, index){
 
                 if(index == 0){
                     renderSearchInitial(recipientId);
-                    bot.sendTypingOn(recipientId);
+                    bot.sendTypingOn(recipientId, senderId);
                 }
 
                 splitSearchResult(recipientId, result, index).then(elements => {
@@ -2287,8 +2287,8 @@ function searchProducts(recipientId, query, index){
                         });
                     }
 
-                    return bot.sendTypingOff(recipientId).then(()=>{
-                        return bot.sendGenericMessage(recipientId, elements)
+                    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                        return bot.sendGenericMessage(recipientId, senderId, elements)
                     });
                 });
             }
@@ -2300,19 +2300,19 @@ function searchProducts(recipientId, query, index){
     );
 }
 
-function renderSearchInitial(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "Se han encontrado los siguientes productos:")
+function renderSearchInitial(recipientId, senderId){
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, "Se han encontrado los siguientes productos:")
     });
 }
 
-function renderSearchEmpty(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "No se han encontrado productos que coincidan")
+function renderSearchEmpty(recipientId, senderId){
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, "No se han encontrado productos que coincidan")
     })
 }
 
-function splitSearchResult(recipientId, products, index){
+function splitSearchResult(recipientId, senderId, products, index){
     let customer = getData(recipientId, 'customer');
     let image_url;
     let idx = 0;
@@ -2356,29 +2356,29 @@ function splitSearchResult(recipientId, products, index){
     //    subtitle: item.get('description'),
 }
 
-function sendHelp(recipientId){
-    bot.sendTypingOn(recipientId);
+function sendHelp(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId);
     renderHelp(recipientId).then(()=>{
         sendContactUs(recipientId);
     });
 }
 
-function renderHelp(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "InOut Bot.\n\nTe permite visualizar las opciones de productos, agregarlos al carrito y realizar tu compra por medio del chat de facebook.\n\nFuncionalidades disponibles: \n\n'Hola', para iniciar la conversación\n'Pedir Domicilio', si quieres realizar un domicilio\n'Carrito', para ver el estado actual de tu carrito")
+function renderHelp(recipientId, senderId){
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, "InOut Bot.\n\nTe permite visualizar las opciones de productos, agregarlos al carrito y realizar tu compra por medio del chat de facebook.\n\nFuncionalidades disponibles: \n\n'Hola', para iniciar la conversación\n'Pedir Domicilio', si quieres realizar un domicilio\n'Carrito', para ver el estado actual de tu carrito")
     });
 }
 
-function sendContactUs(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, " Para mayor información puedes contactarnos en:\n\n Web: http://www.inoutdelivery.com/\n\n Email: soporte@inoutdelivery.com")
+function sendContactUs(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendTextMessage(recipientId, senderId, " Para mayor información puedes contactarnos en:\n\n Web: http://www.inoutdelivery.com/\n\n Email: soporte@inoutdelivery.com")
         });
     });
 }
 
-function sendOrders(recipientId){
-    bot.sendTypingOn(recipientId);
+function sendOrders(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId);
 
     authentication(recipientId).then( () =>{
         let consumer = getData(recipientId, 'consumer');
@@ -2393,7 +2393,7 @@ function sendOrders(recipientId){
     });
 }
 
-function renderOrders(recipientId){
+function renderOrders(recipientId, senderId){
     let customer = getData(recipientId, 'customer');
     let orders = getData(recipientId, 'orders');
     let elements = [];
@@ -2437,13 +2437,13 @@ function renderOrders(recipientId){
         }
     }
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendGenericMessage(recipientId, elements)
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendGenericMessage(recipientId, senderId, elements)
     });
 }
 
-function sendOrder(recipientId, id){
-    bot.sendTypingOn(recipientId);
+function sendOrder(recipientId, senderId, id){
+    bot.sendTypingOn(recipientId, senderId);
     authentication(recipientId).then( () =>{
         let orders = getData(recipientId, 'orders');
         let customer = getData(recipientId, 'customer');
@@ -2482,7 +2482,7 @@ function sendOrder(recipientId, id){
     });
 }
 
-function renderOrder(recipientId, order, elements){
+function renderOrder(recipientId, senderId, order, elements){
     let user = getData(recipientId, 'user');
     let consumer = getData(recipientId, 'consumer');
     let address = order.consumerAddress;
@@ -2505,7 +2505,7 @@ function renderOrder(recipientId, order, elements){
         }
     }
 
-    return bot.sendTypingOff(recipientId).then(()=>{
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
         return bot.sendReceiptMessage(recipientId, {
             template_type: "receipt",
             recipient_name: user.first_name+" "+user.last_name,
@@ -2541,7 +2541,7 @@ function renderOrder(recipientId, order, elements){
     });
 }
 
-function newOrder(recipientId){
+function newOrder(recipientId, senderId){
     clearCart(recipientId).then(()=>{
         sendCart(recipientId);
         sendAddressesWithTitle(recipientId);
@@ -2549,7 +2549,7 @@ function newOrder(recipientId){
 
 }
 
-function cancelOrder(recipientId, id){
+function cancelOrder(recipientId, senderId, id){
     Parse.Cloud.run('changeStatusOrder', { status: "canceledByUser", orderId: id}).then( () => {
         renderCancelOrder(recipientId).then(()=>{
             sendOrders(recipientId);
@@ -2560,21 +2560,21 @@ function cancelOrder(recipientId, id){
     });
 }
 
-function renderCancelOrder(recipientId){
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendTextMessage(recipientId, "La orden ha sido cancelada.")
+function renderCancelOrder(recipientId, senderId){
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendTextMessage(recipientId, senderId, "La orden ha sido cancelada.")
     });
 }
 
-function sendAccount(recipientId){
-    bot.sendTypingOn(recipientId);
+function sendAccount(recipientId, senderId){
+    bot.sendTypingOn(recipientId, senderId);
 
     authentication(recipientId).then( ()=> {
         renderAccount(recipientId)
     });
 }
 
-function renderAccount(recipientId){
+function renderAccount(recipientId, senderId){
     let user = getData(recipientId, 'user');
     let consumer = getData(recipientId, 'consumer');
     let elements = [{
@@ -2601,20 +2601,20 @@ function renderAccount(recipientId){
         ]
     }];
 
-    return bot.sendTypingOff(recipientId).then(()=>{
-        return bot.sendGenericMessage(recipientId, elements)
+    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+        return bot.sendGenericMessage(recipientId, senderId, elements)
     });
 }
 
-function sendYouAreWelcome(recipientId){
-    return bot.sendTypingOn(recipientId).then(()=>{
-        return bot.sendTypingOff(recipientId).then(()=>{
-            return bot.sendTextMessage(recipientId, "De nada, gracias por usar nuestros servicios")
+function sendYouAreWelcome(recipientId, senderId){
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendTextMessage(recipientId, senderId, "De nada, gracias por usar nuestros servicios")
         });
     });
 }
 
-function addCreditCard(recipientId, token, data){
+function addCreditCard(recipientId, senderId, token, data){
     console.log('addCreditCard');
     let expiration = data['expiry'].replace(/\s+/g,"").split('/');
 
@@ -2654,3 +2654,5 @@ function getOrderState(orderStateNumber){
 }
 
 module.exports = {store, getData}
+
+store.dispatch({type: types.APP_LOADED});

@@ -27,6 +27,19 @@ const REDIRECT_URI = (process.env.REDIRECT_URI) ? (process.env.REDIRECT_URI) : c
 
 const limit = 9;
 
+const commerces = {
+    1329140110447050: {
+        "name": "Speedy",
+        "BUSINESS_ID": "com.inoutdelivery.oxxo",
+        "PAGE_ACCESS_TOKEN": "EAACmGsSpx0UBAFFMieBuZAUkzuFfLoALZCxNKMZBvxu0yBzrqpEALX4koiwqBtw95SZApwClpz2VA4WJEeMyXVfQP2ws0gfuYWTYRD9ulRIAjV6p6TO45u4g1KPn495D5Itus5ennDIGaM9OVUjBxZAaHdhzIlcgdZC8HpgZCm0IAZDZD"
+    },
+    1242177029183121: {
+        "name": "InOut Bot Demo",
+        "BUSINESS_ID": "com.inoutdelivery.inoutdemo",
+        "PAGE_ACCESS_TOKEN": "EAAEZCXUHN8RkBACxN9NIi2RpJR8qLQycx7uNKeIlZBZCEjU3gsuugkpfNvIU6OQxiDMIZCpzpXBc6ZAtFQODYJuBsAFIRTilX8IuESrXzNuSTxrhDZA6aMh7tZACD4oh7lGp3K5iMShAX4pptQxqCKgfby55YQCDw0pZCsb5km5sbQZDZD"
+    }
+};
+
 if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
     console.error("Missing config values");
     process.exit(1);
@@ -93,6 +106,7 @@ function receivedAuthentication(event) {
     // plugin.
 
     senderID = parseInt(senderID);
+    recipientID = parseInt(recipientID);
     let passThroughParam = event.optin.ref;
 
     console.log("Received authentication for user %d and page %d with pass " +
@@ -101,7 +115,7 @@ function receivedAuthentication(event) {
 
     // When an authentication is received, we'll send a message back to the sender
     // to let them know it was successful.
-    sendTextMessage(senderID, "Authentication successful");
+    sendTextMessage(senderID, recipientID, "Authentication successful");
 }
 
 /*
@@ -138,6 +152,7 @@ function receivedMessage(event) {
     let quickReply = message.quick_reply;
 
     senderID = parseInt(senderID);
+    recipientID = parseInt(recipientID);
 
     if (isEcho) {
         // Just logging message echoes to console
@@ -157,26 +172,26 @@ function receivedMessage(event) {
             //console.log(typeof senderID);
             if(typeof payloadFunction == 'function'){
                 if(params.length == 4) {
-                    payloadFunction(senderID, params[1], params[2], params[3]);
+                    payloadFunction(senderID, recipientID, params[1], params[2], params[3]);
                 }
                 else if(params.length == 3) {
-                    payloadFunction(senderID, params[1], params[2]);
+                    payloadFunction(senderID, recipientID, params[1], params[2]);
                 }
                 else{
-                    payloadFunction(senderID, params[1]);
+                    payloadFunction(senderID, recipientID, params[1]);
                 }
             }
         }else{
             payloadFunction = payloadRules.get(quickReplyPayload)
 
             if(payloadFunction){
-                payloadFunction(senderID);
+                payloadFunction(senderID, recipientID);
             }
-            /*
-             payloadFunction = findKeyStartsWith(payloadRules, quickReplyPayload);
-             if(payloadFunction){
-             payloadFunction(senderID);
-             }*/
+
+            //payloadFunction = findKeyStartsWith(payloadRules, quickReplyPayload);
+            //if(payloadFunction){
+            //payloadFunction(senderID, recipientID);
+            //}
         }
         //sendTextMessage(senderID, "Quick reply tapped");
 
@@ -206,7 +221,7 @@ function receivedMessage(event) {
                 //console.log(key);
                 if(userListeners[key].type == 'text'){
                     buffer[senderID][key] = messageText;
-                    userListeners[key].callback(senderID);
+                    userListeners[key].callback(senderID, recipientID);
                     existRule = true;
                 }
                 delete userListeners[key];
@@ -216,9 +231,9 @@ function receivedMessage(event) {
         else{
             messageText = messageText.toLowerCase()
 
-            rules.forEach(function (value, key){
+            rules.forEach(function (func, key){
                 if(messageText.includes(key)){
-                    value(senderID);
+                    func(senderID, recipientID);
                     existRule = true;
                 }
             });
@@ -227,81 +242,9 @@ function receivedMessage(event) {
         if(!existRule){
             //console.log(messageText);
             //console.log(defaultSearch);
-            defaultSearch(senderID, messageText);
+            defaultSearch(senderID, recipientID, messageText);
         }
-        /*
 
-
-         switch (messageText) {
-         case 'image':
-         sendImageMessage(senderID);
-         break;
-
-         case 'gif':
-         sendGifMessage(senderID);
-         break;
-
-         case 'audio':
-         sendAudioMessage(senderID);
-         break;
-
-         case 'video':
-         sendVideoMessage(senderID);
-         break;
-
-         case 'file':
-         sendFileMessage(senderID);
-         break;
-
-         case 'button':
-         sendButtonMessage(senderID);
-         break;
-
-         case 'generic':
-         sendGenericMessage(senderID);
-         break;
-
-         case 'receipt':
-         sendReceiptMessage(senderID);
-         break;
-
-         case 'quick reply':
-         sendQuickReply(senderID);
-         break;
-
-         case 'read receipt':
-         sendReadReceipt(senderID);
-         break;
-
-         case 'typing on':
-         sendTypingOn(senderID);
-         break;
-
-         case 'typing off':
-         sendTypingOff(senderID);
-         break;
-
-         case 'account linking':
-         sendAccountLinking(senderID);
-         break;
-
-         default:
-         sendTextMessage(senderID, messageText);
-         }
-         /*
-         if (messageText.indexOf("hola") > -1){
-         sendMenuMessage(senderID);
-         }
-         else if (messageText.indexOf("buenos dias") > -1){
-         sendMenuMessage(senderID);
-         }
-         else if (messageText.indexOf("menu del dia") > -1){
-         sendMenuMessage(senderID);
-         }
-         else if (messageText.indexOf("cuenta") > -1){
-         sendBillMessage(senderID);
-         }
-         */
     }
     else if (messageAttachments) {
         if(messageAttachments[0].type == 'location'){
@@ -320,7 +263,7 @@ function receivedMessage(event) {
                     //console.log(key);
                     if(userListeners[key].type == 'attachment'){
                         buffer[senderID][key] = {lat: location.lat, lng: location.long};
-                        userListeners[key].callback(senderID);
+                        userListeners[key].callback(senderID, recipientID);
                     }
                     delete userListeners[key]
                     key = keys.shift();
@@ -348,6 +291,7 @@ function receivedDeliveryConfirmation(event) {
     let sequenceNumber = delivery.seq;
 
     senderID = parseInt(senderID);
+    recipientID = parseInt(recipientID);
 
     if (messageIDs) {
         messageIDs.forEach(function(messageID) {
@@ -385,6 +329,7 @@ function receivedPostback(event) {
 
     payloadFunction = payloadRules.get(params[0]);
     senderID = parseInt(senderID);
+    recipientID = parseInt(recipientID);
 
     //console.log(senderID);
     //console.log(typeof senderID);
@@ -392,13 +337,13 @@ function receivedPostback(event) {
     if(payloadFunction){
         switch (params.length){
             case 1:
-                payloadFunction(senderID);
+                payloadFunction(senderID, recipientID);
                 break;
             case 2:
-                payloadFunction(senderID, params[1]);
+                payloadFunction(senderID, recipientID, params[1]);
                 break;
             case 3:
-                payloadFunction(senderID, params[1], params[2]);
+                payloadFunction(senderID, recipientID, params[1], params[2]);
                 break;
             default:
                 console.log('Payload not found: '+params)
@@ -451,6 +396,7 @@ function receivedMessageRead(event) {
     let sequenceNumber = event.read.seq;
 
     senderID = parseInt(senderID);
+    recipientID = parseInt(recipientID);
 
     console.log("Received message read event for watermark %d and sequence " +
         "number %d", watermark, sequenceNumber);
@@ -472,6 +418,7 @@ function receivedAccountLink(event) {
     let authCode = event.account_linking.authorization_code;
 
     senderID = parseInt(senderID);
+    recipientID = parseInt(recipientID);
 
     console.log("Received account link event with for user %d with status %s " +
         "and auth code %s ", senderID, status, authCode);
@@ -482,16 +429,22 @@ function receivedAccountLink(event) {
  * get the message id in a response
  *
  */
-function callSendAPI(messageData) {
-    return rp({
-        uri: FACEBOOK_GRAPH+'me/messages',
-        qs: { access_token: PAGE_ACCESS_TOKEN },
-        method: 'POST',
-        json: messageData
-    }).catch(error =>{
-        console.log('error');
-        console.log(error);
-    });
+function callSendAPI(messageData, senderId) {
+    if(commerces.hasOwnProperty(senderId)){
+        return rp({
+            uri: FACEBOOK_GRAPH+'me/messages',
+            qs: { access_token: commerces[senderId].PAGE_ACCESS_TOKEN },
+            method: 'POST',
+            json: messageData
+        }).catch(error =>{
+            console.log('error');
+            console.log(error);
+        });
+    }
+    else{
+        console.log('Error: senderId not found: '+senderId)
+        console.log(messageData);
+    }
 }
 
 function testAPI(){
@@ -513,7 +466,7 @@ function testAPI(){
  * Turn typing indicator on
  *
  */
-function sendTypingOn(recipientId) {
+function sendTypingOn(recipientId, senderId) {
     //console.log("Turning typing indicator on");
 
     let messageData = {
@@ -523,14 +476,14 @@ function sendTypingOn(recipientId) {
         sender_action: "typing_on"
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Turn typing indicator off
  *
  */
-function sendTypingOff(recipientId) {
+function sendTypingOff(recipientId, senderId) {
     //console.log("Turning typing indicator off");
 
     let messageData = {
@@ -540,14 +493,14 @@ function sendTypingOff(recipientId) {
         sender_action: "typing_off"
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a text message using the Send API.
  *
  */
-function sendTextMessage(recipientId, messageText) {
+function sendTextMessage(recipientId, senderId,  messageText) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -558,14 +511,14 @@ function sendTextMessage(recipientId, messageText) {
         }
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send an image using the Send API.
  *
  */
-function sendImageMessage(recipientId, imageUrl) {
+function sendImageMessage(recipientId, senderId, imageUrl) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -580,14 +533,14 @@ function sendImageMessage(recipientId, imageUrl) {
         }
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a Gif using the Send API.
  *
  */
-function sendGifMessage(recipientId, gifUrl) {
+function sendGifMessage(recipientId, senderId, gifUrl) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -602,14 +555,14 @@ function sendGifMessage(recipientId, gifUrl) {
         }
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send audio using the Send API.
  *
  */
-function sendAudioMessage(recipientId, audioUrl) {
+function sendAudioMessage(recipientId, senderId, audioUrl) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -624,14 +577,14 @@ function sendAudioMessage(recipientId, audioUrl) {
         }
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a video using the Send API.
  *
  */
-function sendVideoMessage(recipientId, videoUrl) {
+function sendVideoMessage(recipientId, senderId, videoUrl) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -646,14 +599,14 @@ function sendVideoMessage(recipientId, videoUrl) {
         }
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a video using the Send API.
  *
  */
-function sendFileMessage(recipientId, fileUrl) {
+function sendFileMessage(recipientId, senderId, fileUrl) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -668,14 +621,14 @@ function sendFileMessage(recipientId, fileUrl) {
         }
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a button message using the Send API.
  *
  */
-function sendButtonMessage(recipientId, text, buttons) {
+function sendButtonMessage(recipientId, senderId, text, buttons) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -709,14 +662,14 @@ function sendButtonMessage(recipientId, text, buttons) {
 
     * */
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a Structured Message (Generic Message type) using the Send API.
  *
  */
-function sendGenericMessage(recipientId, elements) {
+function sendGenericMessage(recipientId, senderId, elements) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -732,14 +685,14 @@ function sendGenericMessage(recipientId, elements) {
         }
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a receipt message using the Send API.
  *
  */
-function sendReceiptMessage(recipientId, payload, quick_replies) {
+function sendReceiptMessage(recipientId, senderId, payload, quick_replies) {
     // Generate a random receipt ID as the API requires a unique ID
     let receiptId = "order" + Math.floor(Math.random()*1000);
 
@@ -802,14 +755,14 @@ function sendReceiptMessage(recipientId, payload, quick_replies) {
      }
     *
     * */
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a message with Quick Reply buttons.
  *
  */
-function sendQuickReplyMessage(recipientId, text, quick_replies) {
+function sendQuickReplyMessage(recipientId, senderId, text, quick_replies) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -843,14 +796,14 @@ function sendQuickReplyMessage(recipientId, text, quick_replies) {
 
     * */
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a read receipt to indicate the message has been read
  *
  */
-function sendReadReceipt(recipientId) {
+function sendReadReceipt(recipientId, senderId) {
     console.log("Sending a read receipt to mark message as seen");
 
     let messageData = {
@@ -860,14 +813,14 @@ function sendReadReceipt(recipientId) {
         sender_action: "mark_seen"
     };
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 /*
  * Send a message with the account linking call-to-action
  *
  */
-function sendAccountLinking(recipientId, payload) {
+function sendAccountLinking(recipientId, senderId, payload) {
     let messageData = {
         recipient: {
             id: recipientId
@@ -893,7 +846,7 @@ function sendAccountLinking(recipientId, payload) {
 
     * */
 
-    return callSendAPI(messageData);
+    return callSendAPI(messageData, senderId);
 }
 
 function findKeyStartsWith(map, str){
@@ -1039,4 +992,4 @@ app.listen(app.get('port'), function() {
     //console.log('Node app is running on port', app.get('port'));
 });
 
-module.exports = {app, Parse, rules, payloadRules, buffer, listener, limit, defaultSearch, callSendAPI, sendTypingOn, sendTypingOff, sendTextMessage, sendQuickReplyMessage, sendImageMessage, sendGifMessage, sendAudioMessage, sendVideoMessage, sendFileMessage, sendButtonMessage, sendGenericMessage, sendReceiptMessage, setListener, getListener, deleteListener, setDataBuffer, testAPI};
+module.exports = {app, Parse, rules, payloadRules, buffer, listener, limit, commerces, defaultSearch, callSendAPI, sendTypingOn, sendTypingOff, sendTextMessage, sendQuickReplyMessage, sendImageMessage, sendGifMessage, sendAudioMessage, sendVideoMessage, sendFileMessage, sendButtonMessage, sendGenericMessage, sendReceiptMessage, setListener, getListener, deleteListener, setDataBuffer, testAPI};
