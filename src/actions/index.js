@@ -22,8 +22,7 @@ import {
     PaymentMethodLanguage
 } from '../models/ParseModels'
 
-const BUSINESS_ID = (process.env.BUSINESS_ID) ? (process.env.BUSINESS_ID) : config.get('BUSINESS_ID');
-//const geocoder = new google.maps.Geocoder()
+const BUSINESS = config.get('BUSINESS');
 
 /**
  * Load Consumer of given user
@@ -154,11 +153,11 @@ export function setAddress(recipientId, id) {
 /**
  * Load Payment Methods.
  */
-export function loadPaymentMethods(recipientId) {
+export function loadPaymentMethods(recipientId, senderId) {
     return dispatch => {
         return new Parse.Cloud.run('paymentMethods',{
             languageCode: 'es',
-            businessId: BUSINESS_ID
+            businessId: BUSINESS[senderId].BUSINESS_ID
         }).then((paymentMethods) => {
             dispatch({ type: types.PAYMENT_METHODS_LOADED, data: {recipientId, paymentMethods}})
         })
@@ -325,7 +324,7 @@ export function loadConsumerOrders(recipientId, consumer) {
     }
 
    /*return dispatch => {
-    Parse.Cloud.run('orders', { businessId: BUSINESS_ID }).then(orders => {
+    Parse.Cloud.run('orders', { businessId: BUSINESS[senderId].BUSINESS_ID }).then(orders => {
       dispatch({
         type: types.CONSUMER_ORDERS_LOADED,
         data: orders
@@ -356,9 +355,9 @@ export function loadConsumerOrders(recipientId, consumer) {
 /**
 * Load products from Parse.
 */
-export function loadProducts( lat, lng, category, pointSale ) {
+export function loadProducts(senderId, lat, lng, category, pointSale ) {
   return (dispatch, getState) => {
-    let params = new GetProductsParams(BUSINESS_ID)
+    let params = new GetProductsParams(BUSINESS[senderId].BUSINESS_ID)
     if (lat && lng) {
       params.lat = lat
       params.lng = lng
@@ -475,13 +474,13 @@ export function createConsumer(consumerData, mainDispatch) {
 * It only dispatches CONSUMER_UPDATED if Consumer and ParseUser were
 * saved successfully.
 */
-export function updateConsumer(consumerData) {
+export function updateConsumer(senderId, consumerData) {
   return dispatch => {
     dispatch({type: types.UPDATE_CONSUMER, data: consumerData})
     const consumer = new Consumer()
     consumer.objectId = consumerData.objectId
     consumer.save(consumerData).then( consumer => {
-      let username = consumer.get('email') + BUSINESS_ID
+      let username = consumer.get('email') + BUSINESS[senderId].BUSINESS_ID
       consumer.get('user').save({username}).then(u => {
         dispatch({type: types.CONSUMER_UPDATED, data: {consumer}})
         dispatch({type: types.HIDE_PROFILE})
@@ -535,10 +534,10 @@ export function logout(mainDispatch) {
 /**
 * Email Login Action
 */
-export function emailLogin(userData, mainDispatch) {
+export function emailLogin(senderId, userData, mainDispatch) {
   mainDispatch({type: types.EMAIL_LOGIN})
   return dispatch => {
-    Parse.User.logIn(userData.email + BUSINESS_ID, userData.password).then(user => {
+    Parse.User.logIn(userData.email + BUSINESS[senderId].BUSINESS_ID, userData.password).then(user => {
       dispatch({
         type: types.EMAIL_LOGIN_SUCCESS,
         data: user
@@ -557,10 +556,10 @@ export function emailLogin(userData, mainDispatch) {
 /**
 * Email Login Action
 */
-export function emailRegister(userData, mainDispatch) {
+export function emailRegister(senderId, userData, mainDispatch) {
   mainDispatch({type: types.EMAIL_REGISTER})
   return dispatch => {
-    Parse.User.signUp(userData.email + BUSINESS_ID, userData.password).then(user => {
+    Parse.User.signUp(userData.email + BUSINESS[senderId].BUSINESS_ID, userData.password).then(user => {
       dispatch({
         type: types.EMAIL_REGISTER_SUCCESS,
         data: {user, userData}
@@ -1048,8 +1047,8 @@ export function hideOutOfCoverageModal() {
 /**
 * Load Point of Sales of given businessId.
 */
-export function loadPointSales () {
-  const params = {businessId: BUSINESS_ID}
+export function loadPointSales (senderId) {
+  const params = {businessId: BUSINESS[senderId].BUSINESS_ID}
   return dispatch => {
     Parse.Cloud.run('getPointSales', params).then((results) => {
       dispatch({type: types.POINT_OF_SALES_LOADED, data: results})

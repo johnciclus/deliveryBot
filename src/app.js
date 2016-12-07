@@ -14,10 +14,6 @@ import path from 'path';
 import DateTime from 'datetime-converter-nodejs';
 import dateFormat from 'dateformat'
 
-const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? process.env.MESSENGER_APP_SECRET : config.get('APP_SECRET');
-
-const PAGE_ACCESS_TOKEN = (process.env.MESSENGER_PAGE_ACCESS_TOKEN) ? (process.env.MESSENGER_PAGE_ACCESS_TOKEN) : config.get('PAGE_ACCESS_TOKEN');
-
 const SERVER_URL = (process.env.SERVER_URL) ? (process.env.SERVER_URL) : config.get('SERVER_URL');
 
 const PARSE_APP_ID = (process.env.PARSE_APP_ID) ? (process.env.PARSE_APP_ID) : config.get('PARSE_APP_ID');
@@ -30,11 +26,11 @@ const FACEBOOK_APP_ID = (process.env.FACEBOOK_APP_ID) ? (process.env.FACEBOOK_AP
 
 const REDIRECT_URI = (process.env.REDIRECT_URI) ? (process.env.REDIRECT_URI) : config.get('REDIRECT_URI');
 
-const BUSINESS_ID = (process.env.BUSINESS_ID) ? (process.env.BUSINESS_ID) : config.get('BUSINESS_ID');
-
 const GOOGLE_MAPS_URL = (process.env.GOOGLE_MAPS_URL) ? (process.env.GOOGLE_MAPS_URL) : config.get('GOOGLE_MAPS_URL');
 
 const GOOGLE_MAPS_KEY = (process.env.GOOGLE_MAPS_KEY) ? (process.env.GOOGLE_MAPS_KEY) : config.get('GOOGLE_MAPS_KEY');
+
+const BUSINESS = config.get('BUSINESS');
 
 bot.rules.set('hola', sendMenu);
 bot.rules.set('iniciar', sendMenu);
@@ -254,12 +250,10 @@ bot.app.post('/registerUser', function (req, res) {
 });
 
 bot.app.get('/creditCard', function(req, res) {
-    console.log('creditCard');
     res.sendFile(path.join(__dirname+'/views/cardForm.html'));
 });
 
 bot.app.post('/registerCreditCard', function (req, res) {
-    console.log('registerCreditCard');
     let data = req.body;
     let consumerID = data['consumerID'];
 
@@ -295,15 +289,15 @@ bot.app.post('/creditCardRegistered', function (req, res) {
 
     if (typeof userBuffer != 'undefined') {
         if (userBuffer.creditCardPayload == 'SendCreditCards') {
-            sendRegisteredCreditCards(data.recipientId);
+            sendRegisteredCreditCards(data.recipientId, 1329140110447050);
             delete userBuffer.creditCardPayload
         }
         else {
-            sendCreditCards(data.recipientId)
+            sendCreditCards(data.recipientId, 1329140110447050)
         }
     }
     else {
-        sendCreditCards(data.recipientId)
+        sendCreditCards(data.recipientId, 1329140110447050)
     }
 })
 
@@ -360,16 +354,17 @@ function login(username, password){
         }});
 }
 
-function authentication(recipientId){
-    return getCustomer(recipientId).then(customer => {
+
+function authentication(recipientId, senderId){
+    return getCustomer(recipientId, senderId).then(customer => {
         return getUser(recipientId).then(user => {
             if(typeof user == 'undefined'){
                 //sendSignUp(recipientId)
-                return User.createUser(store, recipientId, recipientId, PAGE_ACCESS_TOKEN).then(()=>{
+                return User.createUser(store, recipientId, recipientId, BUSINESS[senderId].PAGE_ACCESS_TOKEN).then(()=>{
                     let userObject = getData(recipientId, 'user');
                     let user = userObject.rawParseObject;
 
-                    return user.createConsumer(store, recipientId, PAGE_ACCESS_TOKEN).then(consumer => {
+                    return user.createConsumer(store, recipientId, BUSINESS[senderId].PAGE_ACCESS_TOKEN).then(consumer => {
                         return new Promise((resolve, reject) => {
                             resolve(userObject)
                         });
@@ -394,10 +389,10 @@ function authentication(recipientId){
     });
 }
 
-function getCustomer(recipientId){
+function getCustomer(recipientId, senderId){
     let customer = getData(recipientId, 'customer');
     if(typeof customer == 'undefined'){
-        return Customer.loadInStore(store, recipientId, BUSINESS_ID).then(()=>{
+        return Customer.loadInStore(store, recipientId, BUSINESS[senderId].BUSINESS_ID).then(()=>{
             return getData(recipientId, 'customer');
         });
     }
@@ -472,7 +467,7 @@ function sendSignUp(recipientId, senderId) {
 
 function sendMenu(recipientId, senderId) {
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
-        authentication(recipientId).then(() =>{
+        authentication(recipientId, senderId).then(() =>{
             let customer = getData(recipientId, 'customer');
             let user = getData(recipientId, 'user');
             let image_url = customer.image.url;
@@ -511,7 +506,7 @@ function sendAddressesWithTitle(recipientId, senderId){
 
 function sendAddresses(recipientId, senderId){
     return bot.sendTypingOn(recipientId, senderId).then(()=> {
-        authentication(recipientId).then(() => {
+        authentication(recipientId, senderId).then(() => {
             let consumer = getData(recipientId, 'consumer');
 
             ConsumerAddress.loadInStore(store, recipientId, consumer).then(() => {
@@ -568,7 +563,7 @@ function sendAddresses(recipientId, senderId){
 
 function sendCreditCards(recipientId, senderId){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
-        authentication(recipientId).then(() =>{
+        authentication(recipientId, senderId).then(() =>{
             let state = store.getState();
             let user = getData(recipientId, 'user');
             let creditCardsImages = state['creditCardImages'];
@@ -684,7 +679,6 @@ function sendMapConfirmation(recipientId, senderId){
 }
 
 function addressCheck(recipientId, senderId){
-    console.log(recipientId +' ' +senderId);
     let userBuffer = bot.buffer[recipientId];
 
     geocoder.geocode(userBuffer.address, (error, data) =>{
@@ -695,7 +689,7 @@ function addressCheck(recipientId, senderId){
             console.log('Geocode not found');
             console.log(error);
             sendNullMapMessage(recipientId, senderId).then(()=>{
-                newAddress(recipientId)
+                newAddress(recipientId, senderId)
             });
         }
     });
@@ -849,14 +843,14 @@ function setEmail(recipientId, senderId){
     });
 }
 
-function setEmailCheck(recipientId, senderId, value){
+function setEmailCheck(recipientId, senderId){
     let userBuffer = bot.buffer[recipientId];
     let consumer = getData(recipientId, 'consumer').rawParseObject;
 
     consumer.setEmail(userBuffer.email);
     consumer.saveInStore(store, recipientId).then(()=>{
         delete userBuffer.email;
-        checkOrder(recipientId)
+        checkOrder(recipientId, senderId)
     });
 }
 
@@ -874,7 +868,7 @@ function setTelephoneCheck(recipientId, senderId){
     consumer.setPhone(userBuffer.telephone);
     consumer.saveInStore(store, recipientId).then(()=>{
         delete userBuffer.telephone;
-        checkOrder(recipientId)
+        checkOrder(recipientId, senderId)
     });
 }
 
@@ -883,13 +877,13 @@ function setLocationCheck(recipientId, senderId){
 
     geocoder.reverseGeocode( userBuffer.location.lat, userBuffer.location.lng, (error, data) =>{
         if(!error && data.status == 'OK'){
-            setAddressComponetsInBuffer(recipientId, data.results[0])
+            setAddressComponetsInBuffer(recipientId, senderId, data.results[0])
         }
         else{
             console.log('Geocode not found');
             console.log(error);
-            sendNullMapMessage(recipientId).then(()=>{
-                newAddress(recipientId)
+            sendNullMapMessage(recipientId, senderId).then(()=>{
+                newAddress(recipientId, senderId)
             });
         }
     });
@@ -900,7 +894,7 @@ function setAddress(recipientId, senderId, id){
         store.dispatch(Actions.setAddress(recipientId, id)).then(() => {
             let address = getData(recipientId, 'address');
 
-            Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, lat: address.location.lat, lng: address.location.lng}).then(
+            Parse.Cloud.run('getProducts', { businessId: BUSINESS[senderId].BUSINESS_ID, lat: address.location.lat, lng: address.location.lng}).then(
                 function(result){
                     let pointSale = result.pointSale;
 
@@ -916,7 +910,7 @@ function setAddress(recipientId, senderId, id){
                     if(error.code == '141'){
                         return bot.sendTypingOff(recipientId, senderId).then(()=>{
                             return bot.sendTextMessage(recipientId, senderId, "La dirección seleccionada no está dentro de la cobertura de nuestras sedes, por favor intenta con otra dirección").then(()=>{
-                                sendAddressesWithTitle(recipientId)
+                                sendAddressesWithTitle(recipientId, senderId)
                             });
                         });
                     }
@@ -934,7 +928,7 @@ function editAddress(recipientId, senderId, id){
     return bot.sendTypingOn(recipientId, senderId).then(()=> {
         return bot.sendTypingOff(recipientId, senderId).then(()=>{
             bot.setDataBuffer(recipientId, 'addressPayload', 'EditAddress-'+id);
-            writeAddress(recipientId);
+            writeAddress(recipientId, senderId);
         });
     });
 }
@@ -945,7 +939,7 @@ function removeAddress(recipientId, senderId, id){
             consumerAddress.destroy().then(()=>{
                 return bot.sendTypingOff(recipientId, senderId).then(()=>{
                     return bot.sendTextMessage(recipientId, senderId, "La dirección ha sido eliminada.").then(()=>{
-                        sendAddresses(recipientId);
+                        sendAddresses(recipientId, senderId);
                     })
                 });
             });
@@ -957,10 +951,9 @@ function removeCreditCard(recipientId, senderId, id){
     return bot.sendTypingOn(recipientId, senderId).then(()=> {
         new Parse.Query(CreditCard).get(id).then((creditCard) => {
             creditCard.destroy().then(() => {
-
                 return bot.sendTypingOff(recipientId, senderId).then(() => {
                     return bot.sendTextMessage(recipientId, senderId, "La tarjeta de credito ha sido eliminada.").then(() => {
-                        sendCreditCards(recipientId);
+                        sendCreditCards(recipientId, senderId);
                     });
                 });
             });
@@ -970,8 +963,8 @@ function removeCreditCard(recipientId, senderId, id){
 
 function sendCategories(recipientId, senderId, index){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
-        authentication(recipientId).then(()=>{
-            Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID }).then(function(result){
+        authentication(recipientId, senderId).then(()=>{
+            Parse.Cloud.run('getProducts', { businessId: BUSINESS[senderId].BUSINESS_ID }).then(function(result){
                 if(result.pointSaleIsOpen) {
                     if(typeof index == 'undefined')
                         index = 0;
@@ -980,12 +973,15 @@ function sendCategories(recipientId, senderId, index){
 
                     if(index == 0){
                         bot.sendTypingOff(recipientId, senderId).then(()=>{
-                            bot.sendTextMessage(recipientId, senderId, "A continuación te presentamos las categorías de productos disponibles.")
+                            bot.sendTextMessage(recipientId, senderId, "A continuación te presentamos las categorías de productos disponibles.").then(()=>{
+                                sendCategoriesDetail(recipientId, senderId, result.categories, index);
+                            })
+                        });
+                    }else{
+                        bot.sendTypingOff(recipientId, senderId).then(()=>{
+                            sendCategoriesDetail(recipientId, senderId, result.categories, index);
                         });
                     }
-
-                    sendCategoriesDetail(recipientId, senderId, result.categories, index);
-
                 }else{
                     sendScheduleRestriction(recipientId, result.pointSaleSchedules);
                 }
@@ -1058,43 +1054,51 @@ function sendProducts(recipientId, senderId, categoryId, proIdx){
         if(proIdx == 0){
             new Parse.Query(Category).get(categoryId).then(category => {
                 return bot.sendTypingOff(recipientId, senderId).then(()=>{
-                    return bot.sendTextMessage(recipientId, senderId, "Selecciona "+category.get('name')+":");
+                    return bot.sendTextMessage(recipientId, senderId, "Selecciona "+category.get('name')+":").then(()=>{
+                        getProducts(recipientId, senderId, categoryId, proIdx);
+                    })
                 });
             },
             (object, error) => {
                 console.log(error);
             });
         }
-        Parse.Cloud.run('getProducts', { businessId: BUSINESS_ID, category: categoryId }).then(result => {
-            if(result.hasOwnProperty('categories')){
-                sendCategoriesDetail(recipientId, senderId, result.categories, 0);
-            }else{
-                if(result.products.length == 0){
-                    bot.sendTypingOff(recipientId, senderId).then(()=>{
-                        bot.sendQuickReplyMessage(recipientId, senderId,
-                            "No existen productos en esta categoría",
-                            [{
-                                "content_type": "text",
-                                "title": "Seguir pidiendo",
-                                "payload": "SendContinueOrder"
-                            },
+        else{
+            getProducts(recipientId, senderId, categoryId, proIdx)
+        }
+    });
+}
+
+function getProducts(recipientId, senderId, categoryId, proIdx){
+    Parse.Cloud.run('getProducts', { businessId: BUSINESS[senderId].BUSINESS_ID, category: categoryId }).then(result => {
+        if(result.hasOwnProperty('categories')){
+            sendCategoriesDetail(recipientId, senderId, result.categories, 0);
+        }else{
+            if(result.products.length == 0){
+                bot.sendTypingOff(recipientId, senderId).then(()=>{
+                    bot.sendQuickReplyMessage(recipientId, senderId,
+                        "No existen productos en esta categoría",
+                        [{
+                            "content_type": "text",
+                            "title": "Seguir pidiendo",
+                            "payload": "SendContinueOrder"
+                        },
                             {
                                 "content_type": "text",
                                 "title": "Ver carrito",
                                 "payload": "SendCart"
                             }]);
-                    });
-                }
-                else{
-                    sendProductsDetail(recipientId, categoryId, result.products, proIdx);
-                }
+                });
             }
-        },
-        function(error) {
-            console.log('error');
-            console.log(error);
-        })
-    });
+            else{
+                sendProductsDetail(recipientId, senderId, categoryId, result.products, proIdx);
+            }
+        }
+    },
+    function(error) {
+        console.log('error');
+        console.log(error);
+    })
 }
 
 function splitProducts(recipientId, products, proIdx){
@@ -1158,7 +1162,7 @@ function sendProductsDetail(recipientId, senderId, categoryId, products, index){
     });
 }
 
-function createCart(recipientId, senderId){
+function createCart(recipientId){
     let userData = getData(recipientId);
     Object.assign(userData, {'cart': {items: new Map()}});
     return userData.cart;
@@ -1199,9 +1203,8 @@ function addProduct(recipientId, senderId, productId){
         }
 
         Parse.Promise.when(promises).then(function(modifiers) {
-            let undefinedModifiers = checkModifiers(recipientId, productId, modifiers);
 
-            console.log(undefinedModifiers);
+            let undefinedModifiers = checkModifiers(recipientId, productId, modifiers);
 
             //checkModifiersComplete(recipientId, productId, modifiers).then(result =>{
             //    console.log('result: '+result);
@@ -1217,12 +1220,12 @@ function addProduct(recipientId, senderId, productId){
                 });
 
                 Parse.Promise.when(promises).then(function (modifierItems) {
-                    sendModifierMenu(recipientId, productId, undefinedModifiers[0], modifierItems);
+                    sendModifierMenu(recipientId, senderId, productId, undefinedModifiers[0], modifierItems);
                 })
             }
             else{
                 saveCart(recipientId);
-                sendAddProductNenu(recipientId, productId);
+                sendAddProductNenu(recipientId, senderId, productId);
             }
         });
     },
@@ -1317,7 +1320,7 @@ function addModifier(recipientId, senderId, productId, modifierId, itemId){
 
 }
 
-function checkModifiers(recipientId, senderId, productId, modifiers){
+function checkModifiers(recipientId, productId, modifiers){
     let cart = getData(recipientId, 'cart');
     let items = cart.items;
     let item = items.get(productId);
@@ -1391,10 +1394,10 @@ function removeProduct(recipientId, senderId, productId){
 
             cart.itemsPointers = itemsPointers;
             if(items.size == 0){
-                sendCart(recipientId);
+                sendCart(recipientId, senderId);
             }
             else{
-                sendCartDetails(recipientId)
+                sendCartDetails(recipientId, senderId)
             }
         },
         error: (orderItem, error) => {
@@ -1420,7 +1423,7 @@ function increaseOneProduct(recipientId, senderId, productId){
         success: (orderItem) => {
             orderItem.set('amount', item.quantity);
             orderItem.save();
-            sendCartDetails(recipientId)
+            sendCartDetails(recipientId, senderId)
         },
         error: (orderItem, error) => {
             console.log('error');
@@ -1446,7 +1449,7 @@ function decreaseOneProduct(recipientId, senderId, productId){
             success: (orderItem) => {
                 orderItem.set('amount', item.quantity);
                 orderItem.save();
-                sendCartDetails(recipientId)
+                sendCartDetails(recipientId, senderId)
             },
             error: (orderItem, error) => {
                 console.log('error');
@@ -1649,12 +1652,10 @@ function sendEmptyCartOptions(recipientId, senderId){
 
 function sendCart(recipientId, senderId){
     bot.sendTypingOn(recipientId, senderId).then(()=>{
-        authentication(recipientId).then( () =>{
+        authentication(recipientId, senderId).then( () =>{
             let user = getData(recipientId, 'user');
             let customer = getData(recipientId, 'customer');
-            let consumer = getData(recipientId, 'consumer');
             let cart = getData(recipientId, 'cart');
-            let address = getData(recipientId, 'address');
             let customer_image_url;
 
             if(typeof customer != 'undefined'){
@@ -1677,7 +1678,7 @@ function sendCart(recipientId, senderId){
             if(orderLimit == 0){
                 bot.sendTypingOff(recipientId, senderId).then(()=>{
                     return bot.sendTextMessage(recipientId, senderId, "Tu carrito de compras está vacío.").then(()=>{
-                        sendEmptyCartOptions(recipientId);
+                        sendEmptyCartOptions(recipientId, senderId);
                     })
                 });
             }
@@ -1707,7 +1708,7 @@ function sendCart(recipientId, senderId){
                             ind++;
 
                             if(ind == orderLimit){
-                                sendCartReceipt(recipientId, cart.id, elements, total)
+                                sendCartReceipt(recipientId, senderId, cart.id, elements, total)
                             }
                         },
                         error: function (error) {
@@ -1728,61 +1729,67 @@ function sendCartReceipt(recipientId, senderId, cartId, elements, total){
     let payment_method = getData(recipientId, 'payment_method');
     let addressData = undefined;
 
-    if(typeof payment_method == 'undefined'){
-        payment_method = {name: 'Sin definir'}
+    if(typeof pointSale == 'undefined'){
+        bot.sendTextMessage(recipientId, senderId, "No has registrado una dirección correcta, por favor registrala para visualizar el carrito").then(()=>{
+            sendAddresses(recipientId, senderId)
+        });
     }
-
-    if(typeof address != 'undefined'){
-        addressData = {
-            street_1: address.address ? address.address : 'Dirección no definida',
-            street_2: address.description ? address.description : 'Sin complemento',
-            city: address.city ? address.city : 'No definida',
-            postal_code: address.postalCode ? address.postalCode : 'No definido',
-            state: address.state ? address.state : 'No definido',
-            country: address.countryCode ? address.countryCode : 'No definido'
+    else{
+        if(typeof address != 'undefined'){
+            addressData = {
+                street_1: address.address ? address.address : 'Dirección no definida',
+                street_2: address.description ? address.description : 'Sin complemento',
+                city: address.city ? address.city : 'No definida',
+                postal_code: address.postalCode ? address.postalCode : 'No definido',
+                state: address.state ? address.state : 'No definido',
+                country: address.countryCode ? address.countryCode : 'No definido'
+            }
         }
+
+        if(typeof payment_method == 'undefined') {
+            payment_method = {name: 'Sin definir'}
+        }
+
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            return bot.sendReceiptMessage(recipientId, senderId, {
+                    template_type: "receipt",
+                    recipient_name: user.first_name+" "+user.last_name,
+                    order_number: cartId,
+                    currency: "COP",
+                    payment_method: payment_method.name,
+                    timestamp: Math.trunc(Date.now()/1000).toString(),
+                    elements: elements,
+                    address: addressData,
+                    summary: {
+                        subtotal: total,
+                        shipping_cost: pointSale.deliveryCost,
+                        total_cost: total+pointSale.deliveryCost
+                    }
+                },
+                [
+                    {
+                        "content_type":"text",
+                        "title":"Finalizar pedido",
+                        "payload":"CheckOrder"
+                    },
+                    {
+                        "content_type":"text",
+                        "title":"Seguir Pidiendo",
+                        "payload":"SendContinueOrder"
+                    },
+                    {
+                        "content_type":"text",
+                        "title":"Modificar carrito",
+                        "payload":"SendCartDetails"
+                    },
+                    {
+                        "content_type":"text",
+                        "title":"Borrar carrito",
+                        "payload": "ClearAndSendCart"
+                    }
+                ])
+        });
     }
-
-    return bot.sendTypingOff(recipientId, senderId).then(()=>{
-        return bot.sendReceiptMessage(recipientId, {
-            template_type: "receipt",
-            recipient_name: user.first_name+" "+user.last_name,
-            order_number: cartId,
-            currency: "COP",
-            payment_method: payment_method.name,
-            timestamp: Math.trunc(Date.now()/1000).toString(),
-            elements: elements,
-            address: addressData,
-            summary: {
-                subtotal: total,
-                shipping_cost: pointSale.deliveryCost,
-                total_cost: total+pointSale.deliveryCost
-            }
-        },
-        [
-            {
-                "content_type":"text",
-                "title":"Finalizar pedido",
-                "payload":"CheckOrder"
-            },
-            {
-                "content_type":"text",
-                "title":"Seguir Pidiendo",
-                "payload":"SendContinueOrder"
-            },
-            {
-                "content_type":"text",
-                "title":"Modificar carrito",
-                "payload":"SendCartDetails"
-            },
-            {
-                "content_type":"text",
-                "title":"Borrar carrito",
-                "payload": "ClearAndSendCart"
-            }
-        ])
-    });
-
 }
 
 function sendCartDetails(recipientId, senderId){
@@ -1831,7 +1838,7 @@ function sendCartDetails(recipientId, senderId){
         return Parse.Promise.when(promises).then(function(elements) {
             return bot.sendTypingOff(recipientId, senderId).then(()=>{
                 return bot.sendGenericMessage(recipientId, senderId, elements).then(()=>{
-                    sendEditCartOptions(recipientId)
+                    sendEditCartOptions(recipientId, senderId)
                 });
             });
         });
@@ -1877,7 +1884,7 @@ function editCart(recipientId, senderId){
 
 }
 
-function clearCart(recipientId, senderId){
+function clearCart(recipientId){
     let cart = getData(recipientId, 'cart');
 
     if(typeof cart != 'undefined'){
@@ -1895,7 +1902,7 @@ function clearCart(recipientId, senderId){
 
 function clearAndSendCart(recipientId, senderId){
     clearCart(recipientId).then(()=>{
-        sendCart(recipientId)
+        sendCart(recipientId, senderId)
     });
 }
 
@@ -1905,23 +1912,32 @@ function checkOrder(recipientId, senderId){
     let pointSale = getData(recipientId, 'pointSale');
     let total = 0;
 
-    cart.items.forEach(function(value, key){
-        total += value.quantity * value.price;
-    });
-
-    if(pointSale.minOrderPrice && pointSale.minOrderPrice > total ){
-        sendMinOrderPriceRestriction(recipientId);
-    }
-    else if(typeof consumer.phone == 'undefined' || consumer.phone == ''){
-        setTelephone(recipientId)
-    }
-    else if(typeof consumer.email == 'undefined' || consumer.email == ''){
-        setEmail(recipientId)
+    if(typeof cart != 'undefined'){
+        cart.items.forEach(function(value, key){
+            total += value.quantity * value.price;
+        });
     }
     else{
-        checkPayment(recipientId);
+        cart = createCart(recipientId)
     }
-
+    if(typeof pointSale == 'undefined'){
+        bot.sendTextMessage(recipientId, senderId, "No has registrado una dirección correcta, por favor registrala para visualizar el carrito").then(()=>{
+            sendAddresses(recipientId, senderId)
+        });
+    }else{
+        if(pointSale.minOrderPrice && pointSale.minOrderPrice > total ){
+            sendMinOrderPriceRestriction(recipientId, senderId);
+        }
+        else if(typeof consumer.phone == 'undefined' || consumer.phone == ''){
+            setTelephone(recipientId, senderId)
+        }
+        else if(typeof consumer.email == 'undefined' || consumer.email == ''){
+            setEmail(recipientId, senderId)
+        }
+        else{
+            checkPayment(recipientId, senderId);
+        }
+    }
 }
 
 function checkAddress(recipientId, senderId){
@@ -1930,12 +1946,11 @@ function checkAddress(recipientId, senderId){
 
 function checkPayment(recipientId, senderId){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
-        store.dispatch(Actions.loadPaymentMethods(recipientId)).then(() => {
+        store.dispatch(Actions.loadPaymentMethods(recipientId, senderId)).then(() => {
             let paymentMethods = getData(recipientId, 'paymentMethods');
             let quick_replies = [];
 
             for(let i in paymentMethods){
-
                 quick_replies.push({
                     "content_type": "text",
                     "title": paymentMethods[i].name.substring(0,20),
@@ -1951,15 +1966,15 @@ function checkPayment(recipientId, senderId){
 }
 
 function checkout(recipientId, senderId, id){
-    bot.sendTypingOn(recipientId, senderId);
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(() => {
+            let state = store.getState();
+            let paymentTypes = state['paymentTypes'];
+            let paymentMethod = getData(recipientId, 'paymentMethod');
+            let paymentFunction = paymentTypes[paymentMethod.method.objectId];
 
-    store.dispatch(Actions.setPaymentMethod(recipientId, id)).then(() => {
-        let state = store.getState();
-        let paymentTypes = state['paymentTypes'];
-        let paymentMethod = getData(recipientId, 'paymentMethod');
-        let paymentFunction = paymentTypes[paymentMethod.method.objectId];
-
-        paymentFunction(recipientId);
+            paymentFunction(recipientId, senderId);
+        });
     });
 }
 
@@ -1968,7 +1983,7 @@ function sendMinOrderPriceRestriction(recipientId, senderId){
 
     return bot.sendTypingOff(recipientId, senderId).then(()=>{
         return bot.sendTextMessage(recipientId, senderId, "El valor minimo de una orden con domicilio es "+pointSale.minOrderPrice+", \npor favor modifica tu pedido para cumplir este requisito").then(()=>{
-            sendPurchaseOptions(recipientId);
+            sendPurchaseOptions(recipientId, senderId);
         })
     });
 }
@@ -2016,7 +2031,7 @@ function sendCash(recipientId, senderId){
 
         return bot.sendTypingOff(recipientId, senderId).then(()=>{
             return bot.sendTextMessage(recipientId, senderId, "Se ha registrado el pago con "+paymentMethod.name ).then(()=>{
-                orderConfirmation(recipientId);
+                orderConfirmation(recipientId, senderId);
             })
         });
     });
@@ -2024,7 +2039,7 @@ function sendCash(recipientId, senderId){
 
 function registerCreditCard(recipientId, senderId){
     bot.sendTypingOn(recipientId, senderId);
-    authentication(recipientId).then( () => {
+    authentication(recipientId, senderId).then( () => {
         let consumer = getData(recipientId, 'consumer');
 
         return bot.sendTypingOff(recipientId, senderId).then(()=>{
@@ -2053,7 +2068,7 @@ function registerCreditCard(recipientId, senderId){
 function registerCreditCardAndPay(recipientId, senderId){
     bot.setDataBuffer(recipientId, 'creditCardPayload', 'SendCreditCards');
 
-    registerCreditCard(recipientId)
+    registerCreditCard(recipientId, senderId)
 }
 
 function cancelRegisterCreditCard(recipientId, senderId){
@@ -2066,7 +2081,7 @@ function cancelRegisterCreditCard(recipientId, senderId){
                     checkPayment(recipientId);
                 }
                 else{
-                    sendAccount(recipientId);
+                    sendAccount(recipientId, senderId);
                 }
             });
         });
@@ -2125,9 +2140,9 @@ function sendRegisteredCreditCards(recipientId, senderId){
 }
 
 function payWithCreditCard(recipientId, senderId, creditCardId){
-    bot.sendTypingOn(recipientId, senderId);
-
-    orderConfirmation(recipientId)
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        orderConfirmation(recipientId, senderId)
+    });
 }
 
 function orderConfirmation(recipientId, senderId){
@@ -2225,7 +2240,7 @@ function setScore(recipientId, senderId, score){
         Parse.Cloud.run('rateOrder', { orderId: order.objectId, score: Number(score), comment: ''}).then(
             function(result){
                 return bot.sendTypingOff(recipientId, senderId).then(()=>{
-                    thank(recipientId)
+                    thank(recipientId, senderId)
                 });
             },
             function(error) {
@@ -2233,8 +2248,6 @@ function setScore(recipientId, senderId, score){
                 console.log(error);
             });
     });
-
-
 }
 
 function thank(recipientId, senderId){
@@ -2246,58 +2259,58 @@ function thank(recipientId, senderId){
 }
 
 function searchProducts(recipientId, senderId, query, index){
-    bot.sendTypingOn(recipientId, senderId);
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        Parse.Cloud.run('search', { businessId: BUSINESS[senderId].BUSINESS_ID, q: query }).then(
+            function(result){
 
-    Parse.Cloud.run('search', { businessId: BUSINESS_ID, q: query }).then(
-        function(result){
-            if(result.length == 0){
-                renderSearchEmpty(recipientId);
-            }
-            else if(result.length == 1 && result[0].type == 'Category'){
-                sendProducts(recipientId, senderId, result[0].id, 0)
-            }
-            else{
-                if(index == undefined)
-                    index = 0;
-                else if( typeof index == 'string')
-                    index = parseInt(index);
-
-                if(index == 0){
-                    renderSearchInitial(recipientId);
-                    bot.sendTypingOn(recipientId, senderId);
+                if(result.length == 0){
+                    renderSearchEmpty(recipientId, senderId);
                 }
+                else if(result.length == 1 && result[0].type == 'Category'){
+                    sendProducts(recipientId, senderId, result[0].id, 0)
+                }
+                else{
+                    if(index == undefined)
+                        index = 0;
+                    else if( typeof index == 'string')
+                        index = parseInt(index);
 
-                splitSearchResult(recipientId, result, index).then(elements => {
-                    let idx = Object.keys(result).length;
-                    let buttons = [];
-                    let catIni = (index+1)*bot.limit;
-                    let catFin =  (idx > catIni+bot.limit) ? catIni+bot.limit : idx;
-
-                    if(idx > (index+1)*bot.limit){
-                        buttons.push({
-                            type: "postback",
-                            title: "Productos "+(catIni+1)+"-"+catFin,
-                            payload: "Search-"+(index+1),
-                        });
-
-                        elements.push({
-                            title: "Ver más productos ",
-                            subtitle: "Productos disponibles",
-                            buttons: buttons
-                        });
+                    if(index == 0){
+                        renderSearchInitial(recipientId, senderId)
                     }
 
-                    return bot.sendTypingOff(recipientId, senderId).then(()=>{
-                        return bot.sendGenericMessage(recipientId, senderId, elements)
+                    splitSearchResult(recipientId, result, index).then(elements => {
+                        let idx = Object.keys(result).length;
+                        let buttons = [];
+                        let catIni = (index+1)*bot.limit;
+                        let catFin =  (idx > catIni+bot.limit) ? catIni+bot.limit : idx;
+
+                        if(idx > (index+1)*bot.limit){
+                            buttons.push({
+                                type: "postback",
+                                title: "Productos "+(catIni+1)+"-"+catFin,
+                                payload: "Search-"+(index+1),
+                            });
+
+                            elements.push({
+                                title: "Ver más productos ",
+                                subtitle: "Productos disponibles",
+                                buttons: buttons
+                            });
+                        }
+
+                        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                            return bot.sendGenericMessage(recipientId, senderId, elements)
+                        });
                     });
-                });
+                }
+            },
+            function(error) {
+                console.log('error');
+                console.log(error);
             }
-        },
-        function(error) {
-            console.log('error');
-            console.log(error);
-        }
-    );
+        );
+    });
 }
 
 function renderSearchInitial(recipientId, senderId){
@@ -2312,7 +2325,7 @@ function renderSearchEmpty(recipientId, senderId){
     })
 }
 
-function splitSearchResult(recipientId, senderId, products, index){
+function splitSearchResult(recipientId, products, index){
     let customer = getData(recipientId, 'customer');
     let image_url;
     let idx = 0;
@@ -2358,8 +2371,8 @@ function splitSearchResult(recipientId, senderId, products, index){
 
 function sendHelp(recipientId, senderId){
     bot.sendTypingOn(recipientId, senderId);
-    renderHelp(recipientId).then(()=>{
-        sendContactUs(recipientId);
+    renderHelp(recipientId, senderId).then(()=>{
+        sendContactUs(recipientId, senderId);
     });
 }
 
@@ -2378,17 +2391,17 @@ function sendContactUs(recipientId, senderId){
 }
 
 function sendOrders(recipientId, senderId){
-    bot.sendTypingOn(recipientId, senderId);
-
-    authentication(recipientId).then( () =>{
-        let consumer = getData(recipientId, 'consumer');
-        Parse.Cloud.run('ordersBot', { businessId: BUSINESS_ID, consumerId: consumer.objectId}).then( orders => {
-            store.dispatch(Actions.setOrders(recipientId, orders)).then(() => {
-                renderOrders(recipientId);
+    bot.sendTypingOn(recipientId, senderId).then(()=>{
+        authentication(recipientId, senderId).then( () =>{
+            let consumer = getData(recipientId, 'consumer');
+            Parse.Cloud.run('ordersBot', { businessId: BUSINESS[senderId].BUSINESS_ID, consumerId: consumer.objectId}).then( orders => {
+                store.dispatch(Actions.setOrders(recipientId, orders)).then(() => {
+                    renderOrders(recipientId, senderId);
+                });
+            }).fail(error => {
+                console.log('error');
+                console.log(error);
             });
-        }).fail(error => {
-            console.log('error');
-            console.log(error);
         });
     });
 }
@@ -2412,6 +2425,7 @@ function renderOrders(recipientId, senderId){
     });
 
     for(let order of orders.ongoing) {
+        let pointSale = order.pointSale;
         if (elements.length < bot.limit){
             let datetime = DateTime.dateString(order.createdAt);
             let image_url = customer.image.url;
@@ -2419,7 +2433,7 @@ function renderOrders(recipientId, senderId){
 
             elements.push({
                 "title": title,
-                "subtitle": 'Estado: '+order.state.name+', Valor: $'+order.total,
+                "subtitle": 'Estado: '+order.state.name+', Valor: $'+(order.total+pointSale.deliveryCost),
                 "image_url": image_url,
                 "buttons": [
                     {
@@ -2443,42 +2457,43 @@ function renderOrders(recipientId, senderId){
 }
 
 function sendOrder(recipientId, senderId, id){
-    bot.sendTypingOn(recipientId, senderId);
-    authentication(recipientId).then( () =>{
-        let orders = getData(recipientId, 'orders');
-        let customer = getData(recipientId, 'customer');
-        let customer_image_url = customer.image.url;
-        let currentOrder;
-        let elements = [];
-        let element;
-        let image_url;
-        let product;
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        authentication(recipientId, senderId).then( () =>{
+            let orders = getData(recipientId, 'orders');
+            let customer = getData(recipientId, 'customer');
+            let customer_image_url = customer.image.url;
+            let currentOrder;
+            let elements = [];
+            let element;
+            let image_url;
+            let product;
 
-        for(let order of orders.ongoing){
-            if(order.objectId == id){
-                currentOrder = order;
-            }
-        }
-
-        for(let item of currentOrder.items){
-            product = item.product;
-            image_url = customer_image_url;
-
-            if(product.image){
-                image_url = product.image.url;
+            for(let order of orders.ongoing){
+                if(order.objectId == id){
+                    currentOrder = order;
+                }
             }
 
-            element = {};
-            element['title'] = product.name;
-            element['quantity'] = item.amount;
-            element['price'] = item.price;
-            element['currency'] = "COP";
-            element['image_url'] = image_url;
+            for(let item of currentOrder.items){
+                product = item.product;
+                image_url = customer_image_url;
 
-            elements.push(element);
-        }
+                if(product.image){
+                    image_url = product.image.url;
+                }
 
-        renderOrder(recipientId, currentOrder, elements)
+                element = {};
+                element['title'] = product.name;
+                element['quantity'] = item.amount;
+                element['price'] = item.price;
+                element['currency'] = "COP";
+                element['image_url'] = image_url;
+
+                elements.push(element);
+            }
+
+            renderOrder(recipientId, senderId, currentOrder, elements)
+        });
     });
 }
 
@@ -2506,7 +2521,7 @@ function renderOrder(recipientId, senderId, order, elements){
     }
 
     return bot.sendTypingOff(recipientId, senderId).then(()=>{
-        return bot.sendReceiptMessage(recipientId, {
+        return bot.sendReceiptMessage(recipientId, senderId, {
             template_type: "receipt",
             recipient_name: user.first_name+" "+user.last_name,
             order_number: order.objectId,
@@ -2543,16 +2558,14 @@ function renderOrder(recipientId, senderId, order, elements){
 
 function newOrder(recipientId, senderId){
     clearCart(recipientId).then(()=>{
-        sendCart(recipientId);
-        sendAddressesWithTitle(recipientId);
+        sendAddressesWithTitle(recipientId, senderId);
     });
-
 }
 
 function cancelOrder(recipientId, senderId, id){
     Parse.Cloud.run('changeStatusOrder', { status: "canceledByUser", orderId: id}).then( () => {
-        renderCancelOrder(recipientId).then(()=>{
-            sendOrders(recipientId);
+        renderCancelOrder(recipientId, senderId).then(()=>{
+            sendOrders(recipientId, senderId);
         });
     }).fail(error => {
         console.log('error');
@@ -2567,10 +2580,10 @@ function renderCancelOrder(recipientId, senderId){
 }
 
 function sendAccount(recipientId, senderId){
-    bot.sendTypingOn(recipientId, senderId);
-
-    authentication(recipientId).then( ()=> {
-        renderAccount(recipientId)
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        authentication(recipientId, senderId).then( ()=> {
+            renderAccount(recipientId, senderId)
+        });
     });
 }
 
@@ -2614,8 +2627,7 @@ function sendYouAreWelcome(recipientId, senderId){
     });
 }
 
-function addCreditCard(recipientId, senderId, token, data){
-    console.log('addCreditCard');
+function addCreditCard(recipientId, token, data){
     let expiration = data['expiry'].replace(/\s+/g,"").split('/');
 
     return rp({
@@ -2633,6 +2645,8 @@ function addCreditCard(recipientId, senderId, token, data){
             "expirationYear": expiration[1]
         }
     }).then( body => {
+        console.log('result');
+        console.log(body);
         rp({
             uri: SERVER_URL+'creditCardRegistered',
             method: 'POST',
@@ -2641,6 +2655,10 @@ function addCreditCard(recipientId, senderId, token, data){
     }).catch(error =>{
         console.log('error');
         console.log(error);
+        let response = error.response;
+        //console.log(JSON.stringify(error, null, 1));
+        console.log(JSON.stringify(response.body, null, 1))
+
     });
 }
 

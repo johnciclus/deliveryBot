@@ -4,43 +4,20 @@ import config from 'config';
 import crypto from 'crypto';
 import * as _ from 'underscore';
 import rp from 'request-promise';
-//import parseExpressHttpsRedirect from 'parse-express-https-redirect'
 
-// App Secret can be retrieved from the App Dashboard
 const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? process.env.MESSENGER_APP_SECRET : config.get('APP_SECRET');
 
-// Arbitrary value used to validate a webhook
 const VALIDATION_TOKEN = (process.env.MESSENGER_VALIDATION_TOKEN) ? (process.env.MESSENGER_VALIDATION_TOKEN) : config.get('VALIDATION_TOKEN');
 
-// Generate a page access token for your page from the App Dashboard
-const PAGE_ACCESS_TOKEN = (process.env.MESSENGER_PAGE_ACCESS_TOKEN) ? (process.env.MESSENGER_PAGE_ACCESS_TOKEN) : config.get('PAGE_ACCESS_TOKEN');
-
-// URL where the app is running (include protocol). Used to point to scripts and
-// assets located at this address.
 const SERVER_URL = (process.env.SERVER_URL) ? (process.env.SERVER_URL) : config.get('SERVER_URL');
-
-const FACEBOOK_APP_ID = (process.env.FACEBOOK_APP_ID) ? (process.env.FACEBOOK_APP_ID) : config.get('FACEBOOK_APP_ID');
 
 const FACEBOOK_GRAPH = (process.env.FACEBOOK_GRAPH) ? (process.env.FACEBOOK_GRAPH) : config.get('FACEBOOK_GRAPH');
 
-const REDIRECT_URI = (process.env.REDIRECT_URI) ? (process.env.REDIRECT_URI) : config.get('REDIRECT_URI');
+const BUSINESS = config.get('BUSINESS');
 
 const limit = 9;
 
-const commerces = {
-    1329140110447050: {
-        "name": "Speedy",
-        "BUSINESS_ID": "com.inoutdelivery.oxxo",
-        "PAGE_ACCESS_TOKEN": "EAACmGsSpx0UBAFFMieBuZAUkzuFfLoALZCxNKMZBvxu0yBzrqpEALX4koiwqBtw95SZApwClpz2VA4WJEeMyXVfQP2ws0gfuYWTYRD9ulRIAjV6p6TO45u4g1KPn495D5Itus5ennDIGaM9OVUjBxZAaHdhzIlcgdZC8HpgZCm0IAZDZD"
-    },
-    1242177029183121: {
-        "name": "InOut Bot Demo",
-        "BUSINESS_ID": "com.inoutdelivery.inoutdemo",
-        "PAGE_ACCESS_TOKEN": "EAAEZCXUHN8RkBACxN9NIi2RpJR8qLQycx7uNKeIlZBZCEjU3gsuugkpfNvIU6OQxiDMIZCpzpXBc6ZAtFQODYJuBsAFIRTilX8IuESrXzNuSTxrhDZA6aMh7tZACD4oh7lGp3K5iMShAX4pptQxqCKgfby55YQCDw0pZCsb5km5sbQZDZD"
-    }
-};
-
-if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
+if (!(APP_SECRET && VALIDATION_TOKEN && BUSINESS && SERVER_URL)) {
     console.error("Missing config values");
     process.exit(1);
 }
@@ -187,15 +164,7 @@ function receivedMessage(event) {
             if(payloadFunction){
                 payloadFunction(senderID, recipientID);
             }
-
-            //payloadFunction = findKeyStartsWith(payloadRules, quickReplyPayload);
-            //if(payloadFunction){
-            //payloadFunction(senderID, recipientID);
-            //}
         }
-        //sendTextMessage(senderID, "Quick reply tapped");
-
-        return;
     }
     else if (messageText) {
         // If we receive a text message, check to see if it matches any special
@@ -205,8 +174,6 @@ function receivedMessage(event) {
         //Object.keys(listener);
         let userListeners = listener[senderID];
         let existRule = false;
-        //console.log(senderID);
-        //console.log(typeof senderID);
 
         if(!_.isEmpty(userListeners)){
             if(!buffer[senderID]){
@@ -430,10 +397,10 @@ function receivedAccountLink(event) {
  *
  */
 function callSendAPI(messageData, senderId) {
-    if(commerces.hasOwnProperty(senderId)){
+    if(BUSINESS.hasOwnProperty(senderId)){
         return rp({
             uri: FACEBOOK_GRAPH+'me/messages',
-            qs: { access_token: commerces[senderId].PAGE_ACCESS_TOKEN },
+            qs: { access_token: BUSINESS[senderId].PAGE_ACCESS_TOKEN },
             method: 'POST',
             json: messageData
         }).catch(error =>{
@@ -447,10 +414,10 @@ function callSendAPI(messageData, senderId) {
     }
 }
 
-function testAPI(){
+function testAPI(senderId){
     return rp({
         uri: FACEBOOK_GRAPH+'me?fields=name,email,age_range,birthday,is_verified,location',
-        qs: { access_token: PAGE_ACCESS_TOKEN },
+        qs: { access_token: BUSINESS[senderId].PAGE_ACCESS_TOKEN },
         method: 'GET'
     }).then( response => {
         console.log('Successful login for: ' + response.name);
@@ -890,13 +857,13 @@ function setDataBuffer(recipientId, key, value){
     buffer[recipientId][key] = value;
 }
 
-function defaultSearch(recipientId, query){
-    //console.log('defaultSearch');
+function defaultSearch(recipientId, senderId, query){
+    console.log('defaultSearch');
     //console.log(search);
     let search = payloadRules.get('Search');
 
     if(search){
-        search(recipientId, query);
+        search(recipientId, senderId, query);
     }
 };
 
@@ -992,4 +959,4 @@ app.listen(app.get('port'), function() {
     //console.log('Node app is running on port', app.get('port'));
 });
 
-module.exports = {app, Parse, rules, payloadRules, buffer, listener, limit, commerces, defaultSearch, callSendAPI, sendTypingOn, sendTypingOff, sendTextMessage, sendQuickReplyMessage, sendImageMessage, sendGifMessage, sendAudioMessage, sendVideoMessage, sendFileMessage, sendButtonMessage, sendGenericMessage, sendReceiptMessage, setListener, getListener, deleteListener, setDataBuffer, testAPI};
+module.exports = {app, Parse, rules, payloadRules, buffer, listener, limit, defaultSearch, callSendAPI, sendTypingOn, sendTypingOff, sendTextMessage, sendQuickReplyMessage, sendImageMessage, sendGifMessage, sendAudioMessage, sendVideoMessage, sendFileMessage, sendButtonMessage, sendGenericMessage, sendReceiptMessage, setListener, getListener, deleteListener, setDataBuffer, testAPI};
