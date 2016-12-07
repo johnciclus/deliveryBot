@@ -25,8 +25,8 @@ const User = Parse.Object.extend('User', {
             console.log('Error code: ' + error.message);
         });
     },
-    createConsumer: function(store, recipientId, conversationToken){
-        let consumer = new Consumer({conversationId: parseInt(recipientId), conversationToken: conversationToken});
+    createConsumer: function(store, recipientId, senderId, conversationToken){
+        let consumer = new Consumer({recipientId: parseInt(recipientId), senderId: parseInt(senderId), conversationToken: conversationToken});
         consumer.setUser(this);
         return consumer.save().then(()=>{
             return consumer.saveInStore(store, recipientId)

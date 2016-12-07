@@ -53,7 +53,7 @@ export function setCustomer(recipientId, customer){
  */
 export function loadUser(recipientId) {
     return dispatch => {
-        return new Parse.Query(Consumer).equalTo('conversationId', parseInt(recipientId)).first().then(consumer => {
+        return new Parse.Query(Consumer).equalTo('recipientId', parseInt(recipientId)).first().then(consumer => {
             if (consumer) {
                 return new Parse.Query(User).get(consumer.get('user').id).then(user => {
                     dispatch({type: types.USER_LOADED, data: {recipientId, user}})

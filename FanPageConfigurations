@@ -90,9 +90,9 @@ curl -i -X GET "https://graph.facebook.com/v2.6/me/thread_settings?fields=whitel
 
 curl -X POST -H "Content-Type: application/json" -d '{
   "setting_type" : "domain_whitelisting",
-  "whitelisted_domains" : ["https://6ea0e6af.ngrok.io"],
+  "whitelisted_domains" : ["https://8d620099.ngrok.io"],
   "domain_action_type": "add"
-}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBAFFMieBuZAUkzuFfLoALZCxNKMZBvxu0yBzrqpEALX4koiwqBtw95SZApwClpz2VA4WJEeMyXVfQP2ws0gfuYWTYRD9ulRIAjV6p6TO45u4g1KPn495D5Itus5ennDIGaM9OVUjBxZAaHdhzIlcgdZC8HpgZCm0IAZDZD"
+}' "https://graph.facebook.com/v2.6/me/thread_settings?access_token=EAACmGsSpx0UBADa397YfxM7VT5tGlGon344GlKDTZAjSTXMxjw6JJM6uOzRGyYJo6RbaKBwiS1VVfykPsx6MZBqpYekANHNKFzuqA4XTCxJSfqKbtp85xSh7ZCXh7DpZCHcHvXMrssx74XxexsYz26ih84MVrNNCuy024GExJgZDZD"
 
 * Remove
 

@@ -24,8 +24,6 @@ const PARSE_CLIENT_KEY = (process.env.PARSE_CLIENT_KEY) ? (process.env.PARSE_CLI
 
 const FACEBOOK_APP_ID = (process.env.FACEBOOK_APP_ID) ? (process.env.FACEBOOK_APP_ID) : config.get('FACEBOOK_APP_ID');
 
-const REDIRECT_URI = (process.env.REDIRECT_URI) ? (process.env.REDIRECT_URI) : config.get('REDIRECT_URI');
-
 const GOOGLE_MAPS_URL = (process.env.GOOGLE_MAPS_URL) ? (process.env.GOOGLE_MAPS_URL) : config.get('GOOGLE_MAPS_URL');
 
 const GOOGLE_MAPS_KEY = (process.env.GOOGLE_MAPS_KEY) ? (process.env.GOOGLE_MAPS_KEY) : config.get('GOOGLE_MAPS_KEY');
@@ -242,7 +240,7 @@ bot.app.get('/login', function(req, res) {
 bot.app.post('/registerUser', function (req, res) {
     let data = req.body;
 
-    signUp(data.psid, data.uid, data.accessToken).then(user =>{
+    signUp(data.psid, data.psid, data.uid, data.accessToken).then(user =>{
         sendMenu(data.psid);
     });
 
@@ -261,11 +259,12 @@ bot.app.post('/registerCreditCard', function (req, res) {
             if(consumer){
                 new Parse.Query(User).get(consumer.get('user').id).then(user => {
                     let username = user.get('username');
-                    let recipientId = consumer.get('conversationId');
+                    let recipientId = consumer.get('recipientId');
+                    let senderId = consumer.get('senderId');
 
                     Parse.User.logIn(username, username, {
                         success: function(userData) {
-                            addCreditCard(recipientId, userData.getSessionToken(), data)
+                            addCreditCard(recipientId, senderId, userData.getSessionToken(), data)
                         },
                         error: function(user, error) {
                             console.log('error');
@@ -283,21 +282,20 @@ bot.app.post('/registerCreditCard', function (req, res) {
 });
 
 bot.app.post('/creditCardRegistered', function (req, res) {
-    console.log('creditCardRegistered');
     let data = req.body;
     let userBuffer = bot.buffer[data.recipientId];
 
     if (typeof userBuffer != 'undefined') {
         if (userBuffer.creditCardPayload == 'SendCreditCards') {
-            sendRegisteredCreditCards(data.recipientId, 1329140110447050);
+            sendRegisteredCreditCards(data.recipientId, data.senderId);
             delete userBuffer.creditCardPayload
         }
         else {
-            sendCreditCards(data.recipientId, 1329140110447050)
+            sendCreditCards(data.recipientId, data.senderId)
         }
     }
     else {
-        sendCreditCards(data.recipientId, 1329140110447050)
+        sendCreditCards(data.recipientId, data.senderId)
     }
 })
 
@@ -308,12 +306,13 @@ bot.app.post('/changeOrderState', function (req, res) {
             if(consumer){
                 new Parse.Query(User).get(consumer.get('user').id).then(user => {
                     let username = user.get('username');
-                    let recipientId = consumer.get('conversationId');
+                    let recipientId = consumer.get('recipientId');
+                    let senderId = consumer.get('senderId');
 
                     new Parse.Query(OrderState).get(data['stateID']).then(orderState => {
 
                         store.dispatch(Actions.setOrderState(recipientId, orderState)).then(() => {
-                            sendOrderState(recipientId);
+                            sendOrderState(recipientId, senderId);
                         })
                     })
                     .fail(error => {
@@ -329,12 +328,12 @@ bot.app.post('/changeOrderState', function (req, res) {
     res.json({result: 'OK'});
 });
 
-function signUp(recipientId, facebookId, conversationToken){
+function signUp(recipientId, senderId, facebookId, conversationToken){
     return User.createUser(store, recipientId, facebookId, conversationToken).then(()=>{
         let userObject = getData(recipientId, 'user');
         let user = userObject.rawParseObject;
 
-        return user.createConsumer(store, recipientId, conversationToken).then(consumer => {
+        return user.createConsumer(store, recipientId, senderId, conversationToken).then(consumer => {
             return new Promise((resolve, reject) => {
                 resolve(userObject)
             });
@@ -364,7 +363,7 @@ function authentication(recipientId, senderId){
                     let userObject = getData(recipientId, 'user');
                     let user = userObject.rawParseObject;
 
-                    return user.createConsumer(store, recipientId, BUSINESS[senderId].PAGE_ACCESS_TOKEN).then(consumer => {
+                    return user.createConsumer(store, recipientId, senderId, BUSINESS[senderId].PAGE_ACCESS_TOKEN).then(consumer => {
                         return new Promise((resolve, reject) => {
                             resolve(userObject)
                         });
@@ -430,9 +429,6 @@ function getConsumer(recipientId, user){
                 });
             }else{
                 console.log('create consumer');
-                /*return createConsumer(recipientId, user).then( () => {
-                    return getData(recipientId, 'consumer');
-                });*/
             }
         });
     }
@@ -466,6 +462,9 @@ function sendSignUp(recipientId, senderId) {
 };
 
 function sendMenu(recipientId, senderId) {
+    console.log('sendMenu');
+    console.log(recipientId);
+    console.log(senderId);
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then(() =>{
             let customer = getData(recipientId, 'customer');
@@ -1311,7 +1310,7 @@ function addModifier(recipientId, senderId, productId, modifierId, itemId){
             });
 
             saveCart(recipientId);
-            sendAddProductNenu(recipientId, productId)
+            sendAddProductNenu(recipientId, senderId, productId)
         },
         error: function(user, error) {
             console.log('Failed to create new object, with error code: ' + error.message);
@@ -1493,7 +1492,7 @@ function sendProductDescription(recipientId, senderId, productId){
     );
 }
 
-function saveCart(recipientId, senderId){
+function saveCart(recipientId){
     let consumerCart = new Cart();
     let consumer = getData(recipientId, 'consumer');
     let address = getData(recipientId, 'address');
@@ -2156,17 +2155,11 @@ function orderConfirmation(recipientId, senderId){
     });
 }
 
-function orderState(recipientId, senderId){
-    bot.sendTypingOn(recipientId, senderId);
-
-    orderSent(recipientId)
-}
-
-function orderSent(recipientId, senderId){
+function sendorderMapState(recipientId, senderId){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
         return bot.sendTypingOff(recipientId, senderId).then(()=>{
             return bot.sendTextMessage(recipientId, senderId, "Buenas noticias, Tu pedido ha sido Enviado. \n\nHaz click en el mapa para vel tu pedido").then(()=>{
-                sendserviceRating(recipientId);
+                sendserviceRating(recipientId, senderId);
             })
         });
     });
@@ -2178,23 +2171,30 @@ function sendOrderState(recipientId, senderId){
         let pointSale = getData(recipientId, 'pointSale');
 
         return bot.sendTypingOff(recipientId, senderId).then(()=>{
-            if(orderState.order == 1){
-                return bot.sendTextMessage(recipientId, senderId, "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente "+pointSale.deliveryTime+" minutos")
-            }
-            else if(orderState.order == 5){
-                return bot.sendTextMessage(recipientId, senderId, orderState.messagePush).then(()=>{
-                    sendserviceRating(recipientId);
-                });
-            }
-            else if(orderState.order == 6){
-                return new Promise((resolve, reject) => {
-                    resolve()
-                });
-            }
-            else{
-                return bot.sendTypingOff(recipientId, senderId).then(()=>{
-                    return bot.sendTextMessage(recipientId, senderId, orderState.messagePush)
-                });
+            switch(orderState.order){
+                case 1:
+                    return bot.sendTextMessage(recipientId, senderId, "Tu pedido ha sido Aceptado. \n\nLo estan preparando en nuestra sede y te lo enviaremos en aproximadamente "+pointSale.deliveryTime+" minutos")
+                    break;
+                case 5:
+                    return bot.sendTextMessage(recipientId, senderId, orderState.messagePush).then(()=>{
+                        sendserviceRating(recipientId, senderId);
+                    });
+                    break;
+                case 6:
+                    return new Promise((resolve, reject) => {
+                        resolve()
+                    });
+                    break;
+                case 8:
+                    return bot.sendTextMessage(recipientId, senderId, orderState.messagePush).then(()=>{
+                        sendOrders(recipientId, senderId);
+                    });
+                    break;
+                default:
+                    return bot.sendTypingOff(recipientId, senderId).then(()=>{
+                        return bot.sendTextMessage(recipientId, senderId, orderState.messagePush)
+                    });
+                    break;
             }
         });
     });
@@ -2564,18 +2564,10 @@ function newOrder(recipientId, senderId){
 
 function cancelOrder(recipientId, senderId, id){
     Parse.Cloud.run('changeStatusOrder', { status: "canceledByUser", orderId: id}).then( () => {
-        renderCancelOrder(recipientId, senderId).then(()=>{
-            sendOrders(recipientId, senderId);
-        });
+
     }).fail(error => {
         console.log('error');
         console.log(error);
-    });
-}
-
-function renderCancelOrder(recipientId, senderId){
-    return bot.sendTypingOff(recipientId, senderId).then(()=>{
-        return bot.sendTextMessage(recipientId, senderId, "La orden ha sido cancelada.")
     });
 }
 
@@ -2627,7 +2619,7 @@ function sendYouAreWelcome(recipientId, senderId){
     });
 }
 
-function addCreditCard(recipientId, token, data){
+function addCreditCard(recipientId, senderId, token, data){
     let expiration = data['expiry'].replace(/\s+/g,"").split('/');
 
     return rp({
@@ -2638,19 +2630,19 @@ function addCreditCard(recipientId, token, data){
             'X-Parse-Session-Token': token
         },
         method: 'POST',
-        json: { "number": data['number'].replace(/\s+/g,""),
+        json: {
+            "businessId": BUSINESS[senderId].BUSINESS_ID,
+            "number": data['number'].replace(/\s+/g,""),
             "holderName": data['holderName'],
             "verificationNumber": data['cvc'],
             "expirationMonth": expiration[0],
             "expirationYear": expiration[1]
         }
     }).then( body => {
-        console.log('result');
-        console.log(body);
         rp({
             uri: SERVER_URL+'creditCardRegistered',
             method: 'POST',
-            json: { "recipientId": recipientId}
+            json: { "recipientId": recipientId, "senderId": senderId}
         })
     }).catch(error =>{
         console.log('error');
