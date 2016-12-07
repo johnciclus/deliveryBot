@@ -54,6 +54,7 @@ bot.rules.set('agregar tarjeta', registerCreditCard);
 
 bot.rules.set('ayuda', sendHelp);
 bot.rules.set('help', sendHelp);
+bot.rules.set('ok', sendYouAreWelcome);
 bot.rules.set('gracias', sendYouAreWelcome);
 
 bot.payloadRules.set('Greeting', sendMenu);
@@ -272,7 +273,6 @@ bot.app.post('/registerCreditCard', function (req, res) {
                         }
                     });
                 });
-
                 res.sendFile(path.join(__dirname+'/views/cardRegistered.html'));
             }
         },
@@ -375,15 +375,8 @@ function authentication(recipientId, senderId){
                     return new Promise((resolve, reject) => {
                         resolve(user)
                     });
-
-                    /*Parse.Promise.as().then(() => {
-                        return user;
-                    });*/
                 });
             }
-            //return login(user.username, user.username).then(()=>{
-
-            //});
         });
     });
 }
@@ -462,9 +455,6 @@ function sendSignUp(recipientId, senderId) {
 };
 
 function sendMenu(recipientId, senderId) {
-    console.log('sendMenu');
-    console.log(recipientId);
-    console.log(senderId);
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then(() =>{
             let customer = getData(recipientId, 'customer');

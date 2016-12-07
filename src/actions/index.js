@@ -62,7 +62,7 @@ export function loadUser(recipientId) {
                 })
             }
         }).fail(e => {
-            dispatch({type: types.CONSUMER_NOT_FOUND, data: {consumer}})
+            dispatch({type: types.CONSUMER_NOT_FOUND, data: {}})
         })
 
         /*
