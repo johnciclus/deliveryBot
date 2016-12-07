@@ -5,33 +5,41 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="890d1328-2fab-45cf-a19e-5311810914a2" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/bot.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/bot.js.map" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/views/views/_cardForm.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/views/views/cardForm.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/views/views/cardRegistered.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/views/views/login.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/dist/dist/bot-compiled.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/dist/dist/bot-compiled.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/dist/dist/constants/actionTypes-compiled.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/dist/dist/constants/actionTypes-compiled.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/actions/index.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/actions/index.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/app.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/app.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/Consumer.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/Consumer.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/ConsumerAddress.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/ConsumerAddress.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/CreditCard.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/CreditCard.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/Customer.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/Customer.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/ParseModels.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/ParseModels.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/User.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/src/models/User.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/test/unit/localStore.spec.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/test/unit/localStore.spec.js.map" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/test/unit/user.spec.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/dist/test/unit/user.spec.js.map" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/Generated_files.xml" afterPath="$PROJECT_DIR$/.idea/libraries/Generated_files.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/FanPageConfigurations" afterPath="$PROJECT_DIR$/FanPageConfigurations" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/actions/index.js" afterPath="$PROJECT_DIR$/dist/actions/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/app.js" afterPath="$PROJECT_DIR$/dist/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/bot.js" afterPath="$PROJECT_DIR$/dist/bot.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/actions/index.js" afterPath="$PROJECT_DIR$/dist/dist/actions/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/actions/index.js.map" afterPath="$PROJECT_DIR$/dist/dist/actions/index.js.map" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/app.js" afterPath="$PROJECT_DIR$/dist/dist/app.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/app.js.map" afterPath="$PROJECT_DIR$/dist/dist/app.js.map" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/bot.js" afterPath="$PROJECT_DIR$/dist/dist/bot.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/bot.js.map" afterPath="$PROJECT_DIR$/dist/dist/bot.js.map" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/src/actions/index.js" afterPath="$PROJECT_DIR$/dist/src/actions/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/src/actions/index.js.map" afterPath="$PROJECT_DIR$/dist/src/actions/index.js.map" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/src/app.js" afterPath="$PROJECT_DIR$/dist/src/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/src/app.js.map" afterPath="$PROJECT_DIR$/dist/src/app.js.map" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/src/models/User.js" afterPath="$PROJECT_DIR$/dist/src/models/User.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/src/models/User.js.map" afterPath="$PROJECT_DIR$/dist/src/models/User.js.map" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/actions/index.js" afterPath="$PROJECT_DIR$/src/actions/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/app.js" afterPath="$PROJECT_DIR$/src/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/models/User.js" afterPath="$PROJECT_DIR$/src/models/User.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/models/User.js" afterPath="$PROJECT_DIR$/dist/dist/models/User.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/dist/models/User.js.map" afterPath="$PROJECT_DIR$/dist/dist/models/User.js.map" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/models/User.js" afterPath="$PROJECT_DIR$/dist/models/User.js" />
     </list>
     <ignored path="deliveryBot.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -54,11 +62,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/app.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="936">
-              <caret line="393" column="27" lean-forward="true" selection-start-line="393" selection-start-column="27" selection-end-line="393" selection-end-column="27" />
+              <caret line="393" column="27" lean-forward="false" selection-start-line="393" selection-start-column="27" selection-end-line="393" selection-end-column="27" />
               <folding>
                 <element signature="e#5083#5478#0" expanded="false" />
                 <element signature="e#5121#5240#0" expanded="false" />
@@ -727,6 +735,16 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="default.json" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/config/default.json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="144">
+              <caret line="8" column="36" lean-forward="false" selection-start-line="8" selection-start-column="36" selection-end-line="8" selection-end-column="36" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
     </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
@@ -832,11 +850,11 @@
         <option value="$PROJECT_DIR$/src/server.js" />
         <option value="$PROJECT_DIR$/config/production.json" />
         <option value="$PROJECT_DIR$/src/bot.js" />
-        <option value="$PROJECT_DIR$/config/default.json" />
         <option value="$PROJECT_DIR$/FanPageConfigurations" />
         <option value="$PROJECT_DIR$/src/actions/index.js" />
         <option value="$PROJECT_DIR$/src/models/User.js" />
         <option value="$PROJECT_DIR$/src/app.js" />
+        <option value="$PROJECT_DIR$/config/default.json" />
       </list>
     </option>
   </component>
@@ -1156,12 +1174,12 @@
       <workItem from="1480973856033" duration="5121000" />
       <workItem from="1480993170197" duration="7030000" />
       <workItem from="1481035261609" duration="22745000" />
-      <workItem from="1481122649986" duration="7765000" />
+      <workItem from="1481122649986" duration="7843000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="1161143000" />
+    <option name="totallyTimeSpent" value="1161221000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="1920" y="0" width="1920" height="1080" extended-state="6" />
@@ -1521,14 +1539,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config/default.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="15" column="25" lean-forward="false" selection-start-line="15" selection-start-column="9" selection-end-line="15" selection-end-column="25" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/bot.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="828">
@@ -1739,7 +1749,7 @@
     <entry file="file://$PROJECT_DIR$/src/app.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="936">
-          <caret line="393" column="27" lean-forward="true" selection-start-line="393" selection-start-column="27" selection-end-line="393" selection-end-column="27" />
+          <caret line="393" column="27" lean-forward="false" selection-start-line="393" selection-start-column="27" selection-end-line="393" selection-end-column="27" />
           <folding>
             <element signature="e#5083#5478#0" expanded="false" />
             <element signature="e#5121#5240#0" expanded="false" />
@@ -2394,6 +2404,14 @@
             <element signature="e#99789#99845#0" expanded="false" />
             <element signature="e#99870#99905#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config/default.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="8" column="36" lean-forward="false" selection-start-line="8" selection-start-column="36" selection-end-line="8" selection-end-column="36" />
+          <folding />
         </state>
       </provider>
     </entry>
