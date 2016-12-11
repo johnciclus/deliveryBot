@@ -167,51 +167,43 @@ function receivedMessage(event) {
         }
     }
     else if (messageText) {
-        // If we receive a text message, check to see if it matches any special
-        // keywords and send back the corresponding example. Otherwise, just echo
-        // the text we received.
-
-        //Object.keys(listener);
         let userListeners = listener[senderID];
         let existRule = false;
+        let ruleFunction = undefined;
 
-        if(!_.isEmpty(userListeners)){
-            if(!buffer[senderID]){
-                buffer[senderID] = {}
+        messageText = messageText.toLowerCase()
+
+        rules.forEach(function (func, key){
+            if(messageText.includes(key)){
+                ruleFunction =  func;
+                existRule = true;
             }
-            let keys = Object.keys(userListeners);
-            let key = keys.shift();
+        });
 
-            //console.log('User Listeners');
-
-            while(key){
-                //console.log(key);
-                if(userListeners[key].type == 'text'){
-                    buffer[senderID][key] = messageText;
-                    userListeners[key].callback(senderID, recipientID);
-                    existRule = true;
+        if(existRule){
+            ruleFunction(senderID, recipientID);
+        }else{
+            if(!_.isEmpty(userListeners)){
+                if(!buffer[senderID]){
+                    buffer[senderID] = {}
                 }
-                delete userListeners[key];
-                key = keys.shift();
+                let keys = Object.keys(userListeners);
+                let key = keys.shift();
+
+                while(key){
+                    if(userListeners[key].type == 'text'){
+                        buffer[senderID][key] = messageText;
+                        userListeners[key].callback(senderID, recipientID);
+                        existRule = true;
+                    }
+                    delete userListeners[key];
+                    key = keys.shift();
+                }
+            }
+            else{
+                defaultSearch(senderID, recipientID, messageText);
             }
         }
-        else{
-            messageText = messageText.toLowerCase()
-
-            rules.forEach(function (func, key){
-                if(messageText.includes(key)){
-                    func(senderID, recipientID);
-                    existRule = true;
-                }
-            });
-        }
-
-        if(!existRule){
-            //console.log(messageText);
-            //console.log(defaultSearch);
-            defaultSearch(senderID, recipientID, messageText);
-        }
-
     }
     else if (messageAttachments) {
         if(messageAttachments[0].type == 'location'){
@@ -845,7 +837,7 @@ function deleteListener(recipientId, dataId){
         return false
     }
 
-    delete listener[recipientId][dataId]
+    delete listener[recipientId][dataId];
     return true
 
 }
@@ -866,6 +858,13 @@ function defaultSearch(recipientId, senderId, query){
         search(recipientId, senderId, query);
     }
 };
+
+function clearListener(recipientId){
+    let userListener = listener[recipientId];
+    if(typeof userListener != 'undefined'){
+        listener[recipientId] = {};
+    }
+}
 
 /*
  * Use your own validation token. Check that the token used in the Webhook
@@ -959,4 +958,4 @@ app.listen(app.get('port'), function() {
     //console.log('Node app is running on port', app.get('port'));
 });
 
-module.exports = {app, Parse, rules, payloadRules, buffer, listener, limit, defaultSearch, callSendAPI, sendTypingOn, sendTypingOff, sendTextMessage, sendQuickReplyMessage, sendImageMessage, sendGifMessage, sendAudioMessage, sendVideoMessage, sendFileMessage, sendButtonMessage, sendGenericMessage, sendReceiptMessage, setListener, getListener, deleteListener, setDataBuffer, testAPI};
+module.exports = {app, Parse, rules, payloadRules, buffer, listener, limit, defaultSearch, callSendAPI, sendTypingOn, sendTypingOff, sendTextMessage, sendQuickReplyMessage, sendImageMessage, sendGifMessage, sendAudioMessage, sendVideoMessage, sendFileMessage, sendButtonMessage, sendGenericMessage, sendReceiptMessage, setListener, getListener, deleteListener, setDataBuffer, testAPI, clearListener};

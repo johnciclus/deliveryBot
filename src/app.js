@@ -457,6 +457,7 @@ function sendSignUp(recipientId, senderId) {
 function sendMenu(recipientId, senderId) {
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then(() =>{
+            bot.clearListener(recipientId);
             let customer = getData(recipientId, 'customer');
             let user = getData(recipientId, 'user');
             let image_url = customer.image.url;
@@ -496,6 +497,7 @@ function sendAddressesWithTitle(recipientId, senderId){
 function sendAddresses(recipientId, senderId){
     return bot.sendTypingOn(recipientId, senderId).then(()=> {
         authentication(recipientId, senderId).then(() => {
+            bot.clearListener(recipientId);
             let consumer = getData(recipientId, 'consumer');
 
             ConsumerAddress.loadInStore(store, recipientId, consumer).then(() => {
@@ -553,6 +555,7 @@ function sendAddresses(recipientId, senderId){
 function sendCreditCards(recipientId, senderId){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then(() =>{
+            bot.clearListener(recipientId);
             let state = store.getState();
             let user = getData(recipientId, 'user');
             let creditCardsImages = state['creditCardImages'];
@@ -953,6 +956,7 @@ function removeCreditCard(recipientId, senderId, id){
 function sendCategories(recipientId, senderId, index){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then(()=>{
+            bot.clearListener(recipientId);
             Parse.Cloud.run('getProducts', { businessId: BUSINESS[senderId].BUSINESS_ID }).then(function(result){
                 if(result.pointSaleIsOpen) {
                     if(typeof index == 'undefined')
@@ -1039,6 +1043,7 @@ function sendCategoriesDetail(recipientId, senderId, categories, index){
 
 function sendProducts(recipientId, senderId, categoryId, proIdx){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        bot.clearListener(recipientId);
         proIdx = parseInt(proIdx);
         if(proIdx == 0){
             new Parse.Query(Category).get(categoryId).then(category => {
@@ -1642,6 +1647,7 @@ function sendEmptyCartOptions(recipientId, senderId){
 function sendCart(recipientId, senderId){
     bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then( () =>{
+            bot.clearListener(recipientId);
             let user = getData(recipientId, 'user');
             let customer = getData(recipientId, 'customer');
             let cart = getData(recipientId, 'cart');
@@ -2360,15 +2366,13 @@ function splitSearchResult(recipientId, products, index){
 }
 
 function sendHelp(recipientId, senderId){
-    bot.sendTypingOn(recipientId, senderId);
-    renderHelp(recipientId, senderId).then(()=>{
-        sendContactUs(recipientId, senderId);
-    });
-}
-
-function renderHelp(recipientId, senderId){
-    return bot.sendTypingOff(recipientId, senderId).then(()=>{
-        return bot.sendTextMessage(recipientId, senderId, "InOut Bot.\n\nTe permite visualizar las opciones de productos, agregarlos al carrito y realizar tu compra por medio del chat de facebook.\n\nFuncionalidades disponibles: \n\n'Hola', para iniciar la conversación\n'Pedir Domicilio', si quieres realizar un domicilio\n'Carrito', para ver el estado actual de tu carrito")
+    return bot.sendTypingOn(recipientId, senderId).then(()=>{
+        return bot.sendTypingOff(recipientId, senderId).then(()=>{
+            bot.clearListener(recipientId);
+            return bot.sendTextMessage(recipientId, senderId, "InOut Bot.\n\nTe permite visualizar las opciones de productos, agregarlos al carrito y realizar tu compra por medio del chat de facebook.\n\nFuncionalidades disponibles: \n\n'Hola', para iniciar la conversación\n'Pedir Domicilio', si quieres realizar un domicilio\n'Carrito', para ver el estado actual de tu carrito").then(()=>{
+                sendContactUs(recipientId, senderId);
+            });
+        });
     });
 }
 
@@ -2383,6 +2387,7 @@ function sendContactUs(recipientId, senderId){
 function sendOrders(recipientId, senderId){
     bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then( () =>{
+            bot.clearListener(recipientId);
             let consumer = getData(recipientId, 'consumer');
             Parse.Cloud.run('ordersBot', { businessId: BUSINESS[senderId].BUSINESS_ID, consumerId: consumer.objectId}).then( orders => {
                 store.dispatch(Actions.setOrders(recipientId, orders)).then(() => {
@@ -2564,6 +2569,7 @@ function cancelOrder(recipientId, senderId, id){
 function sendAccount(recipientId, senderId){
     return bot.sendTypingOn(recipientId, senderId).then(()=>{
         authentication(recipientId, senderId).then( ()=> {
+            bot.clearListener(recipientId);
             renderAccount(recipientId, senderId)
         });
     });
@@ -2652,6 +2658,8 @@ function getOrderState(orderStateNumber){
         console.log(error);
     });
 }
+
+
 
 module.exports = {store, getData}
 
